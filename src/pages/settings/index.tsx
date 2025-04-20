@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { User, Lock, Bell, CreditCard, Shield, LogOut } from "lucide-react";
@@ -54,7 +53,6 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
-// Profile form schema
 const profileFormSchema = z.object({
   full_name: z.string().min(2, { message: "Name must be at least 2 characters" }),
   email: z.string().email({ message: "Please enter a valid email address" }),
@@ -67,7 +65,6 @@ const profileFormSchema = z.object({
   country: z.string().optional(),
 });
 
-// Security form schema
 const securityFormSchema = z.object({
   current_password: z.string().min(8, { message: "Current password is required" }),
   new_password: z.string().min(8, { message: "Password must be at least 8 characters" }),
@@ -77,7 +74,6 @@ const securityFormSchema = z.object({
   path: ["confirm_password"],
 });
 
-// Notification preferences schema
 const notificationSchema = z.object({
   email_new_messages: z.boolean(),
   email_listing_updates: z.boolean(),
@@ -86,7 +82,7 @@ const notificationSchema = z.object({
 });
 
 const UserSettingsPage = () => {
-  const { user, signOut } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<any>(null);
@@ -95,7 +91,6 @@ const UserSettingsPage = () => {
   const [twofaEnabled, setTwofaEnabled] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Initialize forms
   const profileForm = useForm<z.infer<typeof profileFormSchema>>({
     resolver: zodResolver(profileFormSchema),
     defaultValues: {
@@ -130,7 +125,6 @@ const UserSettingsPage = () => {
     },
   });
 
-  // Fetch user data
   useEffect(() => {
     if (!user) return;
 
@@ -145,17 +139,14 @@ const UserSettingsPage = () => {
         if (error) throw error;
         setProfile(data);
         
-        // Set avatar URL if it exists
         if (data.avatar_url) {
           setAvatarUrl(data.avatar_url);
         }
         
-        // Set 2FA status
         if (data.is_two_factor_enabled !== null) {
           setTwofaEnabled(data.is_two_factor_enabled);
         }
 
-        // Populate form data
         profileForm.reset({
           full_name: data.full_name || "",
           email: user.email || "",
@@ -185,7 +176,7 @@ const UserSettingsPage = () => {
 
   const handleLogout = async () => {
     try {
-      await signOut();
+      await logout();
       navigate('/');
       toast({
         title: "Logged out successfully",
@@ -213,11 +204,8 @@ const UserSettingsPage = () => {
       const fileExt = file.name.split('.').pop();
       const filePath = `${user.id}/avatar.${fileExt}`;
       
-      // In a real application, use Storage bucket for avatar upload
-      // For this demonstration, we'll use a mock URL
       const mockUrl = `https://images.unsplash.com/photo-1633332755192-727a05c4013d?auto=format&fit=crop&w=256&h=256`;
       
-      // Update avatar in profile
       const { error } = await supabase
         .from('profiles')
         .update({ avatar_url: mockUrl })
@@ -248,7 +236,6 @@ const UserSettingsPage = () => {
     
     setIsSaving(true);
     try {
-      // Update profile data
       const { error } = await supabase
         .from('profiles')
         .update({
@@ -266,7 +253,6 @@ const UserSettingsPage = () => {
 
       if (error) throw error;
       
-      // Update email if changed
       if (values.email !== user.email) {
         const { error: emailError } = await supabase.auth.updateUser({
           email: values.email,
@@ -294,14 +280,12 @@ const UserSettingsPage = () => {
   const onSecuritySubmit = async (values: z.infer<typeof securityFormSchema>) => {
     setIsSaving(true);
     try {
-      // Update password
       const { error } = await supabase.auth.updateUser({
         password: values.new_password
       });
 
       if (error) throw error;
       
-      // Reset form
       securityForm.reset({
         current_password: "",
         new_password: "",
@@ -325,7 +309,6 @@ const UserSettingsPage = () => {
   };
 
   const onNotificationSubmit = async (values: z.infer<typeof notificationSchema>) => {
-    // In a real app, this would save notification preferences to the database
     toast({
       title: "Notification preferences updated",
       description: "Your notification preferences have been updated successfully",
@@ -333,7 +316,6 @@ const UserSettingsPage = () => {
   };
 
   const handle2FAToggle = async (enabled: boolean) => {
-    // In a real app, this would enable/disable 2FA
     setTwofaEnabled(enabled);
     
     if (enabled) {
@@ -376,7 +358,6 @@ const UserSettingsPage = () => {
     <MainLayout>
       <div className="container py-8">
         <div className="flex flex-col md:flex-row gap-6">
-          {/* Sidebar */}
           <div className="md:w-1/4">
             <Card>
               <CardHeader>
@@ -471,7 +452,6 @@ const UserSettingsPage = () => {
             </Card>
           </div>
 
-          {/* Main content */}
           <div className="flex-1">
             <Tabs defaultValue="profile">
               <TabsContent value="profile" className="space-y-6">
