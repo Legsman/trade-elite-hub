@@ -31,9 +31,7 @@ export const useProfileService = (setUser: (user: User | null) => void) => {
             "annual_2fa_payment_date",
             "created_at",
             "updated_at",
-          ]
-            .map((f) => f)
-            .join(",")
+          ].join(",")
         )
         .eq("id", id)
         .single();
@@ -43,12 +41,13 @@ export const useProfileService = (setUser: (user: User | null) => void) => {
         return;
       }
       
-      if (data !== null) {
+      if (data) {
+        // data is non-null here
         const hasValidShape = typeof data === 'object' && 'id' in data;
-        
+
         if (hasValidShape) {
           const profile = data as Tables<"profiles">;
-          
+
           const profileUser: User = {
             id: profile.id,
             name: profile.full_name || "",
