@@ -34,11 +34,11 @@ const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
-  const [listings, setListings] = useState([]);
-  const [savedListings, setSavedListings] = useState([]);
-  const [messages, setMessages] = useState([]);
-  const [notifications, setNotifications] = useState([]);
-  const [profile, setProfile] = useState(null);
+  const [listings, setListings] = useState<Supabase.Listing[]>([]);
+  const [savedListings, setSavedListings] = useState<Supabase.SavedListing[]>([]);
+  const [messages, setMessages] = useState<Supabase.Message[]>([]);
+  const [notifications, setNotifications] = useState<Supabase.Notification[]>([]);
+  const [profile, setProfile] = useState<Supabase.Profile | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -54,7 +54,7 @@ const Dashboard = () => {
           .single();
 
         if (profileError) throw profileError;
-        setProfile(profileData);
+        setProfile(profileData as Supabase.Profile);
 
         // Fetch user's listings
         const { data: listingsData, error: listingsError } = await supabase
@@ -64,7 +64,7 @@ const Dashboard = () => {
           .order('created_at', { ascending: false });
 
         if (listingsError) throw listingsError;
-        setListings(listingsData || []);
+        setListings(listingsData as Supabase.Listing[] || []);
 
         // Fetch user's saved listings with listing details
         const { data: savedData, error: savedError } = await supabase
@@ -85,7 +85,7 @@ const Dashboard = () => {
           .order('created_at', { ascending: false });
 
         if (savedError) throw savedError;
-        setSavedListings(savedData || []);
+        setSavedListings(savedData as Supabase.SavedListing[] || []);
 
         // Fetch user's messages
         const { data: messagesData, error: messagesError } = await supabase
@@ -114,7 +114,7 @@ const Dashboard = () => {
           .limit(10);
 
         if (messagesError) throw messagesError;
-        setMessages(messagesData || []);
+        setMessages(messagesData as Supabase.Message[] || []);
 
         // Fetch user's notifications
         const { data: notificationsData, error: notificationsError } = await supabase
@@ -125,7 +125,7 @@ const Dashboard = () => {
           .limit(10);
 
         if (notificationsError) throw notificationsError;
-        setNotifications(notificationsData || []);
+        setNotifications(notificationsData as Supabase.Notification[] || []);
 
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
@@ -142,11 +142,11 @@ const Dashboard = () => {
     fetchDashboardData();
   }, [user]);
 
-  const handleViewListing = (id) => {
+  const handleViewListing = (id: string) => {
     navigate(`/listings/${id}`);
   };
 
-  const handleEditListing = (id) => {
+  const handleEditListing = (id: string) => {
     navigate(`/listings/edit/${id}`);
   };
 
@@ -162,7 +162,7 @@ const Dashboard = () => {
     navigate('/settings');
   };
 
-  const formatDate = (dateString) => {
+  const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-GB', {
       day: 'numeric',
       month: 'short',
@@ -255,7 +255,7 @@ const Dashboard = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
-                    {messages.filter(m => !m.is_read && m.receiver_id === user.id).length}
+                    {messages.filter(m => !m.is_read && m.receiver_id === user?.id).length}
                   </div>
                   <p className="text-xs text-muted-foreground">
                     {messages.length} total messages
@@ -359,7 +359,7 @@ const Dashboard = () => {
                               <div className="flex-shrink-0">
                                 <Avatar>
                                   <AvatarFallback>
-                                    {message.sender_id === user.id 
+                                    {message.sender_id === user?.id 
                                       ? message.receiver_profile?.full_name?.charAt(0) || 'U'
                                       : message.sender_profile?.full_name?.charAt(0) || 'U'}
                                   </AvatarFallback>
@@ -367,7 +367,7 @@ const Dashboard = () => {
                               </div>
                               <div>
                                 <div className="font-medium">
-                                  {message.sender_id === user.id 
+                                  {message.sender_id === user?.id 
                                     ? `To: ${message.receiver_profile?.full_name || "User"}`
                                     : `From: ${message.sender_profile?.full_name || "User"}`}
                                 </div>
@@ -377,7 +377,7 @@ const Dashboard = () => {
                                 </div>
                               </div>
                             </div>
-                            {!message.is_read && message.receiver_id === user.id && (
+                            {!message.is_read && message.receiver_id === user?.id && (
                               <Badge>New</Badge>
                             )}
                           </div>
@@ -682,7 +682,7 @@ const Dashboard = () => {
                           await supabase
                             .from('notifications')
                             .update({ is_read: true })
-                            .eq('user_id', user.id)
+                            .eq('user_id', user?.id)
                             .eq('is_read', false);
                           
                           setNotifications(prev => 

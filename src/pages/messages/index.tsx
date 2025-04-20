@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { Send, Search, User, ArrowLeft, Clock, Check, MessageSquare } from "lucide-react";
@@ -62,7 +61,6 @@ const MessagesPage = () => {
   const [sendingMessage, setSendingMessage] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Check if there's a contact parameter in the URL
   useEffect(() => {
     const contactId = searchParams.get("contact");
     if (contactId) {
@@ -70,11 +68,9 @@ const MessagesPage = () => {
     }
   }, [searchParams]);
 
-  // Fetch contacts and messages
   useEffect(() => {
     if (!user) return;
 
-    // Setup realtime subscription for new messages
     const channel = supabase
       .channel('messages-changes')
       .on(
@@ -88,11 +84,9 @@ const MessagesPage = () => {
         async (payload: any) => {
           const newMessage = payload.new;
           
-          // Add the new message to the messages list if user is viewing that conversation
           if (activeContact === newMessage.sender_id) {
             setMessages(prev => [...prev, newMessage]);
             
-            // Mark as read immediately if it's from the active contact
             try {
               await supabase
                 .from('messages')
@@ -103,10 +97,8 @@ const MessagesPage = () => {
             }
           }
           
-          // Update contact list to show new message
           fetchContacts();
           
-          // Create notification
           try {
             await supabase.from('notifications').insert({
               user_id: user.id,
@@ -131,7 +123,6 @@ const MessagesPage = () => {
     };
   }, [user, activeContact, contactDetails]);
 
-  // Fetch messages when active contact changes
   useEffect(() => {
     if (activeContact) {
       fetchMessages(activeContact);
@@ -139,7 +130,6 @@ const MessagesPage = () => {
     }
   }, [activeContact]);
 
-  // Scroll to bottom when messages change
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -151,7 +141,6 @@ const MessagesPage = () => {
     
     setLoading(true);
     try {
-      // This query gets all users the current user has had conversations with
       const { data, error } = await supabase.rpc('get_user_conversations', {
         user_id: user.id
       });
@@ -161,7 +150,6 @@ const MessagesPage = () => {
       if (data) {
         setContacts(data);
         
-        // If no active contact is set but we have contacts, set the first one
         if (!activeContact && data.length > 0) {
           setActiveContact(data[0].user_id);
           setSearchParams({ contact: data[0].user_id });
@@ -183,7 +171,6 @@ const MessagesPage = () => {
     if (!user) return;
     
     try {
-      // Get messages between current user and the contact
       const { data, error } = await supabase
         .from('messages')
         .select(`
@@ -206,7 +193,6 @@ const MessagesPage = () => {
       
       setMessages(data || []);
       
-      // Mark messages as read
       const unreadMessages = data?.filter(m => 
         m.receiver_id === user.id && !m.is_read
       ) || [];
@@ -218,7 +204,6 @@ const MessagesPage = () => {
             .update({ is_read: true })
             .in('id', unreadMessages.map(m => m.id));
           
-          // Refresh contacts to update unread count
           fetchContacts();
         } catch (updateError) {
           console.error('Error marking messages as read:', updateError);
@@ -255,7 +240,6 @@ const MessagesPage = () => {
     
     setSendingMessage(true);
     try {
-      // Check for contact information in the message (simple check)
       const hasContactInfo = /(\+?\d{10,}|@|email|phone|contact|whatsapp|telegram)/i.test(newMessage);
       
       const { data, error } = await supabase
@@ -270,7 +254,6 @@ const MessagesPage = () => {
       
       if (error) throw error;
       
-      // Add the new message to the messages list
       if (data) {
         setMessages(prev => [...prev, data[0]]);
         setNewMessage("");
@@ -291,17 +274,14 @@ const MessagesPage = () => {
     const date = new Date(dateString);
     const now = new Date();
     
-    // If the message is from today, show only the time
     if (date.toDateString() === now.toDateString()) {
       return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     }
     
-    // If the message is from this year, show the day and month
     if (date.getFullYear() === now.getFullYear()) {
       return date.toLocaleDateString([], { day: 'numeric', month: 'short' });
     }
     
-    // If the message is from a different year, show the full date
     return date.toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' });
   };
 
@@ -332,7 +312,6 @@ const MessagesPage = () => {
         <h1 className="text-3xl font-bold tracking-tight mb-8">Messages</h1>
         
         <div className="grid grid-cols-1 md:grid-cols-7 gap-6">
-          {/* Mobile back button */}
           {activeContact && (
             <div className="md:hidden w-full mb-2">
               <Button 
@@ -349,7 +328,6 @@ const MessagesPage = () => {
             </div>
           )}
           
-          {/* Contacts sidebar (hidden on mobile when a conversation is active) */}
           <Card className={`md:col-span-2 ${activeContact ? 'hidden md:block' : ''}`}>
             <CardHeader className="p-4">
               <div className="relative">
@@ -435,7 +413,6 @@ const MessagesPage = () => {
             </CardContent>
           </Card>
           
-          {/* Conversation view (hidden on mobile when no conversation is active) */}
           <Card className={`md:col-span-5 ${!activeContact ? 'hidden md:block' : ''}`}>
             {activeContact ? (
               <>
