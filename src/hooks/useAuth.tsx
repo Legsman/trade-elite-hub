@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback, createContext, useContext } from "rea
 import { supabase } from "@/integrations/supabase/client";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import type { User } from "@/types";
+import type { Tables } from "@/integrations/supabase/types";
 
 interface AuthContextType {
   user: User | null;
@@ -42,61 +43,68 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   // Fetch profile from profiles table
   const fetchUserProfile = useCallback(async (id: string) => {
-    const { data, error } = await supabase
-      .from("profiles")
-      .select(
-        [
-          "id",
-          "full_name",
-          "avatar_url",
-          "address_line1",
-          "address_line2",
-          "city",
-          "postcode",
-          "country",
-          "trading_address",
-          "company_name",
-          "phone_number",
-          "email",
-          "signup_date",
-          "strike_count",
-          "is_two_factor_enabled",
-          "referred_by",
-          "feedback_rating",
-          "annual_2fa_payment_date",
-          "created_at",
-          "updated_at",
-        ]
-          .map((f) => f)
-          .join(",")
-      )
-      .eq("id", id)
-      .single();
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select(
+          [
+            "id",
+            "full_name",
+            "avatar_url",
+            "address_line1",
+            "address_line2",
+            "city",
+            "postcode",
+            "country",
+            "trading_address",
+            "company_name",
+            "phone_number",
+            "email",
+            "signup_date",
+            "strike_count",
+            "is_two_factor_enabled",
+            "referred_by",
+            "feedback_rating",
+            "annual_2fa_payment_date",
+            "created_at",
+            "updated_at",
+          ]
+            .map((f) => f)
+            .join(",")
+        )
+        .eq("id", id)
+        .single();
 
-    if (error) {
-      console.error("Error fetching user profile:", error);
-      return;
-    }
-    
-    if (data) {
-      // Map database fields to User type
-      const profileUser: User = {
-        id: data.id,
-        name: data.full_name || "",
-        email: data.email || "",
-        role: "unverified", // default, role checking done elsewhere
-        createdAt: new Date(data.created_at),
-        purchases: 0,
-        sales: 0,
-        feedbackRating: data.feedback_rating ?? 0,
-        isVerified: false,
-        isTwoFactorEnabled: data.is_two_factor_enabled ?? false,
-        annual2FAPaymentDate: data.annual_2fa_payment_date
-          ? new Date(data.annual_2fa_payment_date)
-          : undefined,
-        referredBy: data.referred_by,
-      };
-      setUser(profileUser);
+      if (error) {
+        console.error("Error fetching user profile:", error);
+        return;
+      }
+      
+      if (data) {
+        // Explicitly type the data as a profile record
+        const profile = data as Tables["profiles"];
+        
+        // Map database fields to User type
+        const profileUser: User = {
+          id: profile.id,
+          name: profile.full_name || "",
+          email: profile.email || "",
+          role: "unverified", // default, role checking done elsewhere
+          createdAt: new Date(profile.created_at),
+          purchases: 0,
+          sales: 0,
+          feedbackRating: profile.feedback_rating ?? 0,
+          isVerified: false,
+          isTwoFactorEnabled: profile.is_two_factor_enabled ?? false,
+          annual2FAPaymentDate: profile.annual_2fa_payment_date
+            ? new Date(profile.annual_2fa_payment_date)
+            : undefined,
+          referredBy: profile.referred_by,
+        };
+        setUser(profileUser);
+      }
+    } catch (err) {
+      console.error("Unexpected error fetching profile:", err);
     }
   }, []);
 
