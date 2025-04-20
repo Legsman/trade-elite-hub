@@ -81,27 +81,32 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
       
       if (data) {
-        // Type the data correctly - profiles is a table name in the schema
-        const profile = data as Tables<"profiles">;
-        
-        // Map database fields to User type
-        const profileUser: User = {
-          id: profile.id,
-          name: profile.full_name || "",
-          email: profile.email || "",
-          role: "unverified", // default, role checking done elsewhere
-          createdAt: new Date(profile.created_at),
-          purchases: 0,
-          sales: 0,
-          feedbackRating: profile.feedback_rating ?? 0,
-          isVerified: false,
-          isTwoFactorEnabled: profile.is_two_factor_enabled ?? false,
-          annual2FAPaymentDate: profile.annual_2fa_payment_date
-            ? new Date(profile.annual_2fa_payment_date)
-            : undefined,
-          referredBy: profile.referred_by,
-        };
-        setUser(profileUser);
+        // Type guard to check if data has the correct shape
+        if (typeof data === 'object' && data !== null && 'id' in data) {
+          // Now we can safely cast it to the correct type
+          const profile = data as Tables<"profiles">;
+          
+          // Map database fields to User type
+          const profileUser: User = {
+            id: profile.id,
+            name: profile.full_name || "",
+            email: profile.email || "",
+            role: "unverified", // default, role checking done elsewhere
+            createdAt: new Date(profile.created_at),
+            purchases: 0,
+            sales: 0,
+            feedbackRating: profile.feedback_rating ?? 0,
+            isVerified: false,
+            isTwoFactorEnabled: profile.is_two_factor_enabled ?? false,
+            annual2FAPaymentDate: profile.annual_2fa_payment_date
+              ? new Date(profile.annual_2fa_payment_date)
+              : undefined,
+            referredBy: profile.referred_by,
+          };
+          setUser(profileUser);
+        } else {
+          console.error("Profile data is not in the expected format:", data);
+        }
       }
     } catch (err) {
       console.error("Unexpected error fetching profile:", err);
