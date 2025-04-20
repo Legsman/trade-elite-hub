@@ -184,14 +184,14 @@ const ListingsPage = () => {
       }
       
       // Apply listing type filter
-      if (listingType) {
+      if (listingType && listingType !== "all") {
         filteredListings = filteredListings.filter(
           listing => listing.type === listingType
         );
       }
       
       // Apply price range filter
-      if (priceRange) {
+      if (priceRange && priceRange !== "any") {
         const [min, max] = priceRange.split("-").map(Number);
         filteredListings = filteredListings.filter(
           listing => listing.price >= min && (max ? listing.price <= max : true)
@@ -303,7 +303,7 @@ const ListingsPage = () => {
                 <SelectValue placeholder="Listing Type" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Types</SelectItem>
+                <SelectItem value="all">All Types</SelectItem>
                 <SelectItem value="auction">Auction</SelectItem>
                 <SelectItem value="classified">Classified</SelectItem>
               </SelectContent>
@@ -314,7 +314,7 @@ const ListingsPage = () => {
                 <SelectValue placeholder="Price Range" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Any Price</SelectItem>
+                <SelectItem value="any">Any Price</SelectItem>
                 <SelectItem value="0-1000">Under £1,000</SelectItem>
                 <SelectItem value="1000-10000">£1,000 - £10,000</SelectItem>
                 <SelectItem value="10000-50000">£10,000 - £50,000</SelectItem>
