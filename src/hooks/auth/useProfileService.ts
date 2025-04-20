@@ -4,6 +4,18 @@ import { supabase } from "@/integrations/supabase/client";
 import type { User } from "@/types";
 import type { Tables } from "@/integrations/supabase/types";
 
+// Helper function to check if the data is a valid profile
+function isValidProfile(data: any): data is Tables<"profiles"> {
+  return (
+    data &&
+    typeof data === 'object' &&
+    'id' in data &&
+    typeof data.id === 'string' &&
+    'created_at' in data &&
+    typeof data.created_at === 'string'
+  );
+}
+
 export const useProfileService = (setUser: (user: User | null) => void) => {
   const fetchUserProfile = useCallback(async (id: string) => {
     try {
@@ -49,9 +61,8 @@ export const useProfileService = (setUser: (user: User | null) => void) => {
         return;
       }
       
-      // Type guard to check if data is a proper profile object
-      // This ensures TypeScript knows we're working with a profile and not an error
-      if ('id' in data && typeof data.id === 'string') {
+      // Use our custom type guard to validate the profile data
+      if (isValidProfile(data)) {
         const profileUser: User = {
           id: data.id,
           name: data.full_name || "",
