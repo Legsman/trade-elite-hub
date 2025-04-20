@@ -1,6 +1,6 @@
 
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   User,
@@ -18,16 +18,33 @@ import {
   SheetContent,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { useAuth } from "@/hooks/auth";
+import { toast } from "@/hooks/use-toast";
 
 const Navbar = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { user, supabaseUser, logout } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const navigate = useNavigate();
 
-  // Mock user - would come from auth context in a real app
-  const mockUser = {
-    name: "John Trader",
-    role: "verified"
+  const handleLogout = async () => {
+    try {
+      await logout();
+      toast({
+        title: "Logged out successfully",
+        description: "You have been logged out of your account.",
+      });
+      navigate("/");
+    } catch (error) {
+      console.error("Error logging out:", error);
+      toast({
+        title: "Logout failed",
+        description: "There was an error logging out. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
+
+  const isAuthenticated = !!supabaseUser;
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -68,6 +85,12 @@ const Navbar = () => {
                     <Link to="/profile" className="text-lg font-semibold hover:text-purple transition-colors">
                       My Profile
                     </Link>
+                    <button 
+                      onClick={handleLogout}
+                      className="text-lg font-semibold text-left hover:text-purple transition-colors"
+                    >
+                      Logout
+                    </button>
                   </>
                 )}
               </nav>
@@ -151,7 +174,7 @@ const Navbar = () => {
                       </Link>
                       <button
                         className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                        onClick={() => setIsAuthenticated(false)}
+                        onClick={handleLogout}
                       >
                         <div className="flex items-center gap-2">
                           <LogOut className="h-4 w-4" />
