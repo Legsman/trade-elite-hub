@@ -7,8 +7,8 @@ import {
   CardDescription,
   CardContent,
   CardFooter,
-  Separator,
 } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 
