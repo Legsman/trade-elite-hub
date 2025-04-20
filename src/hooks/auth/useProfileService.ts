@@ -49,31 +49,28 @@ export const useProfileService = (setUser: (user: User | null) => void) => {
         return;
       }
       
-      // At this point TypeScript should know data is not null
-      // But to be extra safe we'll use a type assertion
-      const profile = data as Tables<"profiles">;
-      
-      // Check if the profile has the expected shape
-      if (profile && 'id' in profile) {
+      // Ensure the data has the expected shape before proceeding
+      if (typeof data === 'object' && 'id' in data) {
+        // Now we know it's safe to treat this as a profile
         const profileUser: User = {
-          id: profile.id,
-          name: profile.full_name || "",
-          email: profile.email || "",
+          id: data.id,
+          name: data.full_name || "",
+          email: data.email || "",
           role: "unverified", // default, role checking done elsewhere
-          createdAt: new Date(profile.created_at),
+          createdAt: new Date(data.created_at),
           purchases: 0,
           sales: 0,
-          feedbackRating: profile.feedback_rating ?? 0,
+          feedbackRating: data.feedback_rating ?? 0,
           isVerified: false,
-          isTwoFactorEnabled: profile.is_two_factor_enabled ?? false,
-          annual2FAPaymentDate: profile.annual_2fa_payment_date
-            ? new Date(profile.annual_2fa_payment_date)
+          isTwoFactorEnabled: data.is_two_factor_enabled ?? false,
+          annual2FAPaymentDate: data.annual_2fa_payment_date
+            ? new Date(data.annual_2fa_payment_date)
             : undefined,
-          referredBy: profile.referred_by,
+          referredBy: data.referred_by,
         };
         setUser(profileUser);
       } else {
-        console.error("Profile data is not in the expected format:", profile);
+        console.error("Profile data is not in the expected format:", data);
         setUser(null);
       }
     } catch (err) {
