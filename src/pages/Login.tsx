@@ -1,4 +1,6 @@
 
+// Modified Login.tsx to integrate Supabase authentication with useAuth
+
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { z } from "zod";
@@ -19,6 +21,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useAuth } from "@/hooks/useAuth";
 
 const formSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -32,6 +35,7 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { login } = useAuth();
   
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -42,9 +46,18 @@ const Login = () => {
     },
   });
 
-  const onSubmit = (values: FormValues) => {
-    // This would connect to your auth service in a real app
-    console.log(values);
+  const onSubmit = async (values: FormValues) => {
+    const { error } = await login(values.email, values.password);
+
+    if (error) {
+      toast({
+        title: "Login failed",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
     toast({
       title: "Login successful",
       description: "Welcome back to SwiftTrade",

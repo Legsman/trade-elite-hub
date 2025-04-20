@@ -1,4 +1,6 @@
 
+// Modified Signup.tsx to integrate signup with Supabase and store additional profile data.
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
@@ -32,6 +34,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useAuth } from "@/hooks/useAuth";
 
 const formSchema = z
   .object({
@@ -50,6 +53,14 @@ const formSchema = z
     acceptTerms: z.boolean().refine(val => val === true, {
       message: "You must accept the terms and conditions",
     }),
+    addressLine1: z.string().optional(),
+    addressLine2: z.string().optional(),
+    city: z.string().optional(),
+    postcode: z.string().optional(),
+    country: z.string().optional(),
+    tradingAddress: z.string().optional(),
+    companyName: z.string().optional(),
+    phoneNumber: z.string().optional(),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match",
@@ -63,6 +74,7 @@ const Signup = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { signup } = useAuth();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -74,14 +86,44 @@ const Signup = () => {
       referralCode: "",
       paymentOption: "annual",
       acceptTerms: false,
+      addressLine1: "",
+      addressLine2: "",
+      city: "",
+      postcode: "",
+      country: "",
+      tradingAddress: "",
+      companyName: "",
+      phoneNumber: "",
     },
   });
 
   const watchPaymentOption = form.watch("paymentOption");
 
-  const onSubmit = (values: FormValues) => {
-    // This would connect to your auth service in a real app
-    console.log(values);
+  const onSubmit = async (values: FormValues) => {
+    const { error } = await signup({
+      email: values.email,
+      password: values.password,
+      fullName: values.fullName,
+      addressLine1: values.addressLine1,
+      addressLine2: values.addressLine2,
+      city: values.city,
+      postcode: values.postcode,
+      country: values.country,
+      tradingAddress: values.tradingAddress,
+      companyName: values.companyName,
+      phoneNumber: values.phoneNumber,
+      referredBy: values.referralCode,
+    });
+
+    if (error) {
+      toast({
+        title: "Signup failed",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
     toast({
       title: "Account created",
       description: "Please check your email to verify your account",
@@ -114,6 +156,111 @@ const Signup = () => {
               </FormItem>
             )}
           />
+          {/* Additional optional address fields */}
+          <FormField
+            control={form.control}
+            name="addressLine1"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Address Line 1</FormLabel>
+                <FormControl>
+                  <Input placeholder="123 Main St" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="addressLine2"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Address Line 2</FormLabel>
+                <FormControl>
+                  <Input placeholder="Apartment, suite, etc." {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="city"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>City</FormLabel>
+                <FormControl>
+                  <Input placeholder="City" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="postcode"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Postcode</FormLabel>
+                <FormControl>
+                  <Input placeholder="Postal Code" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="country"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Country</FormLabel>
+                <FormControl>
+                  <Input placeholder="Country" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="tradingAddress"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Trading Address (Optional)</FormLabel>
+                <FormControl>
+                  <Input placeholder="Trading Address" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="companyName"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Company Name (Optional)</FormLabel>
+                <FormControl>
+                  <Input placeholder="Company Name" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="phoneNumber"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Phone Number (Optional)</FormLabel>
+                <FormControl>
+                  <Input placeholder="Phone Number" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
           <FormField
             control={form.control}
@@ -128,7 +275,6 @@ const Signup = () => {
               </FormItem>
             )}
           />
-
           <FormField
             control={form.control}
             name="password"
@@ -162,7 +308,6 @@ const Signup = () => {
               </FormItem>
             )}
           />
-
           <FormField
             control={form.control}
             name="confirmPassword"

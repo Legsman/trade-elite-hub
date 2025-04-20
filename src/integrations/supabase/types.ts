@@ -9,16 +9,108 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          address_line1: string | null
+          address_line2: string | null
+          annual_2fa_payment_date: string | null
+          avatar_url: string | null
+          city: string | null
+          company_name: string | null
+          country: string | null
+          created_at: string
+          email: string | null
+          feedback_rating: number | null
+          full_name: string | null
+          id: string
+          is_two_factor_enabled: boolean | null
+          phone_number: string | null
+          postcode: string | null
+          referred_by: string | null
+          signup_date: string | null
+          strike_count: number | null
+          trading_address: string | null
+          updated_at: string
+        }
+        Insert: {
+          address_line1?: string | null
+          address_line2?: string | null
+          annual_2fa_payment_date?: string | null
+          avatar_url?: string | null
+          city?: string | null
+          company_name?: string | null
+          country?: string | null
+          created_at?: string
+          email?: string | null
+          feedback_rating?: number | null
+          full_name?: string | null
+          id: string
+          is_two_factor_enabled?: boolean | null
+          phone_number?: string | null
+          postcode?: string | null
+          referred_by?: string | null
+          signup_date?: string | null
+          strike_count?: number | null
+          trading_address?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address_line1?: string | null
+          address_line2?: string | null
+          annual_2fa_payment_date?: string | null
+          avatar_url?: string | null
+          city?: string | null
+          company_name?: string | null
+          country?: string | null
+          created_at?: string
+          email?: string | null
+          feedback_rating?: number | null
+          full_name?: string | null
+          id?: string
+          is_two_factor_enabled?: boolean | null
+          phone_number?: string | null
+          postcode?: string | null
+          referred_by?: string | null
+          signup_date?: string | null
+          strike_count?: number | null
+          trading_address?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["user_role_type"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["user_role_type"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["user_role_type"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _user_id: string
+          _role: Database["public"]["Enums"]["user_role_type"]
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      user_role_type: "unverified" | "verified" | "admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -133,6 +225,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      user_role_type: ["unverified", "verified", "admin"],
+    },
   },
 } as const
