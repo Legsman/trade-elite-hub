@@ -41,36 +41,43 @@ export const useProfileService = (setUser: (user: User | null) => void) => {
         return;
       }
       
-      if (data) {
-        // data is non-null here
-        const hasValidShape = typeof data === 'object' && 'id' in data;
+      // Properly handle the case where data might be null
+      if (!data) {
+        console.error("No profile data found for user ID:", id);
+        setUser(null);
+        return;
+      }
+      
+      // TypeScript now knows data is not null here
+      const hasValidShape = typeof data === 'object' && 'id' in data;
 
-        if (hasValidShape) {
-          const profile = data as Tables<"profiles">;
+      if (hasValidShape) {
+        const profile = data as Tables<"profiles">;
 
-          const profileUser: User = {
-            id: profile.id,
-            name: profile.full_name || "",
-            email: profile.email || "",
-            role: "unverified", // default, role checking done elsewhere
-            createdAt: new Date(profile.created_at),
-            purchases: 0,
-            sales: 0,
-            feedbackRating: profile.feedback_rating ?? 0,
-            isVerified: false,
-            isTwoFactorEnabled: profile.is_two_factor_enabled ?? false,
-            annual2FAPaymentDate: profile.annual_2fa_payment_date
-              ? new Date(profile.annual_2fa_payment_date)
-              : undefined,
-            referredBy: profile.referred_by,
-          };
-          setUser(profileUser);
-        } else {
-          console.error("Profile data is not in the expected format:", data);
-        }
+        const profileUser: User = {
+          id: profile.id,
+          name: profile.full_name || "",
+          email: profile.email || "",
+          role: "unverified", // default, role checking done elsewhere
+          createdAt: new Date(profile.created_at),
+          purchases: 0,
+          sales: 0,
+          feedbackRating: profile.feedback_rating ?? 0,
+          isVerified: false,
+          isTwoFactorEnabled: profile.is_two_factor_enabled ?? false,
+          annual2FAPaymentDate: profile.annual_2fa_payment_date
+            ? new Date(profile.annual_2fa_payment_date)
+            : undefined,
+          referredBy: profile.referred_by,
+        };
+        setUser(profileUser);
+      } else {
+        console.error("Profile data is not in the expected format:", data);
+        setUser(null);
       }
     } catch (err) {
       console.error("Unexpected error fetching profile:", err);
+      setUser(null);
     }
   }, [setUser]);
 
