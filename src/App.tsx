@@ -10,8 +10,13 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Dashboard from "./pages/Dashboard";
 import AdminDashboard from "./pages/AdminDashboard";
+import ListingsPage from "./pages/listings/index";
+import ListingDetails from "./pages/listings/[id]";
+import CreateListingPage from "./pages/listings/create";
+import MessagesPage from "./pages/messages/index";
 import { AuthProvider } from "./hooks/auth";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
+import AdminRoute from "./components/auth/AdminRoute";
 
 const queryClient = new QueryClient();
 
@@ -31,15 +36,22 @@ const App = () => (
                 <Dashboard />
               </ProtectedRoute>
             } />
-            {/* Add more protected routes as they are developed */}
-            {/* <Route path="/listings/create" element={<ProtectedRoute><CreateListing /></ProtectedRoute>} /> */}
-            {/* <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} /> */}
-            {/* <Route path="/saved" element={<ProtectedRoute><SavedListings /></ProtectedRoute>} /> */}
-            {/* <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} /> */}
-            <Route path="/admin" element={
+            <Route path="/listings" element={<ListingsPage />} />
+            <Route path="/listings/:id" element={<ListingDetails />} />
+            <Route path="/listings/create" element={
               <ProtectedRoute>
-                <AdminDashboard />
+                <CreateListingPage />
               </ProtectedRoute>
+            } />
+            <Route path="/messages" element={
+              <ProtectedRoute>
+                <MessagesPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin" element={
+              <AdminRoute>
+                <AdminDashboard />
+              </AdminRoute>
             } />
             
             {/* Catch-all route for 404 */}
