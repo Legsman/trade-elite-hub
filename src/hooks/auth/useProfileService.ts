@@ -38,6 +38,7 @@ export const useProfileService = (setUser: (user: User | null) => void) => {
 
       if (error) {
         console.error("Error fetching user profile:", error);
+        setUser(null);
         return;
       }
       
@@ -48,12 +49,12 @@ export const useProfileService = (setUser: (user: User | null) => void) => {
         return;
       }
       
-      // TypeScript now knows data is not null here
-      const hasValidShape = typeof data === 'object' && 'id' in data;
-
-      if (hasValidShape) {
-        const profile = data as Tables<"profiles">;
-
+      // At this point TypeScript should know data is not null
+      // But to be extra safe we'll use a type assertion
+      const profile = data as Tables<"profiles">;
+      
+      // Check if the profile has the expected shape
+      if (profile && 'id' in profile) {
         const profileUser: User = {
           id: profile.id,
           name: profile.full_name || "",
@@ -72,7 +73,7 @@ export const useProfileService = (setUser: (user: User | null) => void) => {
         };
         setUser(profileUser);
       } else {
-        console.error("Profile data is not in the expected format:", data);
+        console.error("Profile data is not in the expected format:", profile);
         setUser(null);
       }
     } catch (err) {
