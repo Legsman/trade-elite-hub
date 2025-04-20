@@ -14,6 +14,7 @@ import ListingsPage from "./pages/listings/index";
 import ListingDetails from "./pages/listings/[id]";
 import CreateListingPage from "./pages/listings/create";
 import MessagesPage from "./pages/messages/index";
+import UserSettingsPage from "./pages/settings/index";
 import { AuthProvider } from "./hooks/auth";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import AdminRoute from "./components/auth/AdminRoute";
@@ -46,6 +47,11 @@ const App = () => (
             <Route path="/messages" element={
               <ProtectedRoute>
                 <MessagesPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/settings" element={
+              <ProtectedRoute>
+                <UserSettingsPage />
               </ProtectedRoute>
             } />
             <Route path="/admin" element={
