@@ -72,7 +72,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       )
       .eq("id", id)
       .single();
-    if (data && !error) {
+
+    if (error) {
+      console.error("Error fetching user profile:", error);
+      return;
+    }
+    
+    if (data) {
       // Map database fields to User type
       const profileUser: User = {
         id: data.id,
@@ -103,7 +109,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     });
 
     // Listen for auth state changes
-    const { subscription } = supabase.auth.onAuthStateChange(
+    const { data } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         setSupabaseUser(session?.user ?? null);
         if (session?.user) {
@@ -115,7 +121,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     );
 
     return () => {
-      subscription.unsubscribe();
+      data.subscription.unsubscribe();
     };
   }, [fetchUserProfile]);
 
@@ -205,4 +211,3 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     </AuthContext.Provider>
   );
 };
-
