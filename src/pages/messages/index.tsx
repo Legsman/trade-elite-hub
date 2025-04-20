@@ -10,7 +10,7 @@ import {
   AlertCircle,
   Loader2,
   Image,
-  PaperClip,
+  Paperclip,
   Search
 } from "lucide-react";
 import MainLayout from "@/components/layout/MainLayout";

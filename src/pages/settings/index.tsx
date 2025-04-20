@@ -64,7 +64,7 @@ type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
 const UserSettingsPage = () => {
   const navigate = useNavigate();
-  const { user, signOut } = useAuth();
+  const { user, logout } = useAuth();
   const { profile, isLoading: profileLoading, updateProfile, uploadAvatar } = useUserProfile();
   const { 
     subscribed, 
@@ -247,7 +247,7 @@ const UserSettingsPage = () => {
 
   const handleSignOut = async () => {
     trackEvent("user_signed_out");
-    await signOut();
+    await logout();
     navigate("/");
   };
 
