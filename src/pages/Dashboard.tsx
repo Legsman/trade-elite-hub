@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
@@ -30,15 +29,100 @@ import { supabase } from "@/integrations/supabase/client";
 import { Loading } from "@/components/ui/loading";
 import { toast } from "@/hooks/use-toast";
 
+type Profile = {
+  id: string;
+  email?: string | null;
+  full_name?: string | null;
+  avatar_url?: string | null;
+  address_line1?: string | null;
+  address_line2?: string | null;
+  city?: string | null;
+  postcode?: string | null;
+  country?: string | null;
+  phone_number?: string | null;
+  company_name?: string | null;
+  trading_address?: string | null;
+  is_two_factor_enabled?: boolean | null;
+  feedback_rating?: number | null;
+  annual_2fa_payment_date?: string | null;
+  referred_by?: string | null;
+  signup_date?: string | null;
+  strike_count?: number | null;
+  created_at: string;
+  updated_at: string;
+};
+
+type Listing = {
+  id: string;
+  seller_id: string;
+  title: string;
+  description: string;
+  category: string;
+  type: string;
+  price: number;
+  location: string;
+  condition: string;
+  images: string[];
+  allow_best_offer: boolean;
+  expires_at: string;
+  created_at: string;
+  updated_at: string;
+  status: string;
+  views: number;
+  saves: number;
+};
+
+type SavedListing = {
+  id: string;
+  user_id: string;
+  listing_id: string;
+  created_at: string;
+  listings?: Listing;
+};
+
+type Message = {
+  id: string;
+  sender_id: string;
+  receiver_id: string;
+  listing_id?: string;
+  content: string;
+  is_read: boolean;
+  created_at: string;
+  has_contact_info: boolean;
+  listings?: {
+    id: string;
+    title: string;
+  };
+  sender_profile?: {
+    full_name: string;
+  };
+  receiver_profile?: {
+    full_name: string;
+  };
+};
+
+type Notification = {
+  id: string;
+  user_id: string;
+  type: string;
+  message: string;
+  is_read: boolean;
+  created_at: string;
+  metadata?: {
+    description?: string;
+    [key: string]: any;
+  };
+};
+
 const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
-  const [listings, setListings] = useState<Supabase.Listing[]>([]);
-  const [savedListings, setSavedListings] = useState<Supabase.SavedListing[]>([]);
-  const [messages, setMessages] = useState<Supabase.Message[]>([]);
-  const [notifications, setNotifications] = useState<Supabase.Notification[]>([]);
-  const [profile, setProfile] = useState<Supabase.Profile | null>(null);
+  const [listings, setListings] = useState<Listing[]>([]);
+  const [savedListings, setSavedListings] = useState<SavedListing[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [profile, setProfile] = useState<Profile | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -46,7 +130,6 @@ const Dashboard = () => {
     const fetchDashboardData = async () => {
       setIsLoading(true);
       try {
-        // Fetch user's profile
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('*')
@@ -54,9 +137,8 @@ const Dashboard = () => {
           .single();
 
         if (profileError) throw profileError;
-        setProfile(profileData as Supabase.Profile);
+        setProfile(profileData as Profile);
 
-        // Fetch user's listings
         const { data: listingsData, error: listingsError } = await supabase
           .from('listings')
           .select('*')
@@ -64,9 +146,8 @@ const Dashboard = () => {
           .order('created_at', { ascending: false });
 
         if (listingsError) throw listingsError;
-        setListings(listingsData as Supabase.Listing[] || []);
+        setListings(listingsData as Listing[] || []);
 
-        // Fetch user's saved listings with listing details
         const { data: savedData, error: savedError } = await supabase
           .from('saved_listings')
           .select(`
@@ -85,9 +166,8 @@ const Dashboard = () => {
           .order('created_at', { ascending: false });
 
         if (savedError) throw savedError;
-        setSavedListings(savedData as Supabase.SavedListing[] || []);
+        setSavedListings(savedData as unknown as SavedListing[] || []);
 
-        // Fetch user's messages
         const { data: messagesData, error: messagesError } = await supabase
           .from('messages')
           .select(`
@@ -114,9 +194,8 @@ const Dashboard = () => {
           .limit(10);
 
         if (messagesError) throw messagesError;
-        setMessages(messagesData as Supabase.Message[] || []);
+        setMessages(messagesData as unknown as Message[] || []);
 
-        // Fetch user's notifications
         const { data: notificationsData, error: notificationsError } = await supabase
           .from('notifications')
           .select('*')
@@ -125,7 +204,7 @@ const Dashboard = () => {
           .limit(10);
 
         if (notificationsError) throw notificationsError;
-        setNotifications(notificationsData as Supabase.Notification[] || []);
+        setNotifications(notificationsData as Notification[] || []);
 
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
@@ -212,7 +291,6 @@ const Dashboard = () => {
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
-            {/* Stats Cards */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -281,7 +359,6 @@ const Dashboard = () => {
               </Card>
             </div>
 
-            {/* Recent Activity */}
             <Card>
               <CardHeader>
                 <CardTitle>Recent Activity</CardTitle>
@@ -291,7 +368,6 @@ const Dashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {/* Recent Listings */}
                   {listings.length > 0 && (
                     <div>
                       <h3 className="text-sm font-medium mb-2">Latest Listings</h3>
@@ -334,9 +410,9 @@ const Dashboard = () => {
                       </div>
                       <div className="mt-3">
                         <Button variant="link" className="px-0" onClick={() => {
-                          const element = document.querySelector('[data-value="listings"]');
+                          const element = document.querySelector('[data-value="listings"]') as HTMLElement;
                           if (element) {
-                            (element as HTMLElement).click();
+                            element.click();
                           }
                         }}>
                           View all listings
@@ -345,7 +421,6 @@ const Dashboard = () => {
                     </div>
                   )}
 
-                  {/* Recent Messages */}
                   {messages.length > 0 && (
                     <div className="mt-6">
                       <h3 className="text-sm font-medium mb-2">Latest Messages</h3>

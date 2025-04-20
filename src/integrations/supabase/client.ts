@@ -9,4 +9,152 @@ const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
-export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+// Define the extended Database type for type safety
+type ExtendedDatabase = Database & {
+  public: {
+    Tables: {
+      listings: {
+        Row: {
+          id: string;
+          seller_id: string;
+          title: string;
+          description: string;
+          category: string;
+          type: string;
+          price: number;
+          location: string;
+          condition: string;
+          images: string[];
+          allow_best_offer: boolean;
+          expires_at: string;
+          created_at: string;
+          updated_at: string;
+          status: string;
+          views: number;
+          saves: number;
+        };
+        Insert: {
+          id?: string;
+          seller_id: string;
+          title: string;
+          description: string;
+          category: string;
+          type: string;
+          price: number;
+          location: string;
+          condition: string;
+          images: string[];
+          allow_best_offer: boolean;
+          expires_at: string;
+          created_at?: string;
+          updated_at?: string;
+          status: string;
+          views?: number;
+          saves?: number;
+        };
+        Update: {
+          id?: string;
+          seller_id?: string;
+          title?: string;
+          description?: string;
+          category?: string;
+          type?: string;
+          price?: number;
+          location?: string;
+          condition?: string;
+          images?: string[];
+          allow_best_offer?: boolean;
+          expires_at?: string;
+          created_at?: string;
+          updated_at?: string;
+          status?: string;
+          views?: number;
+          saves?: number;
+        };
+      };
+      saved_listings: {
+        Row: {
+          id: string;
+          user_id: string;
+          listing_id: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          listing_id: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          listing_id?: string;
+          created_at?: string;
+        };
+      };
+      messages: {
+        Row: {
+          id: string;
+          sender_id: string;
+          receiver_id: string;
+          listing_id?: string;
+          content: string;
+          is_read: boolean;
+          created_at: string;
+          has_contact_info: boolean;
+        };
+        Insert: {
+          id?: string;
+          sender_id: string;
+          receiver_id: string;
+          listing_id?: string;
+          content: string;
+          is_read?: boolean;
+          created_at?: string;
+          has_contact_info?: boolean;
+        };
+        Update: {
+          id?: string;
+          sender_id?: string;
+          receiver_id?: string;
+          listing_id?: string;
+          content?: string;
+          is_read?: boolean;
+          created_at?: string;
+          has_contact_info?: boolean;
+        };
+      };
+      notifications: {
+        Row: {
+          id: string;
+          user_id: string;
+          type: string;
+          message: string;
+          is_read: boolean;
+          created_at: string;
+          metadata?: Record<string, any>;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          type: string;
+          message: string;
+          is_read?: boolean;
+          created_at?: string;
+          metadata?: Record<string, any>;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          type?: string;
+          message?: string;
+          is_read?: boolean;
+          created_at?: string;
+          metadata?: Record<string, any>;
+        };
+      };
+    };
+  };
+};
+
+export const supabase = createClient<ExtendedDatabase>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);

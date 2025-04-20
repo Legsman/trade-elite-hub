@@ -41,9 +41,16 @@ interface Message {
   receiver_id: string;
   is_read: boolean;
   listing_id?: string;
+  has_contact_info: boolean;
   listing?: {
     id: string;
     title: string;
+  };
+  sender_profile?: {
+    full_name: string;
+  };
+  receiver_profile?: {
+    full_name: string;
   };
 }
 
@@ -100,7 +107,7 @@ const MessagesPage = () => {
           fetchContacts();
           
           try {
-            await supabase.from('notifications').insert({
+            const notificationData = {
               user_id: user.id,
               type: 'message',
               message: `New message from ${contactDetails?.full_name || 'a user'}`,
@@ -108,7 +115,9 @@ const MessagesPage = () => {
                 message_id: newMessage.id,
                 sender_id: newMessage.sender_id,
               }
-            });
+            };
+            
+            await supabase.from('notifications').insert(notificationData);
           } catch (error) {
             console.error('Error creating notification:', error);
           }
@@ -148,7 +157,7 @@ const MessagesPage = () => {
       if (error) throw error;
       
       if (data) {
-        setContacts(data);
+        setContacts(data as Contact[]);
         
         if (!activeContact && data.length > 0) {
           setActiveContact(data[0].user_id);
@@ -181,9 +190,16 @@ const MessagesPage = () => {
           receiver_id,
           is_read,
           listing_id,
+          has_contact_info,
           listings:listing_id (
             id,
             title
+          ),
+          sender_profile:sender_id (
+            full_name
+          ),
+          receiver_profile:receiver_id (
+            full_name
           )
         `)
         .or(`and(sender_id.eq.${user.id},receiver_id.eq.${contactId}),and(sender_id.eq.${contactId},receiver_id.eq.${user.id})`)
@@ -191,7 +207,7 @@ const MessagesPage = () => {
       
       if (error) throw error;
       
-      setMessages(data || []);
+      setMessages(data as unknown as Message[] || []);
       
       const unreadMessages = data?.filter(m => 
         m.receiver_id === user.id && !m.is_read
@@ -242,20 +258,22 @@ const MessagesPage = () => {
     try {
       const hasContactInfo = /(\+?\d{10,}|@|email|phone|contact|whatsapp|telegram)/i.test(newMessage);
       
+      const newMessageData = {
+        sender_id: user.id,
+        receiver_id: activeContact,
+        content: newMessage,
+        has_contact_info: hasContactInfo
+      };
+      
       const { data, error } = await supabase
         .from('messages')
-        .insert({
-          sender_id: user.id,
-          receiver_id: activeContact,
-          content: newMessage,
-          has_contact_info: hasContactInfo
-        })
+        .insert(newMessageData)
         .select();
       
       if (error) throw error;
       
       if (data) {
-        setMessages(prev => [...prev, data[0]]);
+        setMessages(prev => [...prev, data[0] as unknown as Message]);
         setNewMessage("");
       }
     } catch (error) {
