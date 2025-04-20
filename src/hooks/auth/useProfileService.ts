@@ -44,7 +44,7 @@ export const useProfileService = (setUser: (user: User | null) => void) => {
       }
       
       if (data !== null) {
-        const hasValidShape = typeof data === 'object' && data !== null && 'id' in data;
+        const hasValidShape = typeof data === 'object' && 'id' in data;
         
         if (hasValidShape) {
           const profile = data as Tables<"profiles">;
