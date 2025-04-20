@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { Send, Search, User, ArrowLeft, Clock, Check } from "lucide-react";
+import { Send, Search, User, ArrowLeft, Clock, Check, MessageSquare } from "lucide-react";
 import MainLayout from "@/components/layout/MainLayout";
 import { useAuth } from "@/hooks/auth";
 import { supabase } from "@/integrations/supabase/client";
@@ -93,25 +93,33 @@ const MessagesPage = () => {
             setMessages(prev => [...prev, newMessage]);
             
             // Mark as read immediately if it's from the active contact
-            await supabase
-              .from('messages')
-              .update({ is_read: true })
-              .eq('id', newMessage.id);
+            try {
+              await supabase
+                .from('messages')
+                .update({ is_read: true })
+                .eq('id', newMessage.id);
+            } catch (error) {
+              console.error('Error marking message as read:', error);
+            }
           }
           
           // Update contact list to show new message
           fetchContacts();
           
           // Create notification
-          await supabase.from('notifications').insert({
-            user_id: user.id,
-            type: 'message',
-            message: `New message from ${contactDetails?.full_name || 'a user'}`,
-            metadata: {
-              message_id: newMessage.id,
-              sender_id: newMessage.sender_id,
-            }
-          });
+          try {
+            await supabase.from('notifications').insert({
+              user_id: user.id,
+              type: 'message',
+              message: `New message from ${contactDetails?.full_name || 'a user'}`,
+              metadata: {
+                message_id: newMessage.id,
+                sender_id: newMessage.sender_id,
+              }
+            });
+          } catch (error) {
+            console.error('Error creating notification:', error);
+          }
         }
       )
       .subscribe();
@@ -204,13 +212,17 @@ const MessagesPage = () => {
       ) || [];
       
       if (unreadMessages.length > 0) {
-        await supabase
-          .from('messages')
-          .update({ is_read: true })
-          .in('id', unreadMessages.map(m => m.id));
-        
-        // Refresh contacts to update unread count
-        fetchContacts();
+        try {
+          await supabase
+            .from('messages')
+            .update({ is_read: true })
+            .in('id', unreadMessages.map(m => m.id));
+          
+          // Refresh contacts to update unread count
+          fetchContacts();
+        } catch (updateError) {
+          console.error('Error marking messages as read:', updateError);
+        }
       }
     } catch (error) {
       console.error('Error fetching messages:', error);

@@ -333,7 +333,12 @@ const Dashboard = () => {
                         ))}
                       </div>
                       <div className="mt-3">
-                        <Button variant="link" className="px-0" onClick={() => document.querySelector('[data-value="listings"]').click()}>
+                        <Button variant="link" className="px-0" onClick={() => {
+                          const element = document.querySelector('[data-value="listings"]');
+                          if (element) {
+                            (element as HTMLElement).click();
+                          }
+                        }}>
                           View all listings
                         </Button>
                       </div>
