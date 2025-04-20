@@ -52,6 +52,18 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
+        // Swift Trade custom colors
+        purple: {
+          DEFAULT: '#9b87f5',
+          dark: '#7E69AB',
+        },
+        dark: {
+          DEFAULT: '#1A1F2C',
+          charcoal: '#221F26',
+        },
+        orange: {
+          DEFAULT: '#F97316',
+        },
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
 					foreground: 'hsl(var(--sidebar-foreground))',
