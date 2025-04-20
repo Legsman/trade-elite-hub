@@ -18,209 +18,84 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { ListingType, ListingCategory, Listing } from "@/types";
-import { supabase } from "@/integrations/supabase/client";
+import { Listing } from "@/types";
+import { useListings } from "@/hooks/use-listing";
+import { useAnalytics } from "@/hooks/use-analytics";
 import { Loading } from "@/components/ui/loading";
 
-const MOCK_LISTINGS: Listing[] = [
-  {
-    id: "1",
-    sellerId: "user1",
-    title: "2020 Ferrari 488 Pista",
-    description: "Pristine condition with only 5,000 miles",
-    category: "cars",
-    type: "classified",
-    price: 350000,
-    location: "London, UK",
-    condition: "Like New",
-    images: [
-      "https://images.unsplash.com/photo-1592198084033-aade902d1aae?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-    ],
-    allowBestOffer: true,
-    expiresAt: new Date(2025, 5, 15),
-    createdAt: new Date(2025, 2, 15),
-    updatedAt: new Date(2025, 2, 15),
-    status: "active",
-    views: 245,
-    saves: 18,
-  },
-  {
-    id: "2",
-    sellerId: "user2",
-    title: "Rolex Submariner Date",
-    description: "Unworn, box and papers included",
-    category: "watches",
-    type: "auction",
-    price: 14500,
-    location: "Manchester, UK",
-    condition: "New",
-    images: [
-      "https://images.unsplash.com/photo-1620625515032-6ed0c1790c75?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-    ],
-    allowBestOffer: false,
-    expiresAt: new Date(2025, 4, 28),
-    createdAt: new Date(2025, 3, 28),
-    updatedAt: new Date(2025, 3, 28),
-    status: "active",
-    views: 189,
-    saves: 27,
-  },
-  {
-    id: "3",
-    sellerId: "user3",
-    title: "Luxury Penthouse Apartment",
-    description: "Stunning views, 3 bedrooms, 2 bathrooms",
-    category: "homes",
-    type: "classified",
-    price: 2500000,
-    location: "Central London, UK",
-    condition: "Excellent",
-    images: [
-      "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-    ],
-    allowBestOffer: true,
-    expiresAt: new Date(2025, 6, 10),
-    createdAt: new Date(2025, 3, 10),
-    updatedAt: new Date(2025, 3, 10),
-    status: "active",
-    views: 321,
-    saves: 42,
-  },
-  {
-    id: "4",
-    sellerId: "user4",
-    title: "Vintage Porsche 911 (1973)",
-    description: "Fully restored, matching numbers",
-    category: "cars",
-    type: "auction",
-    price: 120000,
-    location: "Birmingham, UK",
-    condition: "Restored",
-    images: [
-      "https://images.unsplash.com/photo-1584345604476-8ec5e12e42dd?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-    ],
-    allowBestOffer: false,
-    expiresAt: new Date(2025, 5, 5),
-    createdAt: new Date(2025, 4, 5),
-    updatedAt: new Date(2025, 4, 5),
-    status: "active",
-    views: 278,
-    saves: 23,
-  },
-  {
-    id: "5",
-    sellerId: "user5",
-    title: "Patek Philippe Nautilus 5711",
-    description: "Discontinued model, investment opportunity",
-    category: "watches",
-    type: "classified",
-    price: 135000,
-    location: "Edinburgh, UK",
-    condition: "Excellent",
-    images: [
-      "https://images.unsplash.com/photo-1620625515162-c79180a03aff?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-    ],
-    allowBestOffer: true,
-    expiresAt: new Date(2025, 6, 20),
-    createdAt: new Date(2025, 3, 20),
-    updatedAt: new Date(2025, 3, 20),
-    status: "active",
-    views: 412,
-    saves: 56,
-  },
-  {
-    id: "6",
-    sellerId: "user6",
-    title: "Commercial Property - High Street",
-    description: "Prime location with high footfall",
-    category: "commercials",
-    type: "classified",
-    price: 850000,
-    location: "Leeds, UK",
-    condition: "Good",
-    images: [
-      "https://images.unsplash.com/photo-1582407947304-fd86f028f716?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-    ],
-    allowBestOffer: true,
-    expiresAt: new Date(2025, 7, 1),
-    createdAt: new Date(2025, 4, 1),
-    updatedAt: new Date(2025, 4, 1),
-    status: "active",
-    views: 156,
-    saves: 11,
-  },
-];
-
 const ListingsPage = () => {
-  const [isLoading, setIsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [category, setCategory] = useState<string>("");
-  const [listingType, setListingType] = useState<string>("");
+  const [listingType, setListingType] = useState<string>("all");
   const [sortBy, setSortBy] = useState("newest");
-  const [priceRange, setPriceRange] = useState<string>("");
-  const [listings, setListings] = useState<Listing[]>(MOCK_LISTINGS);
+  const [priceRange, setPriceRange] = useState<string>("any");
+  const { trackEvent } = useAnalytics();
   const navigate = useNavigate();
 
-  // This would be replaced by actual API calls
+  // Use the querystring to restore filters when navigating back
   useEffect(() => {
-    setIsLoading(true);
-    // Simulate API delay
-    setTimeout(() => {
-      let filteredListings = [...MOCK_LISTINGS];
-      
-      // Apply search filter
-      if (searchTerm) {
-        filteredListings = filteredListings.filter(
-          listing => listing.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                    listing.description.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-      }
-      
-      // Apply category filter
-      if (category) {
-        filteredListings = filteredListings.filter(
-          listing => listing.category === category
-        );
-      }
-      
-      // Apply listing type filter
-      if (listingType && listingType !== "all") {
-        filteredListings = filteredListings.filter(
-          listing => listing.type === listingType
-        );
-      }
-      
-      // Apply price range filter
-      if (priceRange && priceRange !== "any") {
-        const [min, max] = priceRange.split("-").map(Number);
-        filteredListings = filteredListings.filter(
-          listing => listing.price >= min && (max ? listing.price <= max : true)
-        );
-      }
-      
-      // Apply sorting
-      switch (sortBy) {
-        case "newest":
-          filteredListings.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-          break;
-        case "price-low":
-          filteredListings.sort((a, b) => a.price - b.price);
-          break;
-        case "price-high":
-          filteredListings.sort((a, b) => b.price - a.price);
-          break;
-        case "popular":
-          filteredListings.sort((a, b) => b.views - a.views);
-          break;
-      }
-      
-      setListings(filteredListings);
-      setIsLoading(false);
-    }, 500);
-  }, [searchTerm, category, listingType, sortBy, priceRange]);
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlCategory = urlParams.get("category");
+    const urlSearchTerm = urlParams.get("search");
+    const urlListingType = urlParams.get("type");
+    const urlSortBy = urlParams.get("sort");
+    const urlPriceRange = urlParams.get("price");
+
+    if (urlCategory) setCategory(urlCategory);
+    if (urlSearchTerm) setSearchTerm(urlSearchTerm);
+    if (urlListingType) setListingType(urlListingType);
+    if (urlSortBy) setSortBy(urlSortBy);
+    if (urlPriceRange) setPriceRange(urlPriceRange);
+  }, []);
+
+  // Update URL when filters change
+  useEffect(() => {
+    const params = new URLSearchParams();
+    
+    if (category) params.append("category", category);
+    if (searchTerm) params.append("search", searchTerm);
+    if (listingType && listingType !== "all") params.append("type", listingType);
+    if (sortBy && sortBy !== "newest") params.append("sort", sortBy);
+    if (priceRange && priceRange !== "any") params.append("price", priceRange);
+    
+    const newUrl = params.toString() ? `?${params.toString()}` : window.location.pathname;
+    window.history.replaceState({}, "", newUrl);
+  }, [category, searchTerm, listingType, sortBy, priceRange]);
+
+  // Fetch listings with filters
+  const { listings, isLoading, error, refetch } = useListings({
+    category,
+    searchTerm,
+    listingType,
+    priceRange,
+    sortBy,
+  });
+
+  // Track filter changes
+  useEffect(() => {
+    if (category || searchTerm || listingType !== "all" || priceRange !== "any" || sortBy !== "newest") {
+      trackEvent("listings_filtered", {
+        category: category || "all",
+        search: searchTerm ? "yes" : "no",
+        listingType: listingType || "all",
+        priceRange: priceRange || "any",
+        sortBy: sortBy || "newest",
+      });
+    }
+  }, [category, searchTerm, listingType, priceRange, sortBy, trackEvent]);
 
   const handleCardClick = (id: string) => {
+    trackEvent("listing_clicked", { listingId: id });
     navigate(`/listings/${id}`);
+  };
+
+  const resetFilters = () => {
+    setSearchTerm("");
+    setCategory("");
+    setListingType("all");
+    setPriceRange("any");
+    setSortBy("newest");
+    trackEvent("listings_filters_reset");
   };
 
   return (
@@ -233,7 +108,13 @@ const ListingsPage = () => {
               Find the perfect items from our curated marketplace
             </p>
           </div>
-          <Button className="mt-4 md:mt-0" onClick={() => navigate("/listings/create")}>
+          <Button 
+            className="mt-4 md:mt-0" 
+            onClick={() => {
+              trackEvent("create_listing_clicked");
+              navigate("/listings/create");
+            }}
+          >
             Create New Listing
           </Button>
         </div>
@@ -252,7 +133,7 @@ const ListingsPage = () => {
             </div>
             <div className="flex flex-wrap gap-2">
               <Button
-                variant={category ? "default" : "outline"}
+                variant={category ? "outline" : "default"}
                 size="sm"
                 className="flex items-center gap-1"
                 onClick={() => setCategory("")}
@@ -348,12 +229,24 @@ const ListingsPage = () => {
           <div className="py-12">
             <Loading message="Loading listings..." />
           </div>
+        ) : error ? (
+          <div className="py-12 text-center">
+            <p className="text-red-500 mb-4">{error}</p>
+            <Button variant="outline" onClick={refetch}>
+              Try Again
+            </Button>
+          </div>
         ) : (
           <>
             <div className="mb-4 flex justify-between items-center">
               <p className="text-sm text-muted-foreground">
                 Showing {listings.length} results
               </p>
+              {(category || searchTerm || listingType !== "all" || priceRange !== "any" || sortBy !== "newest") && (
+                <Button variant="ghost" size="sm" onClick={resetFilters}>
+                  Clear Filters
+                </Button>
+              )}
             </div>
 
             <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -368,6 +261,7 @@ const ListingsPage = () => {
                       src={listing.images[0]}
                       alt={listing.title}
                       className="object-cover h-full w-full"
+                      loading="lazy"
                     />
                     <div className="absolute top-2 right-2 bg-background/90 text-xs font-medium rounded-full px-2 py-1">
                       {listing.type === "auction" ? "Auction" : "For Sale"}
@@ -400,12 +294,7 @@ const ListingsPage = () => {
             {listings.length === 0 && (
               <div className="py-12 text-center">
                 <p className="text-muted-foreground">No listings found matching your criteria.</p>
-                <Button variant="outline" className="mt-4" onClick={() => {
-                  setSearchTerm("");
-                  setCategory("");
-                  setListingType("");
-                  setPriceRange("");
-                }}>
+                <Button variant="outline" className="mt-4" onClick={resetFilters}>
                   Clear Filters
                 </Button>
               </div>

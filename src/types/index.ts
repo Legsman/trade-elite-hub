@@ -1,34 +1,14 @@
 
-export type UserRole = 'unverified' | 'verified' | 'admin';
-
-export interface User {
-  id: string;
-  email: string;
-  name: string;
-  role: UserRole;
-  createdAt: Date;
-  purchases: number;
-  sales: number;
-  feedbackRating: number;
-  isVerified: boolean;
-  isTwoFactorEnabled: boolean;
-  annual2FAPaymentDate?: Date;
-  referredBy?: string;
-}
-
-export type ListingType = 'auction' | 'classified';
-
-export type ListingCategory = 'cars' | 'commercials' | 'watches' | 'homes' | 'collectables' | 'other';
-
-export type ListingStatus = 'pending' | 'active' | 'sold' | 'expired';
+export type ListingType = "auction" | "classified";
+export type ListingCategory = "cars" | "watches" | "homes" | "commercials" | "collectables" | "other";
 
 export interface Listing {
   id: string;
   sellerId: string;
   title: string;
   description: string;
-  category: ListingCategory;
-  type: ListingType;
+  category: string;
+  type: string;
   price: number;
   location: string;
   condition: string;
@@ -37,28 +17,44 @@ export interface Listing {
   expiresAt: Date;
   createdAt: Date;
   updatedAt: Date;
-  status: ListingStatus;
+  status: string;
   views: number;
   saves: number;
+  duration?: string; // For form purposes
 }
 
-export interface Message {
+export interface User {
   id: string;
-  senderId: string;
-  receiverId: string;
-  listingId?: string;
-  content: string;
-  isRead: boolean;
+  name?: string;
+  email: string;
+  role: string;
   createdAt: Date;
-  hasContactInfo: boolean;
+  purchases?: number;
+  sales?: number;
+  feedbackRating?: number;
+  isVerified?: boolean;
+  isTwoFactorEnabled?: boolean;
+  annual2FAPaymentDate?: Date;
+  referredBy?: string;
 }
 
-export interface Feedback {
+export interface UserProfile {
   id: string;
-  fromUserId: string;
-  toUserId: string;
-  listingId: string;
-  rating: number;
-  comment: string;
+  fullName: string;
+  email: string;
+  avatarUrl?: string;
+  addressLine1?: string;
+  addressLine2?: string;
+  city?: string;
+  postcode?: string;
+  country?: string;
+  tradingAddress?: string;
+  companyName?: string;
+  phoneNumber?: string;
   createdAt: Date;
+  updatedAt: Date;
+  subscriptionStatus?: string;
+  subscriptionTier?: string;
+  subscriptionEndDate?: Date;
+  paymentMethods?: any;
 }

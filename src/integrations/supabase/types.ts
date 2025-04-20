@@ -9,6 +9,252 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      feedback: {
+        Row: {
+          comment: string | null
+          created_at: string
+          from_user_id: string
+          id: string
+          listing_id: string
+          rating: number
+          to_user_id: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          from_user_id: string
+          id?: string
+          listing_id: string
+          rating: number
+          to_user_id: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          from_user_id?: string
+          id?: string
+          listing_id?: string
+          rating?: number
+          to_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_feedback_from_user"
+            columns: ["from_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_feedback_listing"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_feedback_to_user"
+            columns: ["to_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      listings: {
+        Row: {
+          allow_best_offer: boolean
+          category: string
+          condition: string
+          created_at: string
+          description: string
+          expires_at: string
+          id: string
+          images: string[]
+          location: string
+          price: number
+          saves: number
+          seller_id: string
+          status: string
+          title: string
+          type: string
+          updated_at: string
+          views: number
+        }
+        Insert: {
+          allow_best_offer?: boolean
+          category: string
+          condition: string
+          created_at?: string
+          description: string
+          expires_at: string
+          id?: string
+          images?: string[]
+          location: string
+          price: number
+          saves?: number
+          seller_id: string
+          status: string
+          title: string
+          type: string
+          updated_at?: string
+          views?: number
+        }
+        Update: {
+          allow_best_offer?: boolean
+          category?: string
+          condition?: string
+          created_at?: string
+          description?: string
+          expires_at?: string
+          id?: string
+          images?: string[]
+          location?: string
+          price?: number
+          saves?: number
+          seller_id?: string
+          status?: string
+          title?: string
+          type?: string
+          updated_at?: string
+          views?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_listings_seller"
+            columns: ["seller_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messages: {
+        Row: {
+          content: string
+          created_at: string
+          has_contact_info: boolean
+          id: string
+          is_read: boolean
+          listing_id: string | null
+          receiver_id: string
+          sender_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          has_contact_info?: boolean
+          id?: string
+          is_read?: boolean
+          listing_id?: string | null
+          receiver_id: string
+          sender_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          has_contact_info?: boolean
+          id?: string
+          is_read?: boolean
+          listing_id?: string | null
+          receiver_id?: string
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_messages_listing"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_messages_receiver"
+            columns: ["receiver_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_messages_sender"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          is_read: boolean
+          message: string
+          metadata: Json | null
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message: string
+          metadata?: Json | null
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message?: string
+          metadata?: Json | null
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_notifications_user"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          amount: number | null
+          created_at: string
+          currency: string | null
+          id: string
+          status: string | null
+          stripe_session_id: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string
+          currency?: string | null
+          id?: string
+          status?: string | null
+          stripe_session_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string
+          currency?: string | null
+          id?: string
+          status?: string | null
+          stripe_session_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           address_line1: string | null
@@ -24,11 +270,15 @@ export type Database = {
           full_name: string | null
           id: string
           is_two_factor_enabled: boolean | null
+          payment_methods: Json | null
           phone_number: string | null
           postcode: string | null
           referred_by: string | null
           signup_date: string | null
           strike_count: number | null
+          subscription_end_date: string | null
+          subscription_status: string | null
+          subscription_tier: string | null
           trading_address: string | null
           updated_at: string
         }
@@ -46,11 +296,15 @@ export type Database = {
           full_name?: string | null
           id: string
           is_two_factor_enabled?: boolean | null
+          payment_methods?: Json | null
           phone_number?: string | null
           postcode?: string | null
           referred_by?: string | null
           signup_date?: string | null
           strike_count?: number | null
+          subscription_end_date?: string | null
+          subscription_status?: string | null
+          subscription_tier?: string | null
           trading_address?: string | null
           updated_at?: string
         }
@@ -68,13 +322,89 @@ export type Database = {
           full_name?: string | null
           id?: string
           is_two_factor_enabled?: boolean | null
+          payment_methods?: Json | null
           phone_number?: string | null
           postcode?: string | null
           referred_by?: string | null
           signup_date?: string | null
           strike_count?: number | null
+          subscription_end_date?: string | null
+          subscription_status?: string | null
+          subscription_tier?: string | null
           trading_address?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      saved_listings: {
+        Row: {
+          created_at: string
+          id: string
+          listing_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          listing_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          listing_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_saved_listings_listing"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_saved_listings_user"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subscribers: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          stripe_customer_id: string | null
+          subscribed: boolean
+          subscription_end: string | null
+          subscription_tier: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          stripe_customer_id?: string | null
+          subscribed?: boolean
+          subscription_end?: string | null
+          subscription_tier?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          stripe_customer_id?: string | null
+          subscribed?: boolean
+          subscription_end?: string | null
+          subscription_tier?: string | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -94,7 +424,15 @@ export type Database = {
           role?: Database["public"]["Enums"]["user_role_type"]
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_user_roles_user"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

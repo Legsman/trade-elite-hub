@@ -14,17 +14,18 @@ import {
   Shield,
   User,
   Star,
-  ThumbsUp
+  ThumbsUp,
+  Loader2
 } from "lucide-react";
 import MainLayout from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { 
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
   CardDescription,
   CardFooter,
+  CardHeader,
+  CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -35,87 +36,59 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { supabase } from "@/integrations/supabase/client";
-import { Listing } from "@/types";
-import { Loading } from "@/components/ui/loading";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/auth";
+import { useListing } from "@/hooks/use-listing";
+import { useSellerProfile } from "@/hooks/use-user-profile";
+import { useStartConversation } from "@/hooks/use-message";
 import { toast } from "@/hooks/use-toast";
-
-// Mocked data
-const MOCK_LISTINGS: Listing[] = [
-  {
-    id: "1",
-    sellerId: "user1",
-    title: "2020 Ferrari 488 Pista",
-    description: "The Ferrari 488 Pista is powered by the most powerful V8 engine in the Maranello marque's history and is the company's special series sports car with the highest level yet of technological transfer from racing. In fact the name, meaning 'track' in Italian, was chosen specifically to testify to Ferrari's unparalleled heritage in motor sports.\n\nThis car is in pristine condition with only 5,000 miles on the odometer. Full Ferrari service history with all books, keys, and accessories included. Rosso Corsa with black racing stripe and carbon fiber accents throughout.",
-    category: "cars",
-    type: "classified",
-    price: 350000,
-    location: "London, UK",
-    condition: "Like New",
-    images: [
-      "https://images.unsplash.com/photo-1592198084033-aade902d1aae?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-      "https://images.unsplash.com/photo-1597840900201-394c2a05c784?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-      "https://images.unsplash.com/photo-1544829099-b9a0c07fad1a?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-    ],
-    allowBestOffer: true,
-    expiresAt: new Date(2025, 5, 15),
-    createdAt: new Date(2025, 2, 15),
-    updatedAt: new Date(2025, 2, 15),
-    status: "active",
-    views: 245,
-    saves: 18,
-  },
-];
-
-interface SellerInfo {
-  id: string;
-  name: string;
-  joinDate: Date;
-  rating: number;
-  salesCount: number;
-  verified: boolean;
-}
-
-// Mocked seller data
-const MOCK_SELLER: SellerInfo = {
-  id: "user1",
-  name: "James Wilson",
-  joinDate: new Date(2023, 1, 15),
-  rating: 4.9,
-  salesCount: 37,
-  verified: true,
-};
+import { useAnalytics } from "@/hooks/use-analytics";
+import { Loading } from "@/components/ui/loading";
 
 const ListingDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [loading, setLoading] = useState(true);
-  const [listing, setListing] = useState<Listing | null>(null);
-  const [seller, setSeller] = useState<SellerInfo | null>(null);
+  const { listing, isLoading: listingLoading, error: listingError, toggleSave, checkSaved } = useListing(id);
+  const { seller, isLoading: sellerLoading } = useSellerProfile(listing?.sellerId);
+  const { startConversation } = useStartConversation();
+  const { trackEvent } = useAnalytics();
+  
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isSaved, setIsSaved] = useState(false);
+  const [savingState, setSavingState] = useState(false);
+  const [messageOpen, setMessageOpen] = useState(false);
+  const [messageContent, setMessageContent] = useState("");
+  const [sendingMessage, setSendingMessage] = useState(false);
+  
+  const isLoading = listingLoading || sellerLoading;
 
-  // In a real app, this would fetch from API
+  // Check if the listing is saved
   useEffect(() => {
-    const fetchListing = async () => {
-      setLoading(true);
-      // Simulate API call
-      setTimeout(() => {
-        const foundListing = MOCK_LISTINGS.find(item => item.id === id);
-        if (foundListing) {
-          setListing(foundListing);
-          setSeller(MOCK_SELLER);
-        }
-        setLoading(false);
-      }, 800);
+    const checkSavedStatus = async () => {
+      if (listing && user) {
+        const savedStatus = await checkSaved();
+        setIsSaved(savedStatus);
+      }
     };
+    
+    checkSavedStatus();
+  }, [listing, user, checkSaved]);
 
-    fetchListing();
-  }, [id]);
+  // Track page view
+  useEffect(() => {
+    if (listing) {
+      trackEvent("listing_view", { 
+        listingId: listing.id,
+        listingType: listing.type,
+        listingCategory: listing.category,
+        listingPrice: listing.price,
+      });
+    }
+  }, [listing, trackEvent]);
 
-  const toggleSave = () => {
+  const handleToggleSave = async () => {
     if (!user) {
       toast({
         title: "Authentication required",
@@ -125,13 +98,17 @@ const ListingDetails = () => {
       return;
     }
     
-    setIsSaved(!isSaved);
-    toast({
-      title: isSaved ? "Listing removed from saved items" : "Listing saved successfully",
-      description: isSaved 
-        ? "This listing has been removed from your saved items" 
-        : "This listing has been added to your saved items",
-    });
+    setSavingState(true);
+    const result = await toggleSave();
+    setSavingState(false);
+    
+    if (result.success) {
+      setIsSaved(result.saved);
+      trackEvent("listing_saved", { 
+        listingId: listing?.id,
+        saved: result.saved
+      });
+    }
   };
 
   const handleContact = () => {
@@ -144,8 +121,48 @@ const ListingDetails = () => {
       return;
     }
     
-    // In a real app, this would navigate to messages with this listing context
-    navigate(`/messages/new?listing=${id}`);
+    // Open message dialog
+    setMessageOpen(true);
+    trackEvent("contact_seller_click", { listingId: listing?.id });
+  };
+
+  const handleSendMessage = async () => {
+    if (!messageContent.trim()) {
+      toast({
+        title: "Message required",
+        description: "Please enter a message to send to the seller",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setSendingMessage(true);
+    
+    const result = await startConversation(
+      listing!.sellerId,
+      messageContent,
+      listing!.id
+    );
+    
+    setSendingMessage(false);
+    
+    if (result.success) {
+      setMessageOpen(false);
+      setMessageContent("");
+      
+      toast({
+        title: "Message sent",
+        description: "Your message has been sent to the seller",
+      });
+      
+      trackEvent("message_sent", { 
+        listingId: listing?.id,
+        sellerId: listing?.sellerId
+      });
+      
+      // Redirect to messages
+      navigate(`/messages`);
+    }
   };
 
   const handlePrevImage = () => {
@@ -153,6 +170,7 @@ const ListingDetails = () => {
     setCurrentImageIndex((prev) => 
       prev === 0 ? listing.images.length - 1 : prev - 1
     );
+    trackEvent("listing_image_previous", { listingId: listing?.id });
   };
 
   const handleNextImage = () => {
@@ -160,9 +178,31 @@ const ListingDetails = () => {
     setCurrentImageIndex((prev) => 
       prev === listing.images.length - 1 ? 0 : prev + 1
     );
+    trackEvent("listing_image_next", { listingId: listing?.id });
   };
 
-  if (loading) {
+  const handleShare = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: listing?.title,
+        text: `Check out this listing: ${listing?.title}`,
+        url: window.location.href,
+      }).then(() => {
+        trackEvent("listing_shared", { listingId: listing?.id });
+      }).catch(console.error);
+    } else {
+      // Fallback: copy to clipboard
+      navigator.clipboard.writeText(window.location.href).then(() => {
+        toast({
+          title: "Link copied",
+          description: "Listing link copied to clipboard",
+        });
+        trackEvent("listing_link_copied", { listingId: listing?.id });
+      }).catch(console.error);
+    }
+  };
+
+  if (isLoading) {
     return (
       <MainLayout>
         <div className="container py-12">
@@ -172,7 +212,7 @@ const ListingDetails = () => {
     );
   }
 
-  if (!listing) {
+  if (listingError || !listing) {
     return (
       <MainLayout>
         <div className="container py-12 text-center">
@@ -375,6 +415,7 @@ const ListingDetails = () => {
                   <Button 
                     className="flex-1"
                     onClick={handleContact}
+                    disabled={listing.sellerId === user?.id}
                   >
                     <MessageSquare className="mr-2 h-4 w-4" />
                     Contact Seller
@@ -382,14 +423,21 @@ const ListingDetails = () => {
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Button 
-                          variant={isSaved ? "default" : "outline"} 
-                          size="icon"
-                          onClick={toggleSave}
-                        >
-                          <Heart className={`h-4 w-4 ${isSaved ? "fill-current" : ""}`} />
-                          <span className="sr-only">Save Listing</span>
-                        </Button>
+                        <div> {/* Wrapper div to avoid button inside button warning */}
+                          <Button 
+                            variant={isSaved ? "default" : "outline"} 
+                            size="icon"
+                            onClick={handleToggleSave}
+                            disabled={savingState || listing.sellerId === user?.id}
+                          >
+                            {savingState ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Heart className={`h-4 w-4 ${isSaved ? "fill-current" : ""}`} />
+                            )}
+                            <span className="sr-only">Save Listing</span>
+                          </Button>
+                        </div>
                       </TooltipTrigger>
                       <TooltipContent>
                         <p>{isSaved ? "Remove from saved" : "Save for later"}</p>
@@ -400,7 +448,11 @@ const ListingDetails = () => {
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Button variant="outline" size="icon">
+                        <Button 
+                          variant="outline" 
+                          size="icon"
+                          onClick={handleShare}
+                        >
                           <Share2 className="h-4 w-4" />
                           <span className="sr-only">Share Listing</span>
                         </Button>
@@ -412,8 +464,12 @@ const ListingDetails = () => {
                   </TooltipProvider>
                 </div>
                 
-                {listing.allowBestOffer && (
-                  <Button variant="outline" className="w-full">
+                {listing.allowBestOffer && listing.sellerId !== user?.id && (
+                  <Button 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={handleContact}
+                  >
                     Make an Offer
                   </Button>
                 )}
@@ -434,7 +490,15 @@ const ListingDetails = () => {
                 <CardContent className="space-y-4">
                   <div className="flex items-center">
                     <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mr-3">
-                      <User className="h-6 w-6 text-muted-foreground" />
+                      {seller.avatarUrl ? (
+                        <img 
+                          src={seller.avatarUrl} 
+                          alt={seller.name}
+                          className="h-12 w-12 rounded-full object-cover"
+                        />
+                      ) : (
+                        <User className="h-6 w-6 text-muted-foreground" />
+                      )}
                     </div>
                     <div>
                       <div className="font-medium flex items-center">
@@ -477,13 +541,17 @@ const ListingDetails = () => {
                     <div className="flex items-start">
                       <AlertCircle className="h-4 w-4 text-amber-500 mt-0.5 mr-2 flex-shrink-0" />
                       <p>
-                        Always communicate through SwiftTrade and never share personal contact details. 
+                        Always communicate through our platform and never share personal contact details. 
                         Report suspicious activity immediately.
                       </p>
                     </div>
                   </div>
                   
-                  <Button className="w-full" variant="outline" onClick={() => navigate(`/feedback/new?user=${seller.id}`)}>
+                  <Button 
+                    className="w-full" 
+                    variant="outline" 
+                    onClick={() => navigate(`/feedback/new?user=${seller.id}`)}
+                  >
                     <ThumbsUp className="mr-2 h-4 w-4" />
                     Leave Feedback
                   </Button>
@@ -520,6 +588,68 @@ const ListingDetails = () => {
           </div>
         </div>
       </div>
+
+      {/* Contact seller dialog */}
+      <Dialog open={messageOpen} onOpenChange={setMessageOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Contact Seller</DialogTitle>
+            <DialogDescription>
+              Send a message to the seller about this listing.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="flex items-center space-x-4">
+              <div className="rounded-md border p-2 w-16 h-16 flex-shrink-0">
+                <img 
+                  src={listing.images[0]} 
+                  alt={listing.title}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div>
+                <h4 className="font-medium line-clamp-1">{listing.title}</h4>
+                <p className="text-sm text-muted-foreground">£{listing.price.toLocaleString()}</p>
+              </div>
+            </div>
+            <Textarea
+              placeholder="Write your message to the seller here..."
+              className="min-h-[120px]"
+              value={messageContent}
+              onChange={(e) => setMessageContent(e.target.value)}
+            />
+            <div className="text-sm text-muted-foreground">
+              <p className="flex items-start">
+                <AlertCircle className="h-4 w-4 text-amber-500 mt-0.5 mr-2 flex-shrink-0" />
+                Do not share personal contact details in your first message.
+              </p>
+            </div>
+          </div>
+          <DialogFooter className="sm:justify-between">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setMessageOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button 
+              type="button"
+              disabled={sendingMessage || !messageContent.trim()}
+              onClick={handleSendMessage}
+            >
+              {sendingMessage ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Sending...
+                </>
+              ) : (
+                "Send Message"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </MainLayout>
   );
 };
