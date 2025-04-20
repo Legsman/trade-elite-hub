@@ -80,10 +80,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return;
       }
       
-      // Fixed: Add null check before the type guard
+      // Fixed: Proper null check and type guard sequence
       if (data !== null) {
         // Type guard to check if data has the correct shape
-        if (typeof data === 'object' && 'id' in data && data !== null) {
+        const hasValidShape = typeof data === 'object' && data !== null && 'id' in data;
+        
+        if (hasValidShape) {
           // Now we can safely cast it to the correct type
           const profile = data as Tables<"profiles">;
           

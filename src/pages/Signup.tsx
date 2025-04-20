@@ -1,4 +1,3 @@
-
 // Modified Signup.tsx to integrate signup with Supabase and store additional profile data.
 
 import { useState } from "react";
@@ -34,7 +33,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/auth";
 
 const formSchema = z
   .object({
@@ -156,7 +155,6 @@ const Signup = () => {
               </FormItem>
             )}
           />
-          {/* Additional optional address fields */}
           <FormField
             control={form.control}
             name="addressLine1"

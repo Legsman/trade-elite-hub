@@ -1,6 +1,3 @@
-
-// Modified Login.tsx to integrate Supabase authentication with useAuth
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { z } from "zod";
@@ -21,7 +18,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/auth";
 
 const formSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
