@@ -1,5 +1,5 @@
 
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, Separator } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 
@@ -56,4 +56,3 @@ const SecurityTab = ({
 );
 
 export default SecurityTab;
-
