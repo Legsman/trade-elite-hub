@@ -81,8 +81,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
       
       if (data) {
-        // Explicitly type the data as a profile record
-        const profile = data as Tables["profiles"];
+        // Type the data correctly - profiles is a table name in the schema
+        const profile = data as Tables<"profiles">;
         
         // Map database fields to User type
         const profileUser: User = {
