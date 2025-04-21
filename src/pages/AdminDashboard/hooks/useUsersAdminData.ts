@@ -13,6 +13,8 @@ export function useUsersAdminData() {
       setLoading(true);
       setError(null);
       
+      console.log("Fetching admin users data...");
+      
       // Fetch profiles data first
       const { data: profilesData, error: profilesError } = await supabase
         .from("profiles")
@@ -32,7 +34,7 @@ export function useUsersAdminData() {
         return;
       }
 
-      console.log("Profiles data fetched:", profilesData);
+      console.log("Profiles data fetched:", profilesData?.length);
       
       if (!profilesData || profilesData.length === 0) {
         setUsers([]);
@@ -54,7 +56,7 @@ export function useUsersAdminData() {
             
             const isAdmin = isAdminData || false;
             
-            // For verified status, we need to use another function or approach
+            // For verified status, use the has_role function
             const { data: hasVerifiedRole, error: verifiedError } = await supabase
               .rpc('has_role', { 
                 _user_id: profile.id, 
@@ -67,13 +69,16 @@ export function useUsersAdminData() {
             
             console.log(`User ${profile.id} (${profile.full_name}): isAdmin=${isAdmin}, isVerified=${hasVerifiedRole}`);
             
+            // Admin users are always considered verified
+            const verifiedStatus = isAdmin || hasVerifiedRole ? "verified" : "unverified";
+            
             return {
               id: profile.id,
               email: profile.email,
-              full_name: profile.full_name,
+              full_name: profile.full_name || "Unknown User",
               created_at: profile.created_at,
               role: isAdmin ? "admin" : "user",
-              verified_status: (isAdmin || hasVerifiedRole) ? "verified" : "unverified",
+              verified_status: verifiedStatus,
               strike_count: profile.strike_count || 0,
               last_visited: profile.updated_at,
               listings_count: 0  // This could be enhanced by joining with listings table if needed
@@ -96,7 +101,7 @@ export function useUsersAdminData() {
         })
       );
       
-      console.log("Final mapped users with roles:", usersWithRoles);
+      console.log("Final mapped users with roles:", usersWithRoles.length);
       setUsers(usersWithRoles);
     } catch (err) {
       console.error("Unexpected error fetching users:", err);
@@ -112,6 +117,7 @@ export function useUsersAdminData() {
   }, [fetchUsers]);
 
   const refetchUsers = useCallback(async () => {
+    console.log("Manually refetching users data...");
     await fetchUsers();
   }, [fetchUsers]);
 

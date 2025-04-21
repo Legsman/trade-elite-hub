@@ -19,11 +19,17 @@ export async function assignOrRemoveAdminRole(targetUserId: string, role: string
     
     console.log(`Admin role ${action} response:`, data);
     
+    // Always wait for the database to update, even on success
+    console.log("Waiting for database propagation...");
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
     // Handle both success cases - where it was already done or newly done
-    if (data && data.success) {
-      // Force refetch by waiting for the database to update
-      await new Promise(resolve => setTimeout(resolve, 500));
-      return { success: true, message: data.message || `Role ${action === 'add' ? 'added' : 'removed'} successfully` };
+    if (data && (data.success || data.message?.includes("already") || data.message?.includes("not found"))) {
+      return { 
+        success: true, 
+        message: data.message || `Role ${action === 'add' ? 'added' : 'removed'} successfully`,
+        alreadyDone: data.message?.includes("already") || data.message?.includes("not found")
+      };
     }
     
     return { success: false, error: data?.error || "Failed to update role" };
@@ -49,11 +55,17 @@ export async function assignOrRemoveVerifiedStatus(targetUserId: string, action:
     
     console.log(`Verified status ${action} response:`, data);
     
-    // Handle both success cases - where it was already done or newly done
-    if (data && data.success) {
-      // Force refetch by waiting for the database to update
-      await new Promise(resolve => setTimeout(resolve, 500));
-      return { success: true, message: data.message || `Verification ${action === 'add' ? 'added' : 'removed'} successfully` };
+    // Always wait for the database to update, even on success
+    console.log("Waiting for database propagation...");
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // Handle all success cases with a consistent response
+    if (data && (data.success || data.message?.includes("already") || data.message?.includes("not found"))) {
+      return { 
+        success: true, 
+        message: data.message || `Verification ${action === 'add' ? 'added' : 'removed'} successfully`,
+        alreadyDone: data.message?.includes("already") || data.message?.includes("not found")
+      };
     }
     
     return { success: false, error: data?.error || "Failed to update verification status" };

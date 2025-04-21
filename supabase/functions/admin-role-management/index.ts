@@ -104,7 +104,7 @@ serve(async (req) => {
         console.log(`User ${targetUserId} already has role ${role}`);
         return new Response(JSON.stringify({ 
           success: true, 
-          message: "Role already assigned" 
+          message: `Role ${role} already assigned` 
         }), { headers: corsHeaders });
       }
       
@@ -137,7 +137,7 @@ serve(async (req) => {
         console.log(`User ${targetUserId} doesn't have role ${role}`);
         return new Response(JSON.stringify({ 
           success: true, 
-          message: "Role not found to remove" 
+          message: `Role ${role} not found to remove` 
         }), { headers: corsHeaders });
       }
       
@@ -156,6 +156,9 @@ serve(async (req) => {
         error: resp.error.message 
       }), { headers: corsHeaders, status: 400 });
     }
+
+    // Add a small delay to allow database changes to propagate
+    await new Promise(resolve => setTimeout(resolve, 200));
 
     console.log(`Successfully ${action === 'add' ? 'added' : 'removed'} ${role} role for user ${targetUserId}`);
     return new Response(JSON.stringify({ 

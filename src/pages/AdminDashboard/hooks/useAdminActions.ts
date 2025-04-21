@@ -1,3 +1,4 @@
+
 import { useCallback } from "react";
 import { assignOrRemoveAdminRole, assignOrRemoveVerifiedStatus } from "@/utils/adminUtils";
 import { toast } from "@/hooks/use-toast";
@@ -14,30 +15,50 @@ export function useAdminActions(setUsers: any, setListings: any, setReports: any
       )
     );
     
+    // Show processing toast
+    const pendingToast = toast({ 
+      title: "Processing", 
+      description: "Promoting user to admin..." 
+    });
+    
     // Make the actual API call
-    const { success, error, message } = await assignOrRemoveAdminRole(userId, "admin", "add");
+    const { success, error, message, alreadyDone } = await assignOrRemoveAdminRole(userId, "admin", "add");
+    
+    // Dismiss the pending toast
+    if (pendingToast && pendingToast.dismiss) {
+      pendingToast.dismiss();
+    }
     
     if (success) {
       toast({ 
         title: "Admin promoted", 
         description: message || "User has been made an admin" 
       });
+      
+      // Force a refresh of the users data to ensure UI is in sync
+      setTimeout(() => {
+        setUsers((prev: UserAdmin[]) => {
+          const updatedUsers = [...prev]; // Create a new array to trigger re-render
+          return updatedUsers.map(u =>
+            u.id === userId ? { ...u, role: "admin", verified_status: "verified" } : u
+          );
+        });
+      }, 300);
     } else {
       console.error("Failed to promote admin:", error);
-      // Only revert if it truly failed, not just a UI sync issue
-      if (error && typeof error === 'object' && 'code' in error && error.code !== 'PGRST116') {
-        // Revert the optimistic update if operation failed
-        setUsers((prev: UserAdmin[]) =>
-          prev.map(u =>
-            u.id === userId ? { ...u, role: "user" } : u
-          )
-        );
-        toast({ 
-          title: "Failed to promote", 
-          description: error?.message || String(error) || "Failed", 
-          variant: "destructive" 
-        });
-      }
+      
+      // Revert the optimistic update
+      setUsers((prev: UserAdmin[]) =>
+        prev.map(u =>
+          u.id === userId ? { ...u, role: "user" } : u
+        )
+      );
+      
+      toast({ 
+        title: "Failed to promote", 
+        description: error?.message || String(error) || "Failed", 
+        variant: "destructive" 
+      });
     }
   }, [setUsers]);
 
@@ -51,30 +72,50 @@ export function useAdminActions(setUsers: any, setListings: any, setReports: any
       )
     );
     
+    // Show processing toast
+    const pendingToast = toast({ 
+      title: "Processing", 
+      description: "Removing admin role..." 
+    });
+    
     // Make the actual API call
-    const { success, error, message } = await assignOrRemoveAdminRole(userId, "admin", "remove");
+    const { success, error, message, alreadyDone } = await assignOrRemoveAdminRole(userId, "admin", "remove");
+    
+    // Dismiss the pending toast
+    if (pendingToast && pendingToast.dismiss) {
+      pendingToast.dismiss();
+    }
     
     if (success) {
       toast({ 
         title: "Admin removed", 
         description: message || "User has been demoted from admin" 
       });
+      
+      // Force a refresh of the users data to ensure UI is in sync
+      setTimeout(() => {
+        setUsers((prev: UserAdmin[]) => {
+          const updatedUsers = [...prev]; // Create a new array to trigger re-render
+          return updatedUsers.map(u =>
+            u.id === userId ? { ...u, role: "user" } : u
+          );
+        });
+      }, 300);
     } else {
       console.error("Failed to demote admin:", error);
-      // Only revert if it truly failed, not just a UI sync issue
-      if (error && typeof error === 'object' && 'code' in error && error.code !== 'PGRST116') {
-        // Revert the optimistic update if operation failed
-        setUsers((prev: UserAdmin[]) =>
-          prev.map(u =>
-            u.id === userId ? { ...u, role: "admin" } : u
-          )
-        );
-        toast({ 
-          title: "Failed to demote", 
-          description: error?.message || String(error) || "Failed", 
-          variant: "destructive" 
-        });
-      }
+      
+      // Revert the optimistic update
+      setUsers((prev: UserAdmin[]) =>
+        prev.map(u =>
+          u.id === userId ? { ...u, role: "admin" } : u
+        )
+      );
+      
+      toast({ 
+        title: "Failed to demote", 
+        description: error?.message || String(error) || "Failed", 
+        variant: "destructive" 
+      });
     }
   }, [setUsers]);
 
@@ -89,30 +130,53 @@ export function useAdminActions(setUsers: any, setListings: any, setReports: any
       )
     );
     
+    // Show processing toast
+    const pendingToast = toast({ 
+      title: "Processing", 
+      description: `${action === "add" ? "Verifying" : "Unverifying"} user...` 
+    });
+    
     // Make the actual API call
-    const { success, error, message } = await assignOrRemoveVerifiedStatus(userId, action);
+    const { success, error, message, alreadyDone } = await assignOrRemoveVerifiedStatus(userId, action);
+    
+    // Dismiss the pending toast
+    if (pendingToast && pendingToast.dismiss) {
+      pendingToast.dismiss();
+    }
     
     if (success) {
       toast({ 
         title: `User ${action === "add" ? "verified" : "unverified"}`, 
         description: message || `User has been ${action === "add" ? "verified" : "unverified"}`
       });
+      
+      // Force a refresh of the users data to ensure UI is in sync
+      setTimeout(() => {
+        setUsers((prev: UserAdmin[]) => {
+          const updatedUsers = [...prev]; // Create a new array to trigger re-render
+          return updatedUsers.map(u =>
+            u.id === userId ? { 
+              ...u, 
+              verified_status: action === "add" ? "verified" : "unverified" 
+            } : u
+          );
+        });
+      }, 300);
     } else {
       console.error("Failed to update verification status:", error);
-      // Only revert if it truly failed, not just a UI sync issue
-      if (error && typeof error === 'object' && 'code' in error && error.code !== 'PGRST116') {
-        // Revert the optimistic update if operation failed
-        setUsers((prev: UserAdmin[]) =>
-          prev.map(u =>
-            u.id === userId ? { ...u, verified_status: currentStatus } : u
-          )
-        );
-        toast({ 
-          title: "Failed to update verification status", 
-          description: error?.message || String(error) || "Failed", 
-          variant: "destructive" 
-        });
-      }
+      
+      // Revert the optimistic update
+      setUsers((prev: UserAdmin[]) =>
+        prev.map(u =>
+          u.id === userId ? { ...u, verified_status: currentStatus } : u
+        )
+      );
+      
+      toast({ 
+        title: "Failed to update verification status", 
+        description: error?.message || String(error) || "Failed", 
+        variant: "destructive" 
+      });
     }
   }, [setUsers]);
 
