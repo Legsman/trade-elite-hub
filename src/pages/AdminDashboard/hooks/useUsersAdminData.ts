@@ -41,68 +41,41 @@ export function useUsersAdminData() {
         setLoading(false);
         return;
       }
+
+      // Get all user IDs
+      const userIds = profilesData.map(profile => profile.id);
       
-      // Process each profile to get their roles using the security definer function
-      const usersWithRoles: UserAdmin[] = await Promise.all(
-        profilesData.map(async (profile) => {
-          try {
-            // Add slight delay between role checks to prevent rate limiting
-            await new Promise(resolve => setTimeout(resolve, 50));
-            
-            // Use the security definer function to check if user is admin
-            const { data: isAdminData, error: adminError } = await supabase
-              .rpc('is_admin', { _user_id: profile.id });
-              
-            if (adminError) {
-              console.error(`Error checking admin role for user ${profile.id}:`, adminError);
-            }
-            
-            const isAdmin = isAdminData || false;
-            
-            // For verified status, use the has_role function with a small delay
-            await new Promise(resolve => setTimeout(resolve, 50));
-            const { data: hasVerifiedRole, error: verifiedError } = await supabase
-              .rpc('has_role', { 
-                _user_id: profile.id, 
-                _role: 'verified' 
-              });
-            
-            if (verifiedError) {
-              console.error(`Error checking verified role for user ${profile.id}:`, verifiedError);
-            }
-            
-            console.log(`User ${profile.id} (${profile.full_name}): isAdmin=${isAdmin}, isVerified=${hasVerifiedRole}`);
-            
-            // Admin users are always considered verified
-            const verifiedStatus = isAdmin || hasVerifiedRole ? "verified" : "unverified";
-            
-            return {
-              id: profile.id,
-              email: profile.email,
-              full_name: profile.full_name || "Unknown User",
-              created_at: profile.created_at,
-              role: isAdmin ? "admin" : "user",
-              verified_status: verifiedStatus,
-              strike_count: profile.strike_count || 0,
-              last_visited: profile.updated_at,
-              listings_count: 0
-            };
-          } catch (userError) {
-            console.error(`Error processing user ${profile.id}:`, userError);
-            return {
-              id: profile.id,
-              email: profile.email,
-              full_name: profile.full_name || "Unknown User",
-              created_at: profile.created_at,
-              role: "user",
-              verified_status: "unverified",
-              strike_count: profile.strike_count || 0,
-              last_visited: profile.updated_at,
-              listings_count: 0
-            };
-          }
-        })
-      );
+      // Use the new batch function to get roles efficiently
+      const { data: rolesData, error: rolesError } = await supabase
+        .rpc('get_user_roles_batch', { user_ids: userIds });
+        
+      if (rolesError) {
+        console.error("Error fetching user roles:", rolesError);
+        setError(rolesError.message);
+        return;
+      }
+
+      console.log("Roles data fetched:", rolesData);
+
+      // Map profiles with their roles
+      const usersWithRoles: UserAdmin[] = profilesData.map(profile => {
+        const roleInfo = rolesData.find(r => r.user_id === profile.id) || {
+          is_admin: false,
+          is_verified: false
+        };
+
+        return {
+          id: profile.id,
+          email: profile.email,
+          full_name: profile.full_name || "Unknown User",
+          created_at: profile.created_at,
+          role: roleInfo.is_admin ? "admin" : "user",
+          verified_status: roleInfo.is_admin || roleInfo.is_verified ? "verified" : "unverified",
+          strike_count: profile.strike_count || 0,
+          last_visited: profile.updated_at,
+          listings_count: 0
+        };
+      });
       
       console.log("Final mapped users with roles:", usersWithRoles.length);
       setUsers(usersWithRoles);
@@ -121,7 +94,6 @@ export function useUsersAdminData() {
 
   const refetchUsers = useCallback(async () => {
     console.log("Manually refetching users data...");
-    // Add a delay before refetching to ensure DB changes have propagated
     await new Promise(resolve => setTimeout(resolve, 2000));
     await fetchUsers();
   }, [fetchUsers]);

@@ -481,6 +481,14 @@ export type Database = {
           role: string
         }[]
       }
+      get_user_roles_batch: {
+        Args: { user_ids: string[] }
+        Returns: {
+          user_id: string
+          is_admin: boolean
+          is_verified: boolean
+        }[]
+      }
       has_role: {
         Args: {
           _user_id: string
