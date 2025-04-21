@@ -1,0 +1,225 @@
+
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
+import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+
+export function useAdminDashboard() {
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    totalUsers: 0,
+    newUsersToday: 0,
+    activeListings: 0,
+    pendingListings: 0,
+    totalMessages: 0,
+    reportedContent: 0,
+  });
+  const [users, setUsers] = useState<any[]>([]);
+  const [listings, setListings] = useState<any[]>([]);
+  const [reportedItems, setReportedItems] = useState<any[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [userFilter, setUserFilter] = useState("all");
+  const [listingFilter, setListingFilter] = useState("all");
+  const [analyticsData, setAnalyticsData] = useState<any[]>([]);
+
+  // Fetch admin data
+  const fetchAdminData = useCallback(async () => {
+    setLoading(true);
+    try {
+      let { data: usersRaw, error: usersError } = await supabase
+        .from("profiles")
+        .select("id, full_name, email, created_at, strike_count, is_two_factor_enabled, feedback_rating");
+      if (usersError) throw usersError;
+
+      let { data: rolesRaw, error: rolesError } = await supabase
+        .from("user_roles")
+        .select("user_id, role");
+      if (rolesError) throw rolesError;
+
+      let { data: listingsRaw, error: listingsError } = await supabase
+        .from("listings")
+        .select("id, title, seller_id, price, category, status, created_at, views, saves");
+      if (listingsError) throw listingsError;
+
+      const userRolesMap = new Map();
+      rolesRaw.forEach(({ user_id, role }) => {
+        userRolesMap.set(user_id, role);
+      });
+
+      const usersData = (usersRaw || []).map(profile => {
+        const listings_count = (listingsRaw || []).filter(l => l.seller_id === profile.id).length;
+        return {
+          id: profile.id,
+          email: profile.email,
+          full_name: profile.full_name,
+          created_at: profile.created_at,
+          role: userRolesMap.get(profile.id) || "user",
+          strike_count: profile.strike_count || 0,
+          status: profile.strike_count >= 3 ? "suspended" : profile.strike_count === 2 ? "warning" : "active",
+          listings_count,
+          last_login: null,
+        };
+      });
+
+      const userIdToName: Record<string, string> = {};
+      for (const user of usersRaw) {
+        userIdToName[user.id] = user.full_name;
+      }
+
+      const listingsData = (listingsRaw || []).map(listing => ({
+        ...listing,
+        seller_name: userIdToName[listing.seller_id] || "Unknown",
+      }));
+
+      // Only report if a user has a strike
+      const reported = usersData
+        .filter(u => u.strike_count > 0)
+        .map((u, i) => ({
+          id: String(i + 1),
+          type: "user",
+          item_id: u.id,
+          item_title: `User: ${u.full_name}`,
+          reporter_name: "System",
+          reporter_id: "",
+          reason: u.strike_count >= 3 ? "Account suspended" : "Warning for user",
+          status: u.strike_count >= 3 ? "pending" : "investigating",
+          created_at: u.created_at,
+        }));
+
+      const now = new Date();
+      const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      const analyticsData = monthNames.slice(0, 6).map((name, i) => ({
+        name,
+        users: Math.floor(usersData.length * ((i + 1) / 6)),
+        listings: Math.floor(listingsData.length * ((i + 1) / 6)),
+        messages: Math.floor(200 * (i + 1)),
+      }));
+
+      setUsers(usersData || []);
+      setListings(listingsData || []);
+      setReportedItems(reported);
+      setAnalyticsData(analyticsData);
+
+      const today = now.toISOString().slice(0, 10);
+      setStats({
+        totalUsers: usersData.length,
+        newUsersToday: usersData.filter(u => (u.created_at || "").slice(0, 10) === today).length,
+        activeListings: listingsData.filter(l => l.status === "active").length,
+        pendingListings: listingsData.filter(l => l.status === "pending").length,
+        totalMessages: 0,
+        reportedContent: reported.length,
+      });
+    } catch (error) {
+      console.error('Error fetching admin data:', error);
+      toast({
+        title: "Error loading admin data",
+        description: "Failed to load administrative data. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchAdminData();
+  }, [fetchAdminData]);
+
+  // HANDLERS
+  const handleApproveItem = useCallback((id: string, type: string) => {
+    if (type === 'listing') {
+      setListings(prev =>
+        prev.map(item => item.id === id ? { ...item, status: 'active' } : item)
+      );
+    } else if (type === 'report') {
+      setReportedItems(prev =>
+        prev.map(item => item.id === id ? { ...item, status: 'resolved' } : item)
+      );
+    }
+
+    toast({
+      title: "Item approved",
+      description: `The ${type} has been approved successfully`,
+    });
+  }, []);
+
+  const handleRejectItem = useCallback((id: string, type: string) => {
+    if (type === 'listing') {
+      setListings(prev =>
+        prev.map(item => item.id === id ? { ...item, status: 'rejected' } : item)
+      );
+    } else if (type === 'report') {
+      setReportedItems(prev =>
+        prev.map(item => item.id === id ? { ...item, status: 'dismissed' } : item)
+      );
+    }
+    toast({
+      title: "Item rejected",
+      description: `The ${type} has been rejected`,
+    });
+  }, []);
+
+  const handleSuspendUser = useCallback((id: string) => {
+    setUsers(prev =>
+      prev.map(user => user.id === id ? { ...user, status: 'suspended' } : user)
+    );
+    toast({
+      title: "User suspended",
+      description: "The user has been suspended",
+    });
+  }, []);
+
+  const handleUnsuspendUser = useCallback((id: string) => {
+    setUsers(prev =>
+      prev.map(user => user.id === id ? { ...user, status: 'active', strike_count: 0 } : user)
+    );
+    toast({
+      title: "User unsuspended",
+      description: "The user has been unsuspended and can now use the platform again",
+    });
+  }, []);
+
+  // FILTERED DATA
+  const filteredUsers = useMemo(() => users.filter(user => {
+    const matchesSearch = user.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.email?.toLowerCase().includes(searchQuery.toLowerCase());
+    if (userFilter === 'all') return matchesSearch;
+    if (userFilter === 'admin') return matchesSearch && user.role === 'admin';
+    if (userFilter === 'active') return matchesSearch && user.status === 'active';
+    if (userFilter === 'warning') return matchesSearch && user.status === 'warning';
+    if (userFilter === 'suspended') return matchesSearch && user.status === 'suspended';
+    return matchesSearch;
+  }), [users, searchQuery, userFilter]);
+
+  const filteredListings = useMemo(() => listings.filter(listing => {
+    const matchesSearch = listing.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      listing.seller_name?.toLowerCase().includes(searchQuery.toLowerCase());
+    if (listingFilter === 'all') return matchesSearch;
+    if (listingFilter === 'active') return matchesSearch && listing.status === 'active';
+    if (listingFilter === 'pending') return matchesSearch && listing.status === 'pending';
+    if (listingFilter === 'suspended') return matchesSearch && listing.status === 'suspended';
+    return matchesSearch;
+  }), [listings, searchQuery, listingFilter]);
+
+  return {
+    loading,
+    stats,
+    analyticsData,
+    listings,
+    reportedItems,
+    users,
+    searchQuery,
+    setSearchQuery,
+    userFilter,
+    setUserFilter,
+    listingFilter,
+    setListingFilter,
+    handleApproveItem,
+    handleRejectItem,
+    handleSuspendUser,
+    handleUnsuspendUser,
+    filteredUsers,
+    filteredListings,
+  };
+}
