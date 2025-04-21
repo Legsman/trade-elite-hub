@@ -94,32 +94,16 @@ export function useAdminDashboard() {
 
   const handleRoleOperationWithRefresh = useCallback(async (operationFn: Function, ...args: any[]) => {
     try {
-      const operationToastId = toast({
-        title: "Processing",
-        description: "Updating user roles...",
-      });
-      
       await operationFn(...args);
       
-      setTimeout(() => {
-        toast({
-          title: "Success",
-          description: "User role updated successfully. Refreshing data...",
-        });
-        
-        refetchData();
-      }, 5500);
+      // Wait for the propagation delay before refreshing
+      await new Promise(resolve => setTimeout(resolve, 13000));
+      
+      // Only refresh after the delay
+      await refetchData();
       
     } catch (error) {
       console.error("Error during role operation:", error);
-      
-      setTimeout(() => {
-        toast({
-          title: "Operation failed",
-          description: "An error occurred. Please try again.",
-          variant: "destructive"
-        });
-      }, 500);
     }
   }, [refetchData]);
 

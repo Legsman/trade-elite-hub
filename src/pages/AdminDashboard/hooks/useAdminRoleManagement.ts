@@ -9,31 +9,48 @@ export function useAdminRoleManagement(setUsers: React.Dispatch<React.SetStateAc
 
   const promoteAdmin = useCallback(async (userId: string) => {
     console.log("Attempting to promote user to admin:", userId);
-    setLoadingUserId(userId);
+    if (loadingUserId) return; // Prevent multiple operations
     
+    setLoadingUserId(userId);
     const toastId = toast({ 
       title: "Processing", 
-      description: "Promoting user to admin..." 
+      description: "Promoting user to admin... This may take up to 13 seconds.",
     });
     
+    // Optimistic update
     setUsers((prev: UserAdmin[]) =>
       prev.map(u =>
         u.id === userId ? { ...u, role: "admin", verified_status: "verified" } : u
       )
     );
     
-    const { success, error, message } = await assignOrRemoveAdminRole(userId, "admin", "add");
-    
-    setLoadingUserId(null);
-    
-    if (success) {
-      toast({ 
-        title: "Success", 
-        description: message || "User has been made an admin" 
-      });
-    } else {
-      console.error("Failed to promote admin:", error);
+    try {
+      const { success, error, message } = await assignOrRemoveAdminRole(userId, "admin", "add");
       
+      if (success) {
+        toast({ 
+          title: "Success", 
+          description: message || "User has been made an admin. Database will refresh shortly.",
+        });
+      } else {
+        console.error("Failed to promote admin:", error);
+        
+        // Revert optimistic update
+        setUsers((prev: UserAdmin[]) =>
+          prev.map(u =>
+            u.id === userId ? { ...u, role: "user" } : u
+          )
+        );
+        
+        toast({ 
+          title: "Failed to promote", 
+          description: error?.message || String(error) || "Failed", 
+          variant: "destructive" 
+        });
+      }
+    } catch (error) {
+      console.error("Error during promotion:", error);
+      // Revert optimistic update
       setUsers((prev: UserAdmin[]) =>
         prev.map(u =>
           u.id === userId ? { ...u, role: "user" } : u
@@ -41,40 +58,59 @@ export function useAdminRoleManagement(setUsers: React.Dispatch<React.SetStateAc
       );
       
       toast({ 
-        title: "Failed to promote", 
-        description: error?.message || String(error) || "Failed", 
+        title: "Error", 
+        description: "An unexpected error occurred", 
         variant: "destructive" 
       });
+    } finally {
+      setLoadingUserId(null);
     }
-  }, [setUsers]);
+  }, [setUsers, loadingUserId]);
 
   const demoteAdmin = useCallback(async (userId: string) => {
     console.log("Attempting to demote admin:", userId);
-    setLoadingUserId(userId);
+    if (loadingUserId) return; // Prevent multiple operations
     
+    setLoadingUserId(userId);
     const toastId = toast({ 
       title: "Processing", 
-      description: "Removing admin privileges..." 
+      description: "Removing admin privileges... This may take up to 13 seconds.",
     });
     
+    // Optimistic update
     setUsers((prev: UserAdmin[]) =>
       prev.map(u =>
         u.id === userId ? { ...u, role: "user" } : u
       )
     );
     
-    const { success, error, message } = await assignOrRemoveAdminRole(userId, "admin", "remove");
-    
-    setLoadingUserId(null);
-    
-    if (success) {
-      toast({ 
-        title: "Success", 
-        description: message || "User has been demoted from admin" 
-      });
-    } else {
-      console.error("Failed to demote admin:", error);
+    try {
+      const { success, error, message } = await assignOrRemoveAdminRole(userId, "admin", "remove");
       
+      if (success) {
+        toast({ 
+          title: "Success", 
+          description: message || "User has been demoted from admin. Database will refresh shortly.",
+        });
+      } else {
+        console.error("Failed to demote admin:", error);
+        
+        // Revert optimistic update
+        setUsers((prev: UserAdmin[]) =>
+          prev.map(u =>
+            u.id === userId ? { ...u, role: "admin" } : u
+          )
+        );
+        
+        toast({ 
+          title: "Failed to demote", 
+          description: error?.message || String(error) || "Failed", 
+          variant: "destructive" 
+        });
+      }
+    } catch (error) {
+      console.error("Error during demotion:", error);
+      // Revert optimistic update
       setUsers((prev: UserAdmin[]) =>
         prev.map(u =>
           u.id === userId ? { ...u, role: "admin" } : u
@@ -82,12 +118,14 @@ export function useAdminRoleManagement(setUsers: React.Dispatch<React.SetStateAc
       );
       
       toast({ 
-        title: "Failed to demote", 
-        description: error?.message || String(error) || "Failed", 
+        title: "Error", 
+        description: "An unexpected error occurred", 
         variant: "destructive" 
       });
+    } finally {
+      setLoadingUserId(null);
     }
-  }, [setUsers]);
+  }, [setUsers, loadingUserId]);
 
   return {
     promoteAdmin,

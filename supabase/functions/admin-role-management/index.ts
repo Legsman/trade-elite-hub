@@ -6,8 +6,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Increased propagation delay to ensure DB changes propagate fully
-const PROPAGATION_DELAY_MS = 5000;
+// Increased propagation delay to 13 seconds to ensure DB changes propagate fully
+const PROPAGATION_DELAY_MS = 13000;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
