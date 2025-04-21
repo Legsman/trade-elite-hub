@@ -54,9 +54,17 @@ export function useUsersAdminData() {
         console.log("Admin users set:", Array.from(adminUserIds));
 
         // Map profiles to UserAdmin objects with role information
-        const mappedUsers = (usersRaw || []).map(profile => {
+        const mappedUsers: UserAdmin[] = (usersRaw || []).map(profile => {
           const isAdmin = adminUserIds.has(profile.id);
           console.log(`User ${profile.id} (${profile.full_name}) isAdmin:`, isAdmin);
+          
+          // Determine status based on strike_count
+          let userStatus: "active" | "warning" | "suspended" = "active";
+          if (profile.strike_count >= 3) {
+            userStatus = "suspended";
+          } else if (profile.strike_count === 2) {
+            userStatus = "warning";
+          }
           
           return {
             id: profile.id,
@@ -65,11 +73,7 @@ export function useUsersAdminData() {
             created_at: profile.created_at,
             role: isAdmin ? "admin" : "user",
             strike_count: profile.strike_count || 0,
-            status: profile.strike_count >= 3
-              ? "suspended"
-              : profile.strike_count === 2
-                ? "warning"
-                : "active",
+            status: userStatus,
             listings_count: 0, // will be filled in useAdminDashboard
             last_login: null,
           };
