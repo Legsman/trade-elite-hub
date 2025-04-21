@@ -1,30 +1,26 @@
 
+import { ReactNode } from "react";
 import MainLayout from "@/components/layout/MainLayout";
-import { Shield, AlertCircle } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import OverviewTab from "./OverviewTab";
-import UsersTab from "./UsersTab";
-import ListingsTab from "./ListingsTab";
-import ReportsTab from "./ReportsTab";
-import AdminsTab from "./AdminsTab";
-import { Loading } from "@/components/ui/loading";
+import { RefreshCw, Shield } from "lucide-react";
 import { useAdminDashboard } from "./useAdminDashboard";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import AdminTabsLayout from "./AdminTabsLayout";
+import { formatDate } from "@/utils/adminUtils";
+import { Loading } from "@/components/ui/loading";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-import { formatDate } from "@/utils/adminUtils"; 
+import { useNavigate } from "react-router-dom";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  const location = useLocation();
   const {
-    loading,
-    fetchError,
+    users,
+    listings,
+    reports,
     stats,
     analyticsData,
-    listings,
-    reportedItems,
+    loading,
+    fetchError,
     searchQuery,
     setSearchQuery,
     userFilter,
@@ -37,33 +33,26 @@ const AdminDashboard = () => {
     handleUnsuspendUser,
     filteredUsers,
     filteredListings,
-    users,
     promoteAdmin,
     demoteAdmin,
     toggleVerifiedStatus,
     currentUserId,
-    refetchData
+    refetchData,
+    loadingUserId,
+    isRefetching
   } = useAdminDashboard();
 
-  // Redirect to /admin if on root path
-  useEffect(() => {
-    if (location.pathname === "/") {
-      navigate("/admin", { replace: true });
-    }
-  }, [location.pathname, navigate]);
-
-  if (loading) {
+  if (loading && !isRefetching) {
     return (
       <MainLayout>
-        <div className="container py-12">
-          <Loading message="Loading administrative data..." />
+        <div className="container py-12 flex flex-col items-center justify-center min-h-[60vh]">
+          <Loading size={32} message="Loading administrative data..." />
         </div>
       </MainLayout>
     );
   }
 
   if (fetchError) {
-    console.error("Admin dashboard error:", fetchError);
     return (
       <MainLayout>
         <div className="container py-12">
@@ -71,12 +60,13 @@ const AdminDashboard = () => {
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>Error loading admin data</AlertTitle>
             <AlertDescription>
-              {typeof fetchError === 'string' ? fetchError : 'An unexpected error occurred'}. 
+              {fetchError || 'An unexpected error occurred'}. 
               Please try again or contact system support.
             </AlertDescription>
           </Alert>
           <div className="mt-4 space-x-4">
             <Button onClick={() => refetchData()}>
+              <RefreshCw className="mr-2 h-4 w-4" />
               Try Again
             </Button>
             <Button variant="outline" onClick={() => navigate('/dashboard')}>
@@ -87,21 +77,6 @@ const AdminDashboard = () => {
       </MainLayout>
     );
   }
-
-  // Provide fallback data if any of the required data is missing
-  const safeStats = stats || {
-    totalUsers: 0,
-    newUsersToday: 0,
-    activeListings: 0,
-    pendingListings: 0,
-    totalMessages: 0,
-    reportedContent: 0,
-  };
-  
-  const safeUsers = users || [];
-  const safeListings = listings || [];
-  const safeReportedItems = reportedItems || [];
-  const safeAnalyticsData = analyticsData || [];
 
   return (
     <MainLayout>
@@ -116,74 +91,54 @@ const AdminDashboard = () => {
               </p>
             </div>
           </div>
+          
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={refetchData} 
+            disabled={isRefetching}
+            className="flex items-center gap-1"
+          >
+            {isRefetching ? (
+              <>
+                <Loading size={16} message="Refreshing data..." />
+              </>
+            ) : (
+              <>
+                <RefreshCw className="h-4 w-4 mr-1" />
+                Refresh Data
+              </>
+            )}
+          </Button>
         </div>
-
-        <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="users">Users</TabsTrigger>
-            <TabsTrigger value="listings">Listings</TabsTrigger>
-            <TabsTrigger value="reports">Reports</TabsTrigger>
-            <TabsTrigger value="admins">Admin Users</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="overview">
-            <OverviewTab
-              stats={safeStats}
-              analyticsData={safeAnalyticsData}
-              listings={safeListings}
-              reportedItems={safeReportedItems}
-              formatDate={formatDate}
-              handleApproveItem={handleApproveItem}
-              handleRejectItem={handleRejectItem}
-            />
-          </TabsContent>
-          
-          <TabsContent value="users">
-            <UsersTab
-              searchQuery={searchQuery}
-              setSearchQuery={setSearchQuery}
-              userFilter={userFilter}
-              setUserFilter={setUserFilter}
-              filteredUsers={filteredUsers}
-              formatDate={formatDate}
-              handleSuspendUser={handleSuspendUser}
-              handleUnsuspendUser={handleUnsuspendUser}
-              toggleVerifiedStatus={toggleVerifiedStatus}
-            />
-          </TabsContent>
-          
-          <TabsContent value="listings">
-            <ListingsTab
-              searchQuery={searchQuery}
-              setSearchQuery={setSearchQuery}
-              listingFilter={listingFilter}
-              setListingFilter={setListingFilter}
-              filteredListings={filteredListings}
-              formatDate={formatDate}
-              handleApproveItem={handleApproveItem}
-              handleRejectItem={handleRejectItem}
-            />
-          </TabsContent>
-          
-          <TabsContent value="reports">
-            <ReportsTab
-              reportedItems={safeReportedItems}
-              formatDate={formatDate}
-              handleApproveItem={handleApproveItem}
-              handleRejectItem={handleRejectItem}
-            />
-          </TabsContent>
-          
-          <TabsContent value="admins">
-            <AdminsTab
-              users={safeUsers}
-              promoteAdmin={promoteAdmin}
-              demoteAdmin={demoteAdmin}
-              currentUserId={currentUserId}
-            />
-          </TabsContent>
-        </Tabs>
+        
+        <AdminTabsLayout
+          stats={stats}
+          analyticsData={analyticsData}
+          listings={listings}
+          reports={reports}
+          users={users}
+          formatDate={formatDate}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          userFilter={userFilter}
+          setUserFilter={setUserFilter}
+          listingFilter={listingFilter}
+          setListingFilter={setListingFilter}
+          filteredUsers={filteredUsers}
+          filteredListings={filteredListings}
+          handleApproveItem={handleApproveItem}
+          handleRejectItem={handleRejectItem}
+          handleSuspendUser={handleSuspendUser}
+          handleUnsuspendUser={handleUnsuspendUser}
+          promoteAdmin={promoteAdmin}
+          demoteAdmin={demoteAdmin}
+          toggleVerifiedStatus={toggleVerifiedStatus}
+          currentUserId={currentUserId}
+          loadingUserId={loadingUserId}
+          isRefetching={isRefetching}
+          onRefresh={refetchData}
+        />
       </div>
     </MainLayout>
   );

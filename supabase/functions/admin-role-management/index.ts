@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.192.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4"
 
@@ -8,7 +7,7 @@ const corsHeaders = {
 };
 
 // Increased propagation delay to ensure DB changes propagate fully
-const PROPAGATION_DELAY_MS = 3000;
+const PROPAGATION_DELAY_MS = 5000;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {

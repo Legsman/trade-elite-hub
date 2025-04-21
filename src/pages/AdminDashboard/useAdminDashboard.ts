@@ -1,4 +1,3 @@
-
 import { useCallback, useState, useMemo, useEffect } from "react";
 import { useUsersAdminData } from "./hooks/useUsersAdminData";
 import { useListingsAdminData } from "./hooks/useListingsAdminData";
@@ -65,17 +64,20 @@ export function useAdminDashboard() {
       setIsRefetching(true);
       setFetchError(null);
       
-      toast({
+      const toastId = toast({
         title: "Refreshing data",
-        description: "Attempting to fetch fresh admin data"
+        description: "Attempting to fetch fresh admin data..."
       });
       
       await refetchUsers();
       
-      toast({
-        title: "Data refreshed",
-        description: "Admin dashboard data has been updated"
-      });
+      setTimeout(() => {
+        toast({
+          title: "Data refreshed",
+          description: "Admin dashboard data has been updated successfully"
+        });
+      }, 500);
+      
     } catch (error) {
       console.error("Failed to refresh data:", error);
       setFetchError(error instanceof Error ? error.message : "Failed to refresh data");
@@ -88,31 +90,39 @@ export function useAdminDashboard() {
     } finally {
       setIsRefetching(false);
     }
-  }, [refetchUsers, toast]);
+  }, [refetchUsers]);
 
-  // This function handles role operations and ensures data is properly refreshed
   const handleRoleOperationWithRefresh = useCallback(async (operationFn: Function, ...args: any[]) => {
     try {
-      // Execute the operation (promote/demote/verify)
+      const operationToastId = toast({
+        title: "Processing",
+        description: "Updating user roles...",
+      });
+      
       await operationFn(...args);
       
-      // Wait a bit to ensure DB changes have propagated
       setTimeout(() => {
-        // Refetch data to ensure we have the latest state
+        toast({
+          title: "Success",
+          description: "User role updated successfully. Refreshing data...",
+        });
+        
         refetchData();
-      }, 3000);
+      }, 5500);
       
     } catch (error) {
       console.error("Error during role operation:", error);
-      toast({
-        title: "Operation error",
-        description: "An error occurred during the operation. Data may be out of sync.",
-        variant: "destructive"
-      });
+      
+      setTimeout(() => {
+        toast({
+          title: "Operation failed",
+          description: "An error occurred. Please try again.",
+          variant: "destructive"
+        });
+      }, 500);
     }
-  }, [refetchData, toast]);
+  }, [refetchData]);
 
-  // Enhanced role operation functions with automatic refresh
   const enhancedPromoteAdmin = useCallback((userId: string) => {
     return handleRoleOperationWithRefresh(promoteAdmin, userId);
   }, [handleRoleOperationWithRefresh, promoteAdmin]);
