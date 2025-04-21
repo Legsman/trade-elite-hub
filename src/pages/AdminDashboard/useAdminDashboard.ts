@@ -15,7 +15,7 @@ export const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.ey
 export function useAdminDashboard() {
   const [fetchError, setFetchError] = useState<string | null>(null);
 
-  const { users, loading: loadingUsers, setUsers, error: usersError } = useUsersAdminData();
+  const { users, loading: loadingUsers, setUsers, error: usersError, refetchUsers } = useUsersAdminData();
   const userIdToName = useMemo(
     () => Object.fromEntries(users.map(u => [u.id, u.full_name])),
     [users]
@@ -60,7 +60,7 @@ export function useAdminDashboard() {
   const refetchData = useCallback(async () => {
     try {
       setFetchError(null);
-      setUsers([...users]);
+      await refetchUsers();
       toast({
         title: "Refreshing data",
         description: "Attempting to fetch fresh admin data"
@@ -69,7 +69,7 @@ export function useAdminDashboard() {
       console.error("Failed to refresh data:", error);
       setFetchError(error instanceof Error ? error.message : "Failed to refresh data");
     }
-  }, [users, setUsers]);
+  }, [refetchUsers]);
 
   return {
     users, setUsers,

@@ -19,7 +19,11 @@ export async function assignOrRemoveAdminRole(targetUserId: string, role: string
     
     console.log(`Admin role ${action} response:`, data);
     
-    if (data && data.success) return { success: true };
+    if (data && data.success) {
+      // Force refetch by waiting for the database to update
+      await new Promise(resolve => setTimeout(resolve, 500));
+      return { success: true };
+    }
     return { success: false, error: data?.error || "Failed" };
   } catch (e) {
     console.error("Exception calling assignOrRemoveAdminRole:", e);
