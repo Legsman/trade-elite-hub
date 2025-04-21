@@ -1,3 +1,4 @@
+
 import { useCallback } from "react";
 import { assignOrRemoveAdminRole, assignOrRemoveVerifiedStatus } from "@/utils/adminUtils";
 import { toast } from "@/hooks/use-toast";
@@ -92,7 +93,7 @@ export function useAdminActions(setUsers: any, setListings: any, setReports: any
 
   const handleSuspendUser = useCallback((id: string) => {
     setUsers((prev: UserAdmin[]) =>
-      prev.map(user => user.id === id ? { ...user, status: 'suspended' } : user)
+      prev.map(user => user.id === id ? { ...user, strike_count: 3 } : user)
     );
     toast({
       title: "User suspended",
@@ -102,7 +103,7 @@ export function useAdminActions(setUsers: any, setListings: any, setReports: any
 
   const handleUnsuspendUser = useCallback((id: string) => {
     setUsers((prev: UserAdmin[]) =>
-      prev.map(user => user.id === id ? { ...user, status: 'active', strike_count: 0 } : user)
+      prev.map(user => user.id === id ? { ...user, strike_count: 0 } : user)
     );
     toast({
       title: "User unsuspended",

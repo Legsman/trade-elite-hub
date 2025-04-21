@@ -67,9 +67,6 @@ const UsersTab: React.FC<UsersTabProps> = ({
           <SelectContent>
             <SelectItem value="all">All Users</SelectItem>
             <SelectItem value="admin">Admins</SelectItem>
-            <SelectItem value="active">Active</SelectItem>
-            <SelectItem value="warning">Warning</SelectItem>
-            <SelectItem value="suspended">Suspended</SelectItem>
             <SelectItem value="verified">Verified</SelectItem>
             <SelectItem value="unverified">Unverified</SelectItem>
           </SelectContent>
@@ -83,9 +80,9 @@ const UsersTab: React.FC<UsersTabProps> = ({
               <TableHead>Name</TableHead>
               <TableHead>Email</TableHead>
               <TableHead>Role</TableHead>
-              <TableHead>Status</TableHead>
               <TableHead>Verified</TableHead>
               <TableHead>Joined</TableHead>
+              <TableHead>Last Visited</TableHead>
               <TableHead>Listings</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -110,19 +107,6 @@ const UsersTab: React.FC<UsersTabProps> = ({
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Badge
-                        variant={
-                          user.status === 'active'
-                            ? 'outline'
-                            : user.status === 'warning'
-                            ? 'secondary'
-                            : 'destructive'
-                        }
-                      >
-                        {user.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
                       {user.role === 'admin' ? (
                         <Badge variant="default">Always Verified</Badge>
                       ) : (
@@ -141,26 +125,17 @@ const UsersTab: React.FC<UsersTabProps> = ({
                       )}
                     </TableCell>
                     <TableCell>{formatDate(user.created_at)}</TableCell>
+                    <TableCell>{user.last_visited ? formatDate(user.last_visited) : "Never"}</TableCell>
                     <TableCell>{user.listings_count}</TableCell>
                     <TableCell className="text-right">
-                      {user.status === 'suspended' ? (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleUnsuspendUser(user.id)}
-                        >
-                          Unsuspend
-                        </Button>
-                      ) : (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleSuspendUser(user.id)}
-                          disabled={user.role === 'admin'}
-                        >
-                          Suspend
-                        </Button>
-                      )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => user.strike_count >= 3 ? handleUnsuspendUser(user.id) : handleSuspendUser(user.id)}
+                        disabled={user.role === 'admin'}
+                      >
+                        {user.strike_count >= 3 ? "Unsuspend" : "Suspend"}
+                      </Button>
                     </TableCell>
                   </TableRow>
                 );

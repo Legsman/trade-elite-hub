@@ -7,9 +7,8 @@ export interface UserAdmin {
   role: "user" | "admin";
   verified_status: "unverified" | "verified";
   strike_count: number;
-  status: "active" | "warning" | "suspended";
+  last_visited: string;
   listings_count: number;
-  last_login: string | null;
 }
 
 export interface ListingAdmin {
