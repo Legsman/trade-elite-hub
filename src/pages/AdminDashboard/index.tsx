@@ -13,6 +13,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { formatDate } from "@/utils/adminUtils"; // Import formatDate from utils
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
