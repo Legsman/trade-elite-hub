@@ -1,4 +1,3 @@
-
 import { useCallback, useState, useMemo, useEffect } from "react";
 import { useUsersAdminData } from "./hooks/useUsersAdminData";
 import { useListingsAdminData } from "./hooks/useListingsAdminData";
@@ -71,9 +70,7 @@ export function useAdminDashboard() {
       setIsRefetching(true);
       setFetchError(null);
       
-      const toastId = "refresh-data";
       toast.loading({
-        id: toastId,
         title: "Refreshing Data",
         description: "Fetching latest data from the server..."
       });
@@ -81,7 +78,6 @@ export function useAdminDashboard() {
       await refetchUsers();
       
       toast.success({
-        id: toastId,
         title: "Data Refreshed",
         description: "Dashboard data has been updated successfully"
       });
@@ -91,7 +87,6 @@ export function useAdminDashboard() {
       setFetchError(error instanceof Error ? error.message : "Failed to refresh data");
       
       toast.error({
-        id: "refresh-error",
         title: "Error Refreshing Data",
         description: "Please try again or contact support"
       });

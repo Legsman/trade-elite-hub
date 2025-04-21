@@ -13,11 +13,9 @@ export function useAdminRoleManagement(setUsers: React.Dispatch<React.SetStateAc
     if (loadingUserId) return { success: false, error: "Another operation is in progress" }; 
     
     setLoadingUserId(userId);
-    const toastId = `promote-${userId}`;
     
     // Show loading toast
     toast.loading({
-      id: toastId,
       title: "Processing",
       description: "Promoting user to admin..."
     });
@@ -34,7 +32,6 @@ export function useAdminRoleManagement(setUsers: React.Dispatch<React.SetStateAc
       
       if (success) {
         toast.success({
-          id: toastId,
           title: "Success", 
           description: message || "User has been made an admin."
         });
@@ -50,7 +47,6 @@ export function useAdminRoleManagement(setUsers: React.Dispatch<React.SetStateAc
         );
         
         toast.error({
-          id: toastId,
           title: "Failed to promote user", 
           description: error ? String(error) : "An unknown error occurred"
         });
@@ -66,7 +62,6 @@ export function useAdminRoleManagement(setUsers: React.Dispatch<React.SetStateAc
       );
       
       toast.error({
-        id: toastId,
         title: "Failed to promote user",
         description: error ? String(error) : "An unknown error occurred"
       });
@@ -81,11 +76,9 @@ export function useAdminRoleManagement(setUsers: React.Dispatch<React.SetStateAc
     if (loadingUserId) return { success: false, error: "Another operation is in progress" };
     
     setLoadingUserId(userId);
-    const toastId = `demote-${userId}`;
     
     // Show loading toast
     toast.loading({
-      id: toastId,
       title: "Processing",
       description: "Removing admin privileges..."
     });
@@ -102,7 +95,6 @@ export function useAdminRoleManagement(setUsers: React.Dispatch<React.SetStateAc
       
       if (success) {
         toast.success({
-          id: toastId,
           title: "Success", 
           description: message || "User has been demoted from admin."
         });
@@ -118,7 +110,6 @@ export function useAdminRoleManagement(setUsers: React.Dispatch<React.SetStateAc
         );
         
         toast.error({
-          id: toastId,
           title: "Failed to demote user", 
           description: error ? String(error) : "An unknown error occurred"
         });
@@ -134,7 +125,6 @@ export function useAdminRoleManagement(setUsers: React.Dispatch<React.SetStateAc
       );
       
       toast.error({
-        id: toastId,
         title: "Failed to demote user",
         description: error ? String(error) : "An unknown error occurred"
       });

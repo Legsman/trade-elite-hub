@@ -12,36 +12,32 @@ export function useAdminToastManager() {
   const { toast: baseToast } = useToast();
 
   const toast = {
-    loading: ({ id, title, description }: ToastOptions) => {
+    loading: ({ title, description }: ToastOptions) => {
       return baseToast({
-        id,
         title,
         description,
         variant: "default"
       });
     },
     
-    success: ({ id, title, description }: ToastOptions) => {
+    success: ({ title, description }: ToastOptions) => {
       return baseToast({
-        id,
         title,
         description,
         variant: "default"
       });
     },
     
-    error: ({ id, title, description }: ToastOptions) => {
+    error: ({ title, description }: ToastOptions) => {
       return baseToast({
-        id,
         title,
         description,
         variant: "destructive"
       });
     },
     
-    info: ({ id, title, description }: ToastOptions) => {
+    info: ({ title, description }: ToastOptions) => {
       return baseToast({
-        id,
         title,
         description,
         variant: "default"

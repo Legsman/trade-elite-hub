@@ -20,12 +20,8 @@ export function useVerificationManagement(setUsers: React.Dispatch<React.SetStat
     // Set pending operation to prevent multiple actions on the same user
     setPendingOperation(userId);
     
-    // Create a unique toast ID for this operation
-    const toastId = `verify-${userId}`;
-    
     // Show initial loading toast
     toast.loading({
-      id: toastId,
       title: "Processing",
       description: `${action === "add" ? "Verifying" : "Unverifying"} user...`
     });
@@ -42,7 +38,6 @@ export function useVerificationManagement(setUsers: React.Dispatch<React.SetStat
       
       if (success) {
         toast.success({
-          id: toastId,
           title: "Success", 
           description: message || `User has been ${action === "add" ? "verified" : "unverified"}`
         });
@@ -58,7 +53,6 @@ export function useVerificationManagement(setUsers: React.Dispatch<React.SetStat
         );
         
         toast.error({
-          id: toastId,
           title: `Failed to ${action === "add" ? "verify" : "unverify"} user`, 
           description: error ? String(error) : "An unknown error occurred"
         });
@@ -75,7 +69,6 @@ export function useVerificationManagement(setUsers: React.Dispatch<React.SetStat
       );
       
       toast.error({
-        id: toastId,
         title: `Failed to ${action === "add" ? "verify" : "unverify"} user`,
         description: error ? String(error) : "An unknown error occurred"
       });
