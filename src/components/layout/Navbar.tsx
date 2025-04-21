@@ -28,6 +28,11 @@ const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const navigate = useNavigate();
 
+  // Debug log for admin status
+  useEffect(() => {
+    console.log("Navbar - Is Admin:", isAdmin, "User:", !!user);
+  }, [isAdmin, user]);
+
   const handleLogout = async () => {
     try {
       await logout();
@@ -88,7 +93,7 @@ const Navbar = () => {
                       My Profile
                     </Link>
                     {isAdmin && (
-                      <Link to="/admin" className="text-lg font-semibold hover:text-purple transition-colors">
+                      <Link to="/admin" className="text-lg font-semibold text-green-600 hover:text-green-800 transition-colors">
                         Admin Panel
                       </Link>
                     )}
@@ -124,7 +129,7 @@ const Navbar = () => {
             Contact
           </Link>
           {isAdmin && isAuthenticated && (
-            <Link to="/admin" className="text-sm font-medium transition-colors hover:text-purple">
+            <Link to="/admin" className="text-sm font-medium text-green-600 transition-colors hover:text-green-800">
               Admin
             </Link>
           )}
@@ -184,6 +189,20 @@ const Navbar = () => {
                           <span>Settings</span>
                         </div>
                       </Link>
+                      {isAdmin && (
+                        <Link
+                          to="/admin"
+                          className="block px-4 py-2 text-sm text-green-600 hover:bg-gray-100"
+                        >
+                          <div className="flex items-center gap-2">
+                            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}
+                              strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M12 2l2 7h7l-5.5 4.3L19 21l-7-4.7L5 21l2.5-7.7L2 9h7z" />
+                            </svg>
+                            <span>Admin Panel</span>
+                          </div>
+                        </Link>
+                      )}
                       <button
                         className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                         onClick={handleLogout}

@@ -127,6 +127,10 @@ const Dashboard = () => {
   const [profile, setProfile] = useState<Profile | null>(null);
 
   useEffect(() => {
+    console.log("Dashboard - Is Admin:", isAdmin, "Checking Admin:", checkingAdmin, "User ID:", user?.id);
+  }, [isAdmin, checkingAdmin, user]);
+
+  useEffect(() => {
     if (!user) return;
 
     const fetchDashboardData = async () => {
@@ -285,6 +289,7 @@ const Dashboard = () => {
                 variant="secondary"
                 onClick={() => navigate("/admin")}
                 title="Go to Admin Panel"
+                className="bg-green-100 hover:bg-green-200 text-green-700"
               >
                 <span className="mr-2">Admin Panel</span>
                 <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}

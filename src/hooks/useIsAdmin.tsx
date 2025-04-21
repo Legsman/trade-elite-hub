@@ -20,6 +20,9 @@ export function useIsAdmin() {
     const check = async () => {
       setChecking(true);
       try {
+        // Explicitly log the user ID we're checking
+        console.log("Checking admin status for user ID:", user.id);
+        
         const { data, error } = await supabase
           .from("user_roles")
           .select("role")
@@ -30,7 +33,14 @@ export function useIsAdmin() {
         if (cancelled) return;
         
         console.log("Admin check result:", data, error); // Debug log
-        setIsAdmin(!!data);
+        
+        if (error) {
+          console.error("Error fetching admin role:", error);
+          setIsAdmin(false);
+        } else {
+          setIsAdmin(!!data);
+          console.log("Is admin set to:", !!data);
+        }
       } catch (e) {
         console.error("Error checking admin status:", e);
         setIsAdmin(false);

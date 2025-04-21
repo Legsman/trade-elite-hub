@@ -14,6 +14,8 @@ export const AdminRoute = ({ children }: AdminRouteProps) => {
   const { isAdmin, checking: checkingAdmin } = useIsAdmin();
   const location = useLocation();
 
+  console.log("AdminRoute - User:", !!user, "Loading:", loading, "Is Admin:", isAdmin, "Checking Admin:", checkingAdmin);
+
   if (loading || checkingAdmin) {
     return <Loading fullScreen message="Authenticating..." />;
   }
