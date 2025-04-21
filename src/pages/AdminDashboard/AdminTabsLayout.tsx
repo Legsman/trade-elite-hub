@@ -1,3 +1,4 @@
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import OverviewTab from "./OverviewTab";
 import UsersTab from "./UsersTab";
@@ -30,6 +31,8 @@ type AdminTabsLayoutProps = {
   toggleVerifiedStatus: (userId: string, currentStatus: "verified" | "unverified") => void;
   currentUserId: string;
   loadingUserId?: string | null;
+  isRefetching?: boolean;
+  onRefresh?: () => Promise<void>;
 };
 
 export function AdminTabsLayout({
@@ -56,6 +59,8 @@ export function AdminTabsLayout({
   toggleVerifiedStatus,
   currentUserId,
   loadingUserId,
+  isRefetching,
+  onRefresh,
 }: AdminTabsLayoutProps) {
   return (
     <Tabs defaultValue="overview" className="space-y-6">
@@ -89,6 +94,8 @@ export function AdminTabsLayout({
           handleUnsuspendUser={handleUnsuspendUser}
           toggleVerifiedStatus={toggleVerifiedStatus}
           loadingUserId={loadingUserId}
+          isRefetching={isRefetching}
+          onRefresh={onRefresh}
         />
       </TabsContent>
       <TabsContent value="listings">
@@ -118,6 +125,7 @@ export function AdminTabsLayout({
           demoteAdmin={demoteAdmin}
           currentUserId={currentUserId}
           loadingUserId={loadingUserId}
+          isRefetching={isRefetching}
         />
       </TabsContent>
     </Tabs>
