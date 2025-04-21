@@ -26,49 +26,29 @@ export function useUsersAdminData() {
           return;
         }
         
-        // Fetch user roles directly using the RPC function
-        // This avoids recursion by using a security definer function
-        const { data: rolesData, error: rolesError } = await supabase
-          .rpc('rpc_is_admin');
-          
-        if (rolesError) {
-          console.error("Error checking admin status:", rolesError);
-          // Continue with available data
-        }
-        
-        // Determine if current user is admin (for debugging)
-        const isCurrentUserAdmin = rolesData && rolesData.length > 0 && rolesData[0].is_admin;
-        console.log("Current user admin status:", isCurrentUserAdmin);
-        
-        // Fetch all user roles from user_roles table
+        // Fetch all admin roles directly from user_roles table
         // This approach is secured by the admin check in AdminRoute.tsx
-        const { data: userRoles, error: userRolesError } = await supabase
+        const { data: adminRoles, error: adminRolesError } = await supabase
           .from('user_roles')
-          .select('user_id, role');
+          .select('user_id')
+          .eq('role', 'admin');
           
-        if (userRolesError) {
-          console.error("Error fetching user roles:", userRolesError);
+        if (adminRolesError) {
+          console.error("Error fetching admin roles:", adminRolesError);
           // Continue with available data
         }
 
-        // Create a map of user IDs to their roles
-        const userRolesMap = new Map();
-        if (userRoles && userRoles.length > 0) {
-          userRoles.forEach((item: any) => {
-            if (item.user_id && item.role) {
-              // If user has admin role, set it (prioritize admin role)
-              if (item.role === 'admin') {
-                userRolesMap.set(item.user_id, 'admin');
-              } 
-              // Only set non-admin role if user doesn't already have admin role
-              else if (!userRolesMap.has(item.user_id)) {
-                userRolesMap.set(item.user_id, item.role);
-              }
+        // Create a set of admin user IDs for efficient lookups
+        const adminUserIds = new Set();
+        if (adminRoles && adminRoles.length > 0) {
+          adminRoles.forEach(item => {
+            if (item.user_id) {
+              adminUserIds.add(item.user_id);
             }
           });
         }
         
-        console.log("User roles map:", Object.fromEntries(userRolesMap));
+        console.log("Admin users:", Array.from(adminUserIds));
 
         setUsers(
           (usersRaw || []).map(profile => ({
@@ -76,7 +56,7 @@ export function useUsersAdminData() {
             email: profile.email,
             full_name: profile.full_name,
             created_at: profile.created_at,
-            role: userRolesMap.get(profile.id) || "user",
+            role: adminUserIds.has(profile.id) ? "admin" : "user",
             strike_count: profile.strike_count || 0,
             status: profile.strike_count >= 3
               ? "suspended"

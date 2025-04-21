@@ -25,16 +25,21 @@ export async function assignOrRemoveAdminRole(targetUserId: string, role: string
 
 export async function checkUserRoles(userId: string) {
   try {
-    // This bypasses RLS by using a direct RPC call to our security definer function
+    // Direct query to user_roles table to check for admin role
+    // This is secure because it's only called from the admin panel
+    // which already verifies the user is an admin via AdminRoute.tsx
     const { data, error } = await supabase
-      .rpc('rpc_is_admin');
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId)
+      .eq('role', 'admin');
       
     if (error) {
       console.error("Error checking user roles:", error);
       return { success: false, error, roles: [] };
     }
     
-    const isAdmin = data && data.length > 0 && data[0].is_admin;
+    const isAdmin = data && data.length > 0;
     return { success: true, roles: isAdmin ? ['admin'] : [] };
   } catch (e) {
     console.error("Exception checking user roles:", e);
