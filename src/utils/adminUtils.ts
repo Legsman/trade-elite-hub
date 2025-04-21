@@ -19,11 +19,13 @@ export async function assignOrRemoveAdminRole(targetUserId: string, role: string
     
     console.log(`Admin role ${action} response:`, data);
     
+    // Handle both success cases - where it was already done or newly done
     if (data && data.success) {
       // Force refetch by waiting for the database to update
       await new Promise(resolve => setTimeout(resolve, 500));
       return { success: true, message: data.message || `Role ${action === 'add' ? 'added' : 'removed'} successfully` };
     }
+    
     return { success: false, error: data?.error || "Failed to update role" };
   } catch (e) {
     console.error("Exception calling assignOrRemoveAdminRole:", e);
@@ -47,11 +49,13 @@ export async function assignOrRemoveVerifiedStatus(targetUserId: string, action:
     
     console.log(`Verified status ${action} response:`, data);
     
+    // Handle both success cases - where it was already done or newly done
     if (data && data.success) {
       // Force refetch by waiting for the database to update
       await new Promise(resolve => setTimeout(resolve, 500));
       return { success: true, message: data.message || `Verification ${action === 'add' ? 'added' : 'removed'} successfully` };
     }
+    
     return { success: false, error: data?.error || "Failed to update verification status" };
   } catch (e) {
     console.error("Exception calling assignOrRemoveVerifiedStatus:", e);

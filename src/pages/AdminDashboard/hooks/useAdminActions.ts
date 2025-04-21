@@ -24,17 +24,20 @@ export function useAdminActions(setUsers: any, setListings: any, setReports: any
       });
     } else {
       console.error("Failed to promote admin:", error);
-      // Revert the optimistic update if operation failed
-      setUsers((prev: UserAdmin[]) =>
-        prev.map(u =>
-          u.id === userId ? { ...u, role: "user" } : u
-        )
-      );
-      toast({ 
-        title: "Failed to promote", 
-        description: error?.message || String(error) || "Failed", 
-        variant: "destructive" 
-      });
+      // Only revert if it truly failed, not just a UI sync issue
+      if (error && typeof error === 'object' && 'code' in error && error.code !== 'PGRST116') {
+        // Revert the optimistic update if operation failed
+        setUsers((prev: UserAdmin[]) =>
+          prev.map(u =>
+            u.id === userId ? { ...u, role: "user" } : u
+          )
+        );
+        toast({ 
+          title: "Failed to promote", 
+          description: error?.message || String(error) || "Failed", 
+          variant: "destructive" 
+        });
+      }
     }
   }, [setUsers]);
 
@@ -58,17 +61,20 @@ export function useAdminActions(setUsers: any, setListings: any, setReports: any
       });
     } else {
       console.error("Failed to demote admin:", error);
-      // Revert the optimistic update if operation failed
-      setUsers((prev: UserAdmin[]) =>
-        prev.map(u =>
-          u.id === userId ? { ...u, role: "admin" } : u
-        )
-      );
-      toast({ 
-        title: "Failed to demote", 
-        description: error?.message || String(error) || "Failed", 
-        variant: "destructive" 
-      });
+      // Only revert if it truly failed, not just a UI sync issue
+      if (error && typeof error === 'object' && 'code' in error && error.code !== 'PGRST116') {
+        // Revert the optimistic update if operation failed
+        setUsers((prev: UserAdmin[]) =>
+          prev.map(u =>
+            u.id === userId ? { ...u, role: "admin" } : u
+          )
+        );
+        toast({ 
+          title: "Failed to demote", 
+          description: error?.message || String(error) || "Failed", 
+          variant: "destructive" 
+        });
+      }
     }
   }, [setUsers]);
 
@@ -93,17 +99,20 @@ export function useAdminActions(setUsers: any, setListings: any, setReports: any
       });
     } else {
       console.error("Failed to update verification status:", error);
-      // Revert the optimistic update if operation failed
-      setUsers((prev: UserAdmin[]) =>
-        prev.map(u =>
-          u.id === userId ? { ...u, verified_status: currentStatus } : u
-        )
-      );
-      toast({ 
-        title: "Failed to update verification status", 
-        description: error?.message || String(error) || "Failed", 
-        variant: "destructive" 
-      });
+      // Only revert if it truly failed, not just a UI sync issue
+      if (error && typeof error === 'object' && 'code' in error && error.code !== 'PGRST116') {
+        // Revert the optimistic update if operation failed
+        setUsers((prev: UserAdmin[]) =>
+          prev.map(u =>
+            u.id === userId ? { ...u, verified_status: currentStatus } : u
+          )
+        );
+        toast({ 
+          title: "Failed to update verification status", 
+          description: error?.message || String(error) || "Failed", 
+          variant: "destructive" 
+        });
+      }
     }
   }, [setUsers]);
 

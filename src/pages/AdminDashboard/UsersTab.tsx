@@ -19,6 +19,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Search } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 interface UsersTabProps {
   searchQuery: string;
@@ -110,13 +112,16 @@ const UsersTab: React.FC<UsersTabProps> = ({
                       {user.role === 'admin' ? (
                         <Badge variant="default">Always Verified</Badge>
                       ) : (
-                        <Badge 
-                          variant={user.verified_status === "verified" ? "default" : "outline"}
-                          className="cursor-pointer hover:bg-secondary"
-                          onClick={() => toggleVerifiedStatus(user.id, user.verified_status)}
-                        >
-                          {user.verified_status === "verified" ? "Verified" : "Unverified"}
-                        </Badge>
+                        <div className="flex items-center space-x-2">
+                          <Switch
+                            id={`verify-${user.id}`}
+                            checked={user.verified_status === "verified"}
+                            onCheckedChange={() => toggleVerifiedStatus(user.id, user.verified_status)}
+                          />
+                          <Label htmlFor={`verify-${user.id}`}>
+                            {user.verified_status === "verified" ? "Verified" : "Unverified"}
+                          </Label>
+                        </div>
                       )}
                     </TableCell>
                     <TableCell>{formatDate(user.created_at)}</TableCell>

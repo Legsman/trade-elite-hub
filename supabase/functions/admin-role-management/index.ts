@@ -116,6 +116,31 @@ serve(async (req) => {
     } else if (action === "remove") {
       console.log(`Removing ${role} role for user ${targetUserId}`);
       
+      // First check if the role exists
+      const { data: existingRole, error: checkError } = await supabaseAdmin
+        .from("user_roles")
+        .select("*")
+        .eq("user_id", targetUserId)
+        .eq("role", role)
+        .single();
+      
+      if (checkError && checkError.code !== 'PGRST116') {
+        // Real error occurred (not just "no rows returned")
+        console.error(`Error checking for existing role: ${checkError.message}`);
+        return new Response(JSON.stringify({ 
+          success: false, 
+          error: checkError.message 
+        }), { headers: corsHeaders, status: 400 });
+      }
+      
+      if (!existingRole) {
+        console.log(`User ${targetUserId} doesn't have role ${role}`);
+        return new Response(JSON.stringify({ 
+          success: true, 
+          message: "Role not found to remove" 
+        }), { headers: corsHeaders });
+      }
+      
       // Remove the role
       resp = await supabaseAdmin
         .from("user_roles")
