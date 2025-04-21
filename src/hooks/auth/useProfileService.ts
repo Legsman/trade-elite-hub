@@ -78,7 +78,22 @@ export const useProfileService = (setUser: (user: User | null) => void) => {
             ? new Date(data.annual_2fa_payment_date)
             : undefined,
           referredBy: data.referred_by,
+          // Also fetch any Supabase auth data for this user (for email verification status and last sign in)
+          emailConfirmedAt: undefined, // We'll need to set this from auth data
+          lastSignInAt: undefined,      // We'll need to set this from auth data
         };
+        
+        // Now fetch the auth.users data to get email_confirmed_at and last_sign_in_at
+        const { data: authData, error: authError } = await supabase.auth.admin.getUserById(id);
+        
+        if (!authError && authData?.user) {
+          profileUser.emailConfirmedAt = authData.user.email_confirmed_at 
+            ? new Date(authData.user.email_confirmed_at) 
+            : undefined;
+          profileUser.lastSignInAt = authData.user.last_sign_in_at
+            ? new Date(authData.user.last_sign_in_at)
+            : undefined;
+        }
         
         setUser(profileUser);
       } else {

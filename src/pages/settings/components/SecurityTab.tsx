@@ -38,7 +38,7 @@ const SecurityTab = ({ user, profile, handleSignOut }: SecurityTabProps) => {
   const navigate = useNavigate();
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [is2FAEnabled, setIs2FAEnabled] = useState(
-    profile?.is_two_factor_enabled || false
+    profile?.isTwoFactorEnabled || false
   );
 
   const handleToggle2FA = async () => {
@@ -93,19 +93,19 @@ const SecurityTab = ({ user, profile, handleSignOut }: SecurityTabProps) => {
               <h3 className="font-medium mb-2">Account Status</h3>
               <div className="flex items-center space-x-2">
                 <Badge variant="outline">
-                  {user?.email_confirmed_at
+                  {user?.emailConfirmedAt
                     ? "Email Verified"
                     : "Email Not Verified"}
                 </Badge>
                 <Badge
                   variant={
-                    profile?.strike_count && profile.strike_count > 0
+                    profile?.strikeCount && profile.strikeCount > 0
                       ? "destructive"
                       : "outline"
                   }
                 >
-                  {profile?.strike_count
-                    ? `Strikes: ${profile.strike_count}`
+                  {profile?.strikeCount
+                    ? `Strikes: ${profile.strikeCount}`
                     : "No Strikes"}
                 </Badge>
               </div>
@@ -121,8 +121,8 @@ const SecurityTab = ({ user, profile, handleSignOut }: SecurityTabProps) => {
               </p>
               <p className="text-sm">
                 <span className="font-medium">Last Sign In: </span>
-                {user?.last_sign_in_at
-                  ? new Date(user.last_sign_in_at).toLocaleString()
+                {user?.lastSignInAt
+                  ? new Date(user.lastSignInAt).toLocaleString()
                   : "N/A"}
               </p>
             </div>

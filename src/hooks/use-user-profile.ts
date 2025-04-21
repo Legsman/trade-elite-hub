@@ -51,6 +51,8 @@ export const useUserProfile = (userId?: string) => {
         subscriptionTier: data.subscription_tier,
         subscriptionEndDate: data.subscription_end_date ? new Date(data.subscription_end_date) : undefined,
         paymentMethods: data.payment_methods,
+        isTwoFactorEnabled: data.is_two_factor_enabled,
+        strikeCount: data.strike_count
       });
     } catch (err) {
       console.error("Error fetching profile:", err);

@@ -36,6 +36,8 @@ export interface User {
   isTwoFactorEnabled?: boolean;
   annual2FAPaymentDate?: Date;
   referredBy?: string;
+  emailConfirmedAt?: Date; // Added this property
+  lastSignInAt?: Date; // Added this property
 }
 
 export interface UserProfile {
@@ -57,4 +59,6 @@ export interface UserProfile {
   subscriptionTier?: string;
   subscriptionEndDate?: Date;
   paymentMethods?: any;
+  isTwoFactorEnabled?: boolean; // Added this property
+  strikeCount?: number; // Added this property
 }
