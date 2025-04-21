@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
@@ -22,6 +23,7 @@ export function useAdminDashboard() {
   const [userFilter, setUserFilter] = useState("all");
   const [listingFilter, setListingFilter] = useState("all");
   const [analyticsData, setAnalyticsData] = useState<any[]>([]);
+  const [currentUserId, setCurrentUserId] = useState<string>("");
 
   const fetchAdminData = useCallback(async () => {
     setLoading(true);
@@ -33,6 +35,7 @@ export function useAdminDashboard() {
       }
       
       console.log("Fetching data for user:", user.id);
+      setCurrentUserId(user.id);
       
       const { data: isAdmin, error: roleError } = await supabase
         .rpc('has_role', { 
