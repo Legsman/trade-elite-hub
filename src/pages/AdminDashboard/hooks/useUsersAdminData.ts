@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { UserAdmin } from "../types";
+import { toast } from "@/hooks/use-toast";
 
 export function useUsersAdminData() {
   const [users, setUsers] = useState<UserAdmin[]>([]);
@@ -45,13 +46,14 @@ export function useUsersAdminData() {
       // Get all user IDs
       const userIds = profilesData.map(profile => profile.id);
       
-      // Use the new batch function to get roles efficiently
+      // Use the batch function to get roles efficiently
       const { data: rolesData, error: rolesError } = await supabase
         .rpc('get_user_roles_batch', { user_ids: userIds });
         
       if (rolesError) {
         console.error("Error fetching user roles:", rolesError);
         setError(rolesError.message);
+        setUsers([]);
         return;
       }
 
@@ -78,6 +80,9 @@ export function useUsersAdminData() {
       });
       
       console.log("Final mapped users with roles:", usersWithRoles.length);
+      console.log("Admin users:", usersWithRoles.filter(u => u.role === "admin").map(u => u.full_name));
+      console.log("Verified users:", usersWithRoles.filter(u => u.verified_status === "verified").map(u => u.full_name));
+      
       setUsers(usersWithRoles);
     } catch (err) {
       console.error("Unexpected error fetching users:", err);
@@ -94,9 +99,31 @@ export function useUsersAdminData() {
 
   const refetchUsers = useCallback(async () => {
     console.log("Manually refetching users data...");
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    await fetchUsers();
-  }, [fetchUsers]);
+    setLoading(true);
+    
+    // Show a toast to indicate refetching is happening
+    toast({
+      title: "Refreshing data",
+      description: "Fetching fresh user data..."
+    });
+    
+    try {
+      await fetchUsers();
+      toast({
+        title: "Data refreshed",
+        description: "User data has been successfully updated"
+      });
+    } catch (err) {
+      console.error("Error refetching users:", err);
+      toast({
+        title: "Refresh failed",
+        description: "Failed to get updated user data. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [fetchUsers, toast]);
 
   return { users, loading, setUsers, error, refetchUsers };
 }

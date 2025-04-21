@@ -1,6 +1,7 @@
 
+import { ReactNode } from "react";
 import MainLayout from "@/components/layout/MainLayout";
-import { Shield } from "lucide-react";
+import { RefreshCw, Shield } from "lucide-react";
 import { useAdminDashboard } from "./AdminDashboard/useAdminDashboard";
 import AdminTabsLayout from "./AdminDashboard/AdminTabsLayout";
 import { formatDate } from "@/utils/adminUtils";
@@ -36,10 +37,12 @@ const AdminDashboard = () => {
     demoteAdmin,
     toggleVerifiedStatus,
     currentUserId,
-    refetchData
+    refetchData,
+    loadingUserId,
+    isRefetching
   } = useAdminDashboard();
 
-  if (loading) {
+  if (loading && !isRefetching) {
     return (
       <MainLayout>
         <div className="container py-12 flex flex-col items-center justify-center min-h-[60vh]">
@@ -63,6 +66,7 @@ const AdminDashboard = () => {
           </Alert>
           <div className="mt-4 space-x-4">
             <Button onClick={() => refetchData()}>
+              <RefreshCw className="mr-2 h-4 w-4" />
               Try Again
             </Button>
             <Button variant="outline" onClick={() => navigate('/dashboard')}>
@@ -87,7 +91,27 @@ const AdminDashboard = () => {
               </p>
             </div>
           </div>
+          
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={refetchData} 
+            disabled={isRefetching}
+            className="flex items-center gap-1"
+          >
+            {isRefetching ? (
+              <>
+                <Loading size={16} message="Refreshing data..." />
+              </>
+            ) : (
+              <>
+                <RefreshCw className="h-4 w-4 mr-1" />
+                Refresh Data
+              </>
+            )}
+          </Button>
         </div>
+        
         <AdminTabsLayout
           stats={stats}
           analyticsData={analyticsData}
@@ -111,6 +135,9 @@ const AdminDashboard = () => {
           demoteAdmin={demoteAdmin}
           toggleVerifiedStatus={toggleVerifiedStatus}
           currentUserId={currentUserId}
+          loadingUserId={loadingUserId}
+          isRefetching={isRefetching}
+          onRefresh={refetchData}
         />
       </div>
     </MainLayout>

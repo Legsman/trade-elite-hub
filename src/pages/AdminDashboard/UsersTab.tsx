@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, Loader2 } from "lucide-react";
+import { Search, Loader2, RefreshCw } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 
@@ -33,6 +33,8 @@ interface UsersTabProps {
   handleUnsuspendUser: (id: string) => void;
   toggleVerifiedStatus: (userId: string, currentStatus: "verified" | "unverified") => void;
   loadingUserId?: string | null;
+  isRefetching?: boolean;
+  onRefresh?: () => void;
 }
 
 const UsersTab: React.FC<UsersTabProps> = ({
@@ -45,7 +47,9 @@ const UsersTab: React.FC<UsersTabProps> = ({
   handleSuspendUser,
   handleUnsuspendUser,
   toggleVerifiedStatus,
-  loadingUserId
+  loadingUserId,
+  isRefetching,
+  onRefresh
 }) => {
   useEffect(() => {
     console.log("UsersTab - filteredUsers:", filteredUsers);
@@ -54,7 +58,7 @@ const UsersTab: React.FC<UsersTabProps> = ({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row gap-4 mb-6">
+      <div className="flex flex-col md:flex-row gap-4 mb-6 items-end">
         <div className="relative flex-grow">
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
@@ -75,6 +79,28 @@ const UsersTab: React.FC<UsersTabProps> = ({
             <SelectItem value="unverified">Unverified</SelectItem>
           </SelectContent>
         </Select>
+        
+        {onRefresh && (
+          <Button 
+            size="sm" 
+            variant="outline" 
+            onClick={onRefresh} 
+            disabled={isRefetching}
+            className="flex items-center gap-2"
+          >
+            {isRefetching ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Refreshing...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="h-4 w-4" />
+                Refresh
+              </>
+            )}
+          </Button>
+        )}
       </div>
 
       <div className="rounded-md border">
@@ -120,7 +146,7 @@ const UsersTab: React.FC<UsersTabProps> = ({
                             id={`verify-${user.id}`}
                             checked={user.verified_status === "verified"}
                             onCheckedChange={() => toggleVerifiedStatus(user.id, user.verified_status)}
-                            disabled={isLoading}
+                            disabled={isLoading || isRefetching}
                           />
                           <Label htmlFor={`verify-${user.id}`}>
                             {isLoading ? (
@@ -143,7 +169,7 @@ const UsersTab: React.FC<UsersTabProps> = ({
                         variant="outline"
                         size="sm"
                         onClick={() => user.strike_count >= 3 ? handleUnsuspendUser(user.id) : handleSuspendUser(user.id)}
-                        disabled={user.role === 'admin'}
+                        disabled={user.role === 'admin' || isRefetching}
                       >
                         {user.strike_count >= 3 ? "Unsuspend" : "Suspend"}
                       </Button>

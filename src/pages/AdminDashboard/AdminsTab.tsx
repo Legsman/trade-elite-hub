@@ -12,6 +12,7 @@ interface AdminsTabProps {
   demoteAdmin: (userId: string) => void;
   currentUserId: string;
   loadingUserId?: string | null;
+  isRefetching?: boolean;
 }
 
 const AdminsTab: React.FC<AdminsTabProps> = ({ 
@@ -19,7 +20,8 @@ const AdminsTab: React.FC<AdminsTabProps> = ({
   promoteAdmin, 
   demoteAdmin, 
   currentUserId,
-  loadingUserId 
+  loadingUserId,
+  isRefetching
 }) => {
   useEffect(() => {
     console.log("AdminsTab mounted with users:", users);
@@ -29,7 +31,16 @@ const AdminsTab: React.FC<AdminsTabProps> = ({
   
   return (
     <div className="space-y-4">
-      <h2 className="text-2xl font-semibold">Admin User Management</h2>
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-semibold">Admin User Management</h2>
+        {isRefetching && (
+          <div className="flex items-center text-sm text-muted-foreground">
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Refreshing data...
+          </div>
+        )}
+      </div>
+      
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -70,7 +81,7 @@ const AdminsTab: React.FC<AdminsTabProps> = ({
                       <Button 
                         size="sm" 
                         onClick={() => promoteAdmin(user.id)}
-                        disabled={isLoading}
+                        disabled={isLoading || isRefetching}
                       >
                         {isLoading ? (
                           <>
@@ -86,7 +97,7 @@ const AdminsTab: React.FC<AdminsTabProps> = ({
                         size="sm" 
                         variant="outline" 
                         onClick={() => demoteAdmin(user.id)} 
-                        disabled={user.id === currentUserId || isLoading}
+                        disabled={user.id === currentUserId || isLoading || isRefetching}
                       >
                         {isLoading ? (
                           <>

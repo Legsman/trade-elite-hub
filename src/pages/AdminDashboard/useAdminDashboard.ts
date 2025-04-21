@@ -14,6 +14,7 @@ export const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.ey
 
 export function useAdminDashboard() {
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [isRefetching, setIsRefetching] = useState<boolean>(false);
 
   const { users, loading: loadingUsers, setUsers, error: usersError, refetchUsers } = useUsersAdminData();
   const userIdToName = useMemo(
@@ -46,6 +47,7 @@ export function useAdminDashboard() {
     handleRejectItem,
     handleSuspendUser,
     handleUnsuspendUser,
+    loadingUserId
   } = useAdminActions(setUsers, setListings, setReports);
 
   useEffect(() => {
@@ -60,17 +62,68 @@ export function useAdminDashboard() {
 
   const refetchData = useCallback(async () => {
     try {
+      setIsRefetching(true);
       setFetchError(null);
-      await refetchUsers();
+      
       toast({
         title: "Refreshing data",
         description: "Attempting to fetch fresh admin data"
       });
+      
+      await refetchUsers();
+      
+      toast({
+        title: "Data refreshed",
+        description: "Admin dashboard data has been updated"
+      });
     } catch (error) {
       console.error("Failed to refresh data:", error);
       setFetchError(error instanceof Error ? error.message : "Failed to refresh data");
+      
+      toast({
+        title: "Error refreshing data",
+        description: "Please try again or contact support",
+        variant: "destructive"
+      });
+    } finally {
+      setIsRefetching(false);
     }
-  }, [refetchUsers]);
+  }, [refetchUsers, toast]);
+
+  // This function handles role operations and ensures data is properly refreshed
+  const handleRoleOperationWithRefresh = useCallback(async (operationFn: Function, ...args: any[]) => {
+    try {
+      // Execute the operation (promote/demote/verify)
+      await operationFn(...args);
+      
+      // Wait a bit to ensure DB changes have propagated
+      setTimeout(() => {
+        // Refetch data to ensure we have the latest state
+        refetchData();
+      }, 3000);
+      
+    } catch (error) {
+      console.error("Error during role operation:", error);
+      toast({
+        title: "Operation error",
+        description: "An error occurred during the operation. Data may be out of sync.",
+        variant: "destructive"
+      });
+    }
+  }, [refetchData, toast]);
+
+  // Enhanced role operation functions with automatic refresh
+  const enhancedPromoteAdmin = useCallback((userId: string) => {
+    return handleRoleOperationWithRefresh(promoteAdmin, userId);
+  }, [handleRoleOperationWithRefresh, promoteAdmin]);
+  
+  const enhancedDemoteAdmin = useCallback((userId: string) => {
+    return handleRoleOperationWithRefresh(demoteAdmin, userId);
+  }, [handleRoleOperationWithRefresh, demoteAdmin]);
+  
+  const enhancedToggleVerifiedStatus = useCallback((userId: string, currentStatus: "verified" | "unverified") => {
+    return handleRoleOperationWithRefresh(toggleVerifiedStatus, userId, currentStatus);
+  }, [handleRoleOperationWithRefresh, toggleVerifiedStatus]);
 
   return {
     users, setUsers,
@@ -78,7 +131,7 @@ export function useAdminDashboard() {
     reports, setReports,
     reportedItems: reports,
     stats, analyticsData, setStats,
-    loading: loadingUsers || loadingListings || loadingReports,
+    loading: loadingUsers || loadingListings || loadingReports || isRefetching,
     searchQuery,
     setSearchQuery,
     userFilter,
@@ -91,11 +144,13 @@ export function useAdminDashboard() {
     handleUnsuspendUser,
     filteredUsers,
     filteredListings,
-    promoteAdmin,
-    demoteAdmin,
-    toggleVerifiedStatus,
+    promoteAdmin: enhancedPromoteAdmin,
+    demoteAdmin: enhancedDemoteAdmin,
+    toggleVerifiedStatus: enhancedToggleVerifiedStatus,
     currentUserId,
     fetchError,
-    refetchData
+    refetchData,
+    loadingUserId,
+    isRefetching
   };
 }

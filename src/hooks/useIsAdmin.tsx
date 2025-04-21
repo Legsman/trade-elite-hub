@@ -30,10 +30,8 @@ export function useIsAdmin() {
           console.error("Error checking admin role:", error);
           setIsAdmin(false);
         } else {
-          // The function returns an array of records with is_admin property
-          const isUserAdmin = data && data.length > 0 && data[0].is_admin;
-          console.log("Admin status check result:", isUserAdmin, data);
-          setIsAdmin(!!isUserAdmin);
+          setIsAdmin(!!data);
+          console.log("Admin status check result:", data);
         }
       } catch (e) {
         console.error("Error checking admin status:", e);

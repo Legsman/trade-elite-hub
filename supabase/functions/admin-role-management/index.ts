@@ -7,6 +7,9 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Increased propagation delay to ensure DB changes propagate fully
+const PROPAGATION_DELAY_MS = 3000;
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -63,12 +66,15 @@ serve(async (req) => {
 
     console.log(`Request made by user: ${user.id}`);
 
-    // Use the security definer function to check if user is admin
+    // Use the direct database query with service role to check if user is admin
     // This avoids potential recursion in RLS policies
-    const { data: isAdmin } = await supabaseAdmin.rpc("is_admin", {
-      _user_id: user.id,
-    });
+    const { data: adminCheck, error: adminCheckError } = await supabaseAdmin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .eq("role", "admin");
     
+    const isAdmin = adminCheck && adminCheck.length > 0;
     console.log(`Requesting user is admin: ${isAdmin}`);
     
     if (!isAdmin) {
@@ -88,11 +94,10 @@ serve(async (req) => {
         .from("user_roles")
         .select("*")
         .eq("user_id", targetUserId)
-        .eq("role", role)
-        .single();
+        .eq("role", role);
       
-      if (checkError && checkError.code !== 'PGRST116') {
-        // Real error occurred (not just "no rows returned")
+      if (checkError) {
+        // Real error occurred
         console.error(`Error checking for existing role: ${checkError.message}`);
         return new Response(JSON.stringify({ 
           success: false, 
@@ -100,7 +105,7 @@ serve(async (req) => {
         }), { headers: corsHeaders, status: 400 });
       }
         
-      if (existingRole) {
+      if (existingRole && existingRole.length > 0) {
         console.log(`User ${targetUserId} already has role ${role}`);
         return new Response(JSON.stringify({ 
           success: true, 
@@ -121,11 +126,10 @@ serve(async (req) => {
         .from("user_roles")
         .select("*")
         .eq("user_id", targetUserId)
-        .eq("role", role)
-        .single();
+        .eq("role", role);
       
-      if (checkError && checkError.code !== 'PGRST116') {
-        // Real error occurred (not just "no rows returned")
+      if (checkError) {
+        // Real error occurred
         console.error(`Error checking for existing role: ${checkError.message}`);
         return new Response(JSON.stringify({ 
           success: false, 
@@ -133,7 +137,7 @@ serve(async (req) => {
         }), { headers: corsHeaders, status: 400 });
       }
       
-      if (!existingRole) {
+      if (!existingRole || existingRole.length === 0) {
         console.log(`User ${targetUserId} doesn't have role ${role}`);
         return new Response(JSON.stringify({ 
           success: true, 
@@ -157,9 +161,10 @@ serve(async (req) => {
       }), { headers: corsHeaders, status: 400 });
     }
 
-    // Add a small delay to allow database changes to propagate
-    await new Promise(resolve => setTimeout(resolve, 200));
-
+    // Add a significant delay to allow database changes to propagate fully
+    console.log(`Waiting for database propagation (${PROPAGATION_DELAY_MS}ms)...`);
+    await new Promise(resolve => setTimeout(resolve, PROPAGATION_DELAY_MS));
+    
     console.log(`Successfully ${action === 'add' ? 'added' : 'removed'} ${role} role for user ${targetUserId}`);
     return new Response(JSON.stringify({ 
       success: true,

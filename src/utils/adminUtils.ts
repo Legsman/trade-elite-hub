@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 export async function assignOrRemoveAdminRole(targetUserId: string, role: string, action: "add" | "remove") {
@@ -14,10 +15,6 @@ export async function assignOrRemoveAdminRole(targetUserId: string, role: string
     }
     
     console.log(`Admin role ${action} response:`, data);
-    
-    // Increased delay to ensure database propagation
-    console.log("Waiting for database propagation (2s)...");
-    await new Promise(resolve => setTimeout(resolve, 2000));
     
     if (data && (data.success || data.message?.includes("already") || data.message?.includes("not found"))) {
       return { 
@@ -49,10 +46,6 @@ export async function assignOrRemoveVerifiedStatus(targetUserId: string, action:
     
     console.log(`Verified status ${action} response:`, data);
     
-    // Increased delay to ensure database propagation
-    console.log("Waiting for database propagation (2s)...");
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
     if (data && (data.success || data.message?.includes("already") || data.message?.includes("not found"))) {
       return { 
         success: true, 
@@ -81,7 +74,7 @@ export async function checkUserRoles(userId: string) {
     }
     
     console.log("User roles check result:", data);
-    const roles = data ? data.map(r => r.role) : [];
+    const roles = data || [];
     return { success: true, roles };
   } catch (e) {
     console.error("Exception checking user roles:", e);
