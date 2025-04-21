@@ -28,6 +28,7 @@ import { useAuth } from "@/hooks/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { Loading } from "@/components/ui/loading";
 import { toast } from "@/hooks/use-toast";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 
 type Profile = {
   id: string;
@@ -116,6 +117,7 @@ type Notification = {
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const { isAdmin, checking: checkingAdmin } = useIsAdmin();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   const [listings, setListings] = useState<Listing[]>([]);
@@ -249,7 +251,7 @@ const Dashboard = () => {
     });
   };
 
-  if (isLoading) {
+  if (isLoading || checkingAdmin) {
     return (
       <MainLayout>
         <div className="container py-12">
@@ -278,6 +280,19 @@ const Dashboard = () => {
               <User className="mr-2 h-4 w-4" />
               Settings
             </Button>
+            {isAdmin && (
+              <Button
+                variant="secondary"
+                onClick={() => navigate("/admin")}
+                title="Go to Admin Panel"
+              >
+                <span className="mr-2">Admin Panel</span>
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}
+                  strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 2l2 7h7l-5.5 4.3L19 21l-7-4.7L5 21l2.5-7.7L2 9h7z" />
+                </svg>
+              </Button>
+            )}
           </div>
         </div>
 
