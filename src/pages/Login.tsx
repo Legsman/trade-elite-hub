@@ -37,7 +37,11 @@ const Login = () => {
           title: "Login successful",
           description: "Welcome back!",
         });
-        navigate(from, { replace: true });
+        
+        // Delay navigation slightly to allow auth state to update
+        setTimeout(() => {
+          navigate(from, { replace: true });
+        }, 100);
       }
     } catch (error) {
       console.error("Login error:", error);
