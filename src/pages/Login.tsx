@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+
+import { useState } from "react";
 import { useAuth } from "@/hooks/auth";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -6,40 +7,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { Loading } from "@/components/ui/loading";
-import { checkUserRoles } from "@/utils/adminUtils";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [debugInfo, setDebugInfo] = useState("");
   const { login, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
   // Get the redirect path from location state, or default to dashboard
   const from = location.state?.from?.pathname || "/dashboard";
-
-  // Debug info for admin role
-  useEffect(() => {
-    const fetchRoles = async () => {
-      if (!user) return;
-      
-      try {
-        const result = await checkUserRoles(user.id);
-        if (!result.success) {
-          setDebugInfo(`Error checking roles: ${result.error?.message}`);
-        } else {
-          setDebugInfo(`User roles: ${JSON.stringify(result.roles)}`);
-          console.log("User roles debug:", result.roles);
-        }
-      } catch (e) {
-        console.error("Debug error:", e);
-      }
-    };
-    
-    fetchRoles();
-  }, [user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -129,12 +107,6 @@ const Login = () => {
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? <Loading size={16} message="" /> : "Sign in"}
             </Button>
-
-            {debugInfo && (
-              <div className="p-2 bg-gray-100 rounded text-xs overflow-auto">
-                <pre>{debugInfo}</pre>
-              </div>
-            )}
 
             <div className="text-center">
               <p className="text-sm text-gray-600">

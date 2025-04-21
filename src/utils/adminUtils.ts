@@ -71,11 +71,9 @@ export async function assignOrRemoveVerifiedStatus(targetUserId: string, action:
 export async function checkUserRoles(userId: string) {
   try {
     console.log("Checking roles for user:", userId);
-    // Direct query to user_roles table to check for roles
+    // Use the RPC function to get user roles instead of direct table query
     const { data, error } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', userId);
+      .rpc('get_user_roles', { _user_id: userId });
       
     if (error) {
       console.error("Error checking user roles:", error);

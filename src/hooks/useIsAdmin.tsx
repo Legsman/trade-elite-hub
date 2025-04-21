@@ -21,9 +21,8 @@ export function useIsAdmin() {
       setChecking(true);
       try {
         console.log("Checking admin status for user:", user.id);
-        // Using rpc_is_admin which is designed specifically to avoid recursion issues
-        const { data, error } = await supabase
-          .rpc('rpc_is_admin');
+        // Using rpc_is_admin function which is designed specifically to avoid recursion
+        const { data, error } = await supabase.rpc('rpc_is_admin');
 
         if (cancelled) return;
         
