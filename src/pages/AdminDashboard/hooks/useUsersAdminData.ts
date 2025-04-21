@@ -13,8 +13,8 @@ export function useUsersAdminData() {
       setLoading(true);
       setError(null);
       
-      // Fetch profiles data with user roles in a single query
-      const { data: usersData, error: usersError } = await supabase
+      // Fetch profiles data first
+      const { data: profilesData, error: profilesError } = await supabase
         .from("profiles")
         .select(`
           id, 
@@ -22,50 +22,58 @@ export function useUsersAdminData() {
           email, 
           created_at,
           updated_at,
-          strike_count,
-          user_roles (
-            role
-          )
+          strike_count
         `);
         
-      if (usersError) {
-        console.error("Error fetching users:", usersError);
-        setError(usersError.message);
+      if (profilesError) {
+        console.error("Error fetching profiles:", profilesError);
+        setError(profilesError.message);
         setUsers([]);
         return;
       }
 
-      console.log("Users data with roles fetched:", usersData);
+      console.log("Profiles data fetched:", profilesData);
       
-      // Map the data to include role information
-      const mappedUsers: UserAdmin[] = (usersData || []).map(profile => {
-        // Get all roles for this user
-        const userRoles = profile.user_roles || [];
-        
-        // Check if user has admin role
-        const isAdmin = userRoles.some(r => r.role === 'admin');
-        
-        // Get verification status based on roles
-        // Admin users are automatically considered verified
-        const isVerified = isAdmin || userRoles.some(r => r.role === 'verified');
-        
-        console.log(`User ${profile.id} (${profile.full_name}): roles=${userRoles.map(r => r.role).join(',')}, isAdmin=${isAdmin}, isVerified=${isVerified}`);
-        
-        return {
-          id: profile.id,
-          email: profile.email,
-          full_name: profile.full_name,
-          created_at: profile.created_at,
-          role: isAdmin ? "admin" : "user",
-          verified_status: isVerified ? "verified" : "unverified",
-          strike_count: profile.strike_count || 0,
-          last_visited: profile.updated_at,
-          listings_count: 0  // This could be enhanced by joining with listings table if needed
-        };
-      });
+      if (!profilesData || profilesData.length === 0) {
+        setUsers([]);
+        setLoading(false);
+        return;
+      }
       
-      console.log("Final mapped users with roles:", mappedUsers);
-      setUsers(mappedUsers);
+      // Process each profile to get their roles using the security definer function
+      const usersWithRoles: UserAdmin[] = await Promise.all(
+        profilesData.map(async (profile) => {
+          // Use the security definer function to check if user is admin
+          const { data: isAdminData } = await supabase
+            .rpc('is_admin', { _user_id: profile.id });
+            
+          const isAdmin = isAdminData || false;
+          
+          // For verified status, we need to use another function or approach
+          const { data: hasVerifiedRole } = await supabase
+            .rpc('has_role', { 
+              _user_id: profile.id, 
+              _role: 'verified' 
+            });
+          
+          console.log(`User ${profile.id} (${profile.full_name}): isAdmin=${isAdmin}, isVerified=${hasVerifiedRole}`);
+          
+          return {
+            id: profile.id,
+            email: profile.email,
+            full_name: profile.full_name,
+            created_at: profile.created_at,
+            role: isAdmin ? "admin" : "user",
+            verified_status: (isAdmin || hasVerifiedRole) ? "verified" : "unverified",
+            strike_count: profile.strike_count || 0,
+            last_visited: profile.updated_at,
+            listings_count: 0  // This could be enhanced by joining with listings table if needed
+          };
+        })
+      );
+      
+      console.log("Final mapped users with roles:", usersWithRoles);
+      setUsers(usersWithRoles);
     } catch (err) {
       console.error("Unexpected error fetching users:", err);
       setError(err instanceof Error ? err.message : String(err));
