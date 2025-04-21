@@ -24,7 +24,7 @@ export function useVerificationManagement(setUsers: React.Dispatch<React.SetStat
     
     if (success) {
       toast({ 
-        id: toastId,
+        ...toastId, // Spread the toast ID object
         title: "Success", 
         description: message || `User has been ${action === "add" ? "verified" : "unverified"}`
       });
@@ -39,7 +39,7 @@ export function useVerificationManagement(setUsers: React.Dispatch<React.SetStat
       );
       
       toast({ 
-        id: toastId,
+        ...toastId, // Spread the toast ID object
         title: "Failed to update verification status", 
         description: error?.message || String(error) || "Failed", 
         variant: "destructive" 

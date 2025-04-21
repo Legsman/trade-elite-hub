@@ -106,7 +106,7 @@ export function useAdminDashboard() {
         await refetchData();
         
         toast({
-          id: refreshToastId,
+          ...refreshToastId, // Spread the toast ID object
           title: "Updated",
           description: "Data has been refreshed successfully"
         });
