@@ -1,25 +1,20 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
-export async function assignAdminRole(userId: string) {
+// Securely assign or remove admin role by calling edge function
+export async function assignOrRemoveAdminRole(targetUserId: string, role: string, action: "add" | "remove") {
   try {
-    const { error } = await supabase
-      .from("user_roles")
-      .upsert({ 
-        user_id: userId, 
-        role: "admin" 
-      }, { 
-        onConflict: 'user_id,role' 
-      });
-    
+    // Only admins should be able to call this function on backend; so we use edge function protection
+    const { data, error } = await supabase.functions.invoke("admin-role-management", {
+      body: { targetUserId, role, action }
+    });
     if (error) {
-      console.error("Error assigning admin role:", error);
+      console.error("Error in edge function assignOrRemoveAdminRole:", error);
       return { success: false, error };
     }
-    
-    return { success: true };
+    if (data && data.success) return { success: true };
+    return { success: false, error: data?.error || "Failed" };
   } catch (e) {
-    console.error("Exception assigning admin role:", e);
+    console.error("Exception calling assignOrRemoveAdminRole:", e);
     return { success: false, error: e };
   }
 }

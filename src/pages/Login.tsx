@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/auth";
 import { useNavigate, useLocation, Link } from "react-router-dom";
@@ -7,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { Loading } from "@/components/ui/loading";
-import { assignAdminRole, checkUserRoles } from "@/utils/adminUtils";
+import { checkUserRoles } from "@/utils/adminUtils";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -41,48 +40,6 @@ const Login = () => {
     
     fetchRoles();
   }, [user]);
-
-  const handleAssignAdmin = async () => {
-    if (!user) {
-      toast({
-        title: "Not logged in",
-        description: "You need to be logged in to assign admin role",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    setIsLoading(true);
-    try {
-      const result = await assignAdminRole(user.id);
-      if (result.success) {
-        toast({
-          title: "Admin role assigned",
-          description: "You have been assigned the admin role.",
-        });
-        // Refresh role display
-        const roleResult = await checkUserRoles(user.id);
-        if (roleResult.success) {
-          setDebugInfo(`User roles: ${JSON.stringify(roleResult.roles)}`);
-        }
-      } else {
-        toast({
-          title: "Failed to assign admin role",
-          description: result.error?.message || "Unknown error",
-          variant: "destructive",
-        });
-      }
-    } catch (e) {
-      console.error("Error assigning admin role:", e);
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -172,18 +129,6 @@ const Login = () => {
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? <Loading size={16} message="" /> : "Sign in"}
             </Button>
-
-            {user && (
-              <Button 
-                type="button" 
-                variant="outline" 
-                className="w-full mt-2" 
-                onClick={handleAssignAdmin}
-                disabled={isLoading}
-              >
-                Make Me Admin (Testing)
-              </Button>
-            )}
 
             {debugInfo && (
               <div className="p-2 bg-gray-100 rounded text-xs overflow-auto">

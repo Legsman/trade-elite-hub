@@ -6,9 +6,12 @@ import OverviewTab from "./OverviewTab";
 import UsersTab from "./UsersTab";
 import ListingsTab from "./ListingsTab";
 import ReportsTab from "./ReportsTab";
+import AdminsTab from "./AdminsTab";
 import { Loading } from "@/components/ui/loading";
 import { useAdminDashboard } from "./useAdminDashboard";
 import { formatDate } from "./adminUtils";
+import { useAuth } from "@/hooks/auth";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 
 const AdminDashboard = () => {
   const {
@@ -29,7 +32,15 @@ const AdminDashboard = () => {
     handleUnsuspendUser,
     filteredUsers,
     filteredListings,
+    users,
+    promoteAdmin,
+    demoteAdmin,
+    currentUserId,
   } = useAdminDashboard();
+
+  // Add Auth and Admin context
+  const { user } = useAuth();
+  const { isAdmin } = useIsAdmin();
 
   if (loading) {
     return (
@@ -57,11 +68,14 @@ const AdminDashboard = () => {
         </div>
 
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="users">Users</TabsTrigger>
             <TabsTrigger value="listings">Listings</TabsTrigger>
             <TabsTrigger value="reports">Reports</TabsTrigger>
+            {isAdmin && (
+              <TabsTrigger value="admins">Admin Users</TabsTrigger>
+            )}
           </TabsList>
 
           <TabsContent value="overview">
@@ -107,10 +121,19 @@ const AdminDashboard = () => {
               handleRejectItem={handleRejectItem}
             />
           </TabsContent>
+          {isAdmin && (
+            <TabsContent value="admins">
+              <AdminsTab
+                users={users}
+                promoteAdmin={promoteAdmin}
+                demoteAdmin={demoteAdmin}
+                currentUserId={currentUserId}
+              />
+            </TabsContent>
+          )}
         </Tabs>
       </div>
     </MainLayout>
   );
 };
-
 export default AdminDashboard;

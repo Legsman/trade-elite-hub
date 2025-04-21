@@ -1,8 +1,8 @@
-
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { assignOrRemoveAdminRole } from "@/utils/adminUtils";
 
 export function useAdminDashboard() {
   const navigate = useNavigate();
@@ -23,11 +23,9 @@ export function useAdminDashboard() {
   const [listingFilter, setListingFilter] = useState("all");
   const [analyticsData, setAnalyticsData] = useState<any[]>([]);
 
-  // Fetch admin data
   const fetchAdminData = useCallback(async () => {
     setLoading(true);
     try {
-      // Check if user has admin role first
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
@@ -36,7 +34,6 @@ export function useAdminDashboard() {
       
       console.log("Fetching data for user:", user.id);
       
-      // Use the has_role RPC function to check admin status
       const { data: isAdmin, error: roleError } = await supabase
         .rpc('has_role', { 
           _user_id: user.id, 
@@ -54,8 +51,6 @@ export function useAdminDashboard() {
         }
       }
       
-      // During development, we can bypass this check
-      // But in production, you would want to enforce it
       if (isAdmin === false) {
         console.warn('User is not an admin but continuing for development purposes');
         // Uncomment the following lines to enforce admin access in production
@@ -64,7 +59,6 @@ export function useAdminDashboard() {
         // throw new Error("Unauthorized: Admin access required");
       }
 
-      // Continue with admin data fetching
       let { data: usersRaw, error: usersError } = await supabase
         .from("profiles")
         .select("id, full_name, email, created_at, strike_count, is_two_factor_enabled, feedback_rating");
@@ -92,12 +86,10 @@ export function useAdminDashboard() {
         throw listingsError;
       }
 
-      // Initialize empty arrays if data is null
       usersRaw = usersRaw || [];
       rolesRaw = rolesRaw || [];
       listingsRaw = listingsRaw || [];
       
-      // Process the data as before
       const userRolesMap = new Map();
       rolesRaw.forEach(({ user_id, role }) => {
         userRolesMap.set(user_id, role);
@@ -128,7 +120,6 @@ export function useAdminDashboard() {
         seller_name: userIdToName[listing.seller_id] || "Unknown",
       }));
 
-      // Only report if a user has a strike
       const reported = usersData
         .filter(u => u.strike_count > 0)
         .map((u, i) => ({
@@ -173,7 +164,6 @@ export function useAdminDashboard() {
         description: "Failed to load administrative data. Please try again.",
         variant: "destructive"
       });
-      // Redirect to dashboard if there's an error loading admin data
       navigate('/dashboard');
     } finally {
       setLoading(false);
@@ -184,7 +174,34 @@ export function useAdminDashboard() {
     fetchAdminData();
   }, [fetchAdminData]);
 
-  // HANDLERS
+  const promoteAdmin = useCallback(async (userId: string) => {
+    const { success, error } = await assignOrRemoveAdminRole(userId, "admin", "add");
+    if (success) {
+      setUsers(prev =>
+        prev.map(u =>
+          u.id === userId ? { ...u, role: "admin" } : u
+        )
+      );
+      toast({ title: "Admin promoted", description: "User has been made an admin" });
+    } else {
+      toast({ title: "Failed to promote", description: error?.message || error || "Failed", variant: "destructive" });
+    }
+  }, []);
+
+  const demoteAdmin = useCallback(async (userId: string) => {
+    const { success, error } = await assignOrRemoveAdminRole(userId, "admin", "remove");
+    if (success) {
+      setUsers(prev =>
+        prev.map(u =>
+          u.id === userId ? { ...u, role: "user" } : u
+        )
+      );
+      toast({ title: "Admin removed", description: "User has been demoted from admin" });
+    } else {
+      toast({ title: "Failed to demote", description: error?.message || error || "Failed", variant: "destructive" });
+    }
+  }, []);
+
   const handleApproveItem = useCallback((id: string, type: string) => {
     if (type === 'listing') {
       setListings(prev =>
@@ -238,7 +255,6 @@ export function useAdminDashboard() {
     });
   }, []);
 
-  // FILTERED DATA
   const filteredUsers = useMemo(() => users.filter(user => {
     const matchesSearch = user.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.email?.toLowerCase().includes(searchQuery.toLowerCase());
@@ -260,6 +276,8 @@ export function useAdminDashboard() {
     return matchesSearch;
   }), [listings, searchQuery, listingFilter]);
 
+  const currentUserId = users.find(u => u.email === supabase.auth.user()?.email)?.id || "";
+
   return {
     loading,
     stats,
@@ -279,5 +297,8 @@ export function useAdminDashboard() {
     handleUnsuspendUser,
     filteredUsers,
     filteredListings,
+    promoteAdmin,
+    demoteAdmin,
+    currentUserId,
   };
 }
