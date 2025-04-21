@@ -9,14 +9,14 @@ import ReportsTab from "./ReportsTab";
 import AdminsTab from "./AdminsTab";
 import { Loading } from "@/components/ui/loading";
 import { useAdminDashboard } from "./useAdminDashboard";
-import { formatDate } from "./adminUtils";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const {
     loading,
     fetchError,
@@ -43,16 +43,14 @@ const AdminDashboard = () => {
     refetchData
   } = useAdminDashboard();
 
-  // If we're on the root path, redirect to the /admin path
+  // Redirect to /admin if on root path
   useEffect(() => {
-    const currentPath = window.location.pathname;
-    if (currentPath === "/") {
-      navigate("/admin");
+    if (location.pathname === "/") {
+      navigate("/admin", { replace: true });
     }
-  }, [navigate]);
+  }, [location.pathname, navigate]);
 
   // By default, if you're in the admin panel, you should be an admin
-  // This check is for displaying the Admin Users tab
   const isAdmin = true;
 
   if (loading) {
@@ -74,12 +72,20 @@ const AdminDashboard = () => {
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>Error loading admin data</AlertTitle>
             <AlertDescription>
-              {typeof fetchError === 'string' ? fetchError : 'An unexpected error occurred'}. Please try again.
+              {typeof fetchError === 'string' ? fetchError : 'An unexpected error occurred'}. 
+              This is likely due to a database or permissions issue in development mode.
             </AlertDescription>
           </Alert>
           <div className="mt-4 space-x-4">
             <Button onClick={() => refetchData()}>
               Try Again
+            </Button>
+            <Button variant="outline" onClick={() => {
+              // Force development mode for admin data
+              localStorage.setItem('dev_admin_mode', 'true');
+              window.location.reload();
+            }}>
+              Enable Dev Mode
             </Button>
             <Button variant="outline" onClick={() => navigate('/dashboard')}>
               Return to Dashboard

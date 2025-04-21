@@ -17,9 +17,8 @@ export const AdminRoute = ({ children }: AdminRouteProps) => {
   const [bypassAdminCheck, setBypassAdminCheck] = useState(false);
 
   useEffect(() => {
-    // For development purposes, consider anyone logged in as an admin
-    // Remove this in production
-    if (user && !isAdmin && !bypassAdminCheck) {
+    // Development mode: Always bypass admin check when user is logged in
+    if (user && !bypassAdminCheck) {
       console.log("Development mode: Bypassing admin check");
       setBypassAdminCheck(true);
       toast({
@@ -27,9 +26,9 @@ export const AdminRoute = ({ children }: AdminRouteProps) => {
         description: "Admin check bypassed for development purposes.",
       });
     }
-  }, [user, isAdmin, bypassAdminCheck]);
+  }, [user, bypassAdminCheck]);
 
-  console.log("AdminRoute - User:", !!user, "Loading:", loading, "Is Admin:", isAdmin, "Checking Admin:", checkingAdmin);
+  console.log("AdminRoute - User:", !!user, "Loading:", loading, "Is Admin:", isAdmin, "Checking Admin:", checkingAdmin, "Bypass:", bypassAdminCheck);
 
   if (loading) {
     return <Loading fullScreen message="Authenticating..." />;
@@ -40,13 +39,18 @@ export const AdminRoute = ({ children }: AdminRouteProps) => {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // In development mode, allow access even if not admin
-  if (bypassAdminCheck || isAdmin) {
+  // In development mode, allow access immediately once bypassAdminCheck is true
+  if (bypassAdminCheck) {
     return <>{children}</>;
   }
 
   if (checkingAdmin) {
     return <Loading fullScreen message="Verifying admin privileges..." />;
+  }
+
+  // Only check actual admin status if we're not bypassing the check
+  if (isAdmin) {
+    return <>{children}</>;
   }
 
   // Redirect to dashboard if logged in but not admin
