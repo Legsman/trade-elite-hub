@@ -13,10 +13,20 @@ export function useUsersAdminData() {
       setLoading(true);
       setError(null);
       
-      // Fetch profiles data
-      const { data: usersRaw, error: usersError } = await supabase
+      // Fetch profiles data with user roles in a single query
+      const { data: usersData, error: usersError } = await supabase
         .from("profiles")
-        .select("id, full_name, email, created_at, strike_count, is_two_factor_enabled, feedback_rating");
+        .select(`
+          id, 
+          full_name, 
+          email, 
+          created_at,
+          updated_at,
+          strike_count,
+          user_roles (
+            role
+          )
+        `);
         
       if (usersError) {
         console.error("Error fetching users:", usersError);
@@ -25,54 +35,21 @@ export function useUsersAdminData() {
         return;
       }
 
-      console.log("Raw users data fetched:", usersRaw);
+      console.log("Users data with roles fetched:", usersData);
       
-      // Fetch ALL roles from user_roles table - we'll process them locally
-      console.log("Fetching all user roles...");
-      const { data: userRoles, error: userRolesError } = await supabase
-        .from('user_roles')
-        .select('user_id, role');
+      // Map the data to include role information
+      const mappedUsers: UserAdmin[] = (usersData || []).map(profile => {
+        // Get all roles for this user
+        const userRoles = profile.user_roles || [];
         
-      if (userRolesError) {
-        console.error("Error fetching user roles:", userRolesError);
-      }
-      
-      console.log("User roles fetched:", userRoles);
-
-      // Create maps for role lookups (more efficient than filtering arrays repeatedly)
-      const userRolesMap = new Map();
-      
-      if (userRoles && userRoles.length > 0) {
-        userRoles.forEach(item => {
-          if (!userRolesMap.has(item.user_id)) {
-            userRolesMap.set(item.user_id, []);
-          }
-          userRolesMap.get(item.user_id).push(item.role);
-        });
-      }
-      
-      console.log("User roles map created:", Array.from(userRolesMap.entries()));
-
-      // Map profiles to UserAdmin objects with role and verified status information
-      const mappedUsers: UserAdmin[] = (usersRaw || []).map(profile => {
-        const userRoles = userRolesMap.get(profile.id) || [];
+        // Check if user has admin role
+        const isAdmin = userRoles.some(r => r.role === 'admin');
         
-        // A user is admin if they have the 'admin' role
-        const isAdmin = userRoles.includes('admin');
+        // Get verification status based on roles
+        // Admin users are automatically considered verified
+        const isVerified = isAdmin || userRoles.some(r => r.role === 'verified');
         
-        // A user is verified if they have the 'verified' role OR if they're an admin
-        // Admins are automatically considered verified
-        const isVerified = isAdmin || userRoles.includes('verified');
-        
-        console.log(`User ${profile.id} (${profile.full_name}): roles=${userRoles.join(',')}, isAdmin=${isAdmin}, isVerified=${isVerified}`);
-        
-        // Determine status based on strike_count
-        let userStatus: "active" | "warning" | "suspended" = "active";
-        if (profile.strike_count >= 3) {
-          userStatus = "suspended";
-        } else if (profile.strike_count === 2) {
-          userStatus = "warning";
-        }
+        console.log(`User ${profile.id} (${profile.full_name}): roles=${userRoles.map(r => r.role).join(',')}, isAdmin=${isAdmin}, isVerified=${isVerified}`);
         
         return {
           id: profile.id,
@@ -82,16 +59,12 @@ export function useUsersAdminData() {
           role: isAdmin ? "admin" : "user",
           verified_status: isVerified ? "verified" : "unverified",
           strike_count: profile.strike_count || 0,
-          status: userStatus,
-          listings_count: 0,
-          last_login: null,
+          last_visited: profile.updated_at,
+          listings_count: 0  // This could be enhanced by joining with listings table if needed
         };
       });
       
-      console.log("Final mapped users with roles and verified statuses:", mappedUsers);
-      console.log("Admin users after mapping:", mappedUsers.filter(u => u.role === "admin").map(u => `${u.full_name} (${u.id})`));
-      console.log("Verified users after mapping:", mappedUsers.filter(u => u.verified_status === "verified").map(u => `${u.full_name} (${u.id})`));
-      
+      console.log("Final mapped users with roles:", mappedUsers);
       setUsers(mappedUsers);
     } catch (err) {
       console.error("Unexpected error fetching users:", err);
