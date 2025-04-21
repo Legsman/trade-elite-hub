@@ -1,4 +1,3 @@
-
 import MainLayout from "@/components/layout/MainLayout";
 import { Shield } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -51,12 +50,6 @@ const AdminDashboard = () => {
       </MainLayout>
     );
   }
-
-  console.log("Admin Dashboard Rendering - TabsContent:", {
-    users: users.length,
-    currentUserId,
-    showingAdminTab: isAdmin
-  });
 
   return (
     <MainLayout>
