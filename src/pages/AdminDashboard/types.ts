@@ -4,7 +4,8 @@ export interface UserAdmin {
   email: string;
   full_name: string;
   created_at: string;
-  role: string;
+  role: "user" | "admin";
+  verified_status: "unverified" | "verified";
   strike_count: number;
   status: "active" | "warning" | "suspended";
   listings_count: number;

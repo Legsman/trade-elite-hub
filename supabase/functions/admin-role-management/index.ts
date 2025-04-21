@@ -20,6 +20,12 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: "Invalid input" }), { headers: corsHeaders, status: 400 });
     }
 
+    // Validate role to make sure it's either 'admin' or 'verified'
+    if (role !== 'admin' && role !== 'verified') {
+      return new Response(JSON.stringify({ error: "Invalid role. Only 'admin' or 'verified' allowed." }), 
+        { headers: corsHeaders, status: 400 });
+    }
+
     // Create a Supabase client with the service role key
     // This bypasses RLS policies and prevents recursion
     const supabaseAdmin = createClient(
@@ -61,14 +67,14 @@ serve(async (req) => {
     // Only an admin can proceed!
     let resp;
     if (action === "add") {
-      console.log(`Adding admin role for user ${targetUserId}`);
-      // Insert admin role (if not present)
+      console.log(`Adding ${role} role for user ${targetUserId}`);
+      // Insert role (if not present)
       resp = await supabaseAdmin
         .from("user_roles")
         .upsert({ user_id: targetUserId, role }, { onConflict: "user_id,role" });
     } else if (action === "remove") {
-      console.log(`Removing admin role for user ${targetUserId}`);
-      // Remove the admin role
+      console.log(`Removing ${role} role for user ${targetUserId}`);
+      // Remove the role
       resp = await supabaseAdmin
         .from("user_roles")
         .delete()
@@ -77,11 +83,11 @@ serve(async (req) => {
     }
 
     if (resp && resp.error) {
-      console.error("Admin role management error:", resp.error);
+      console.error(`${role} role management error:`, resp.error);
       return new Response(JSON.stringify({ error: resp.error.message }), { headers: corsHeaders, status: 400 });
     }
 
-    console.log(`Successfully ${action === 'add' ? 'added' : 'removed'} admin role for user ${targetUserId}`);
+    console.log(`Successfully ${action === 'add' ? 'added' : 'removed'} ${role} role for user ${targetUserId}`);
     return new Response(JSON.stringify({ success: true }), { headers: corsHeaders });
   } catch (e) {
     console.error("Edge function error:", e);

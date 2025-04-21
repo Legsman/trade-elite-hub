@@ -68,6 +68,8 @@ const UsersTab: React.FC<UsersTabProps> = ({
             <SelectItem value="active">Active</SelectItem>
             <SelectItem value="warning">Warning</SelectItem>
             <SelectItem value="suspended">Suspended</SelectItem>
+            <SelectItem value="verified">Verified</SelectItem>
+            <SelectItem value="unverified">Unverified</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -80,6 +82,7 @@ const UsersTab: React.FC<UsersTabProps> = ({
               <TableHead>Email</TableHead>
               <TableHead>Role</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead>Verified</TableHead>
               <TableHead>Joined</TableHead>
               <TableHead>Listings</TableHead>
               <TableHead className="text-right">Actions</TableHead>
@@ -88,13 +91,13 @@ const UsersTab: React.FC<UsersTabProps> = ({
           <TableBody>
             {filteredUsers.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-6">
+                <TableCell colSpan={8} className="text-center py-6">
                   No users found matching your search criteria
                 </TableCell>
               </TableRow>
             ) : (
               filteredUsers.map((user) => {
-                console.log(`Rendering user ${user.full_name} with role: ${user.role}`);
+                console.log(`Rendering user ${user.full_name} with role: ${user.role}, verified: ${user.verified_status}`);
                 return (
                   <TableRow key={user.id}>
                     <TableCell className="font-medium">{user.full_name}</TableCell>
@@ -115,6 +118,11 @@ const UsersTab: React.FC<UsersTabProps> = ({
                         }
                       >
                         {user.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={user.verified_status === 'verified' ? 'default' : 'outline'}>
+                        {user.verified_status}
                       </Badge>
                     </TableCell>
                     <TableCell>{formatDate(user.created_at)}</TableCell>
