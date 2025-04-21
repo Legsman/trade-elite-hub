@@ -35,8 +35,6 @@ export async function checkUserRoles(userId: string) {
   try {
     console.log("Checking admin role for user:", userId);
     // Direct query to user_roles table to check for admin role
-    // This is secure because it's only called from the admin panel
-    // which already verifies the user is an admin via AdminRoute.tsx
     const { data, error } = await supabase
       .from('user_roles')
       .select('role')

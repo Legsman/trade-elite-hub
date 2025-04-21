@@ -27,15 +27,16 @@ export function useUsersAdminData() {
 
       console.log("Raw users data fetched:", usersRaw);
       
-      // Fetch all admin roles with explicit logging - CRITICAL for seeing admin status
-      console.log("Fetching admin roles from user_roles table...");
+      // IMPORTANT: Fetch admin roles DIRECTLY from the database
+      // This approach bypasses any caching issues
+      console.log("Directly fetching admin roles from user_roles table...");
       const { data: adminRoles, error: adminRolesError } = await supabase
         .from('user_roles')
         .select('user_id, role')
         .eq('role', 'admin');
         
       if (adminRolesError) {
-        console.error("Error fetching admin roles:", adminRolesError);
+        console.error("Error directly fetching admin roles:", adminRolesError);
         // Continue with available data
       }
 
@@ -57,7 +58,7 @@ export function useUsersAdminData() {
       // Map profiles to UserAdmin objects with role information
       const mappedUsers: UserAdmin[] = (usersRaw || []).map(profile => {
         const isAdmin = adminUserIds.has(profile.id);
-        console.log(`User ${profile.id} (${profile.full_name}) isAdmin:`, isAdmin);
+        console.log(`User ${profile.id} (${profile.full_name}) isAdmin check:`, isAdmin);
         
         // Determine status based on strike_count
         let userStatus: "active" | "warning" | "suspended" = "active";
@@ -80,8 +81,8 @@ export function useUsersAdminData() {
         };
       });
       
-      console.log("Mapped users with roles:", mappedUsers);
-      console.log("Admin users after mapping:", mappedUsers.filter(u => u.role === "admin"));
+      console.log("Final mapped users with roles:", mappedUsers);
+      console.log("Admin users after mapping:", mappedUsers.filter(u => u.role === "admin").map(u => `${u.full_name} (${u.id})`));
       setUsers(mappedUsers);
     } catch (err) {
       console.error("Unexpected error fetching users:", err);

@@ -21,8 +21,7 @@ export function useIsAdmin() {
       setChecking(true);
       try {
         console.log("Checking admin status for user:", user.id);
-        // Use the rpc function to check admin status
-        // This is crucial to avoid infinite recursion
+        // Using rpc_is_admin which is designed specifically to avoid recursion issues
         const { data, error } = await supabase
           .rpc('rpc_is_admin');
 

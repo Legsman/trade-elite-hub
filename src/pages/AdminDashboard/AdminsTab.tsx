@@ -14,7 +14,7 @@ interface AdminsTabProps {
 const AdminsTab: React.FC<AdminsTabProps> = ({ users, promoteAdmin, demoteAdmin, currentUserId }) => {
   useEffect(() => {
     console.log("AdminsTab mounted with users:", users);
-    console.log("AdminsTab users with admin role:", users.filter(user => user.role === "admin"));
+    console.log("AdminsTab users with admin role:", users.filter(user => user.role === "admin").map(u => `${u.full_name} (${u.id})`));
     console.log("Current user ID:", currentUserId);
   }, [users, currentUserId]);
   
@@ -34,7 +34,7 @@ const AdminsTab: React.FC<AdminsTabProps> = ({ users, promoteAdmin, demoteAdmin,
           </TableHeader>
           <TableBody>
             {users.map((user) => {
-              console.log(`Rendering user ${user.full_name} with role: ${user.role}`);
+              console.log(`AdminsTab rendering user ${user.full_name} with role: ${user.role}`);
               return (
                 <TableRow key={user.id}>
                   <TableCell>{user.full_name}</TableCell>
