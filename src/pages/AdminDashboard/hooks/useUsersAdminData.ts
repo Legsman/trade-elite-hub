@@ -26,11 +26,11 @@ export function useUsersAdminData() {
           return;
         }
         
-        // Fetch all admin roles directly from user_roles table
-        // This approach is secured by the admin check in AdminRoute.tsx
+        // Fetch all admin roles directly from user_roles table with explicit logging
+        console.log("Fetching admin roles...");
         const { data: adminRoles, error: adminRolesError } = await supabase
           .from('user_roles')
-          .select('user_id')
+          .select('user_id, role')
           .eq('role', 'admin');
           
         if (adminRolesError) {
@@ -41,22 +41,29 @@ export function useUsersAdminData() {
         // Create a set of admin user IDs for efficient lookups
         const adminUserIds = new Set();
         if (adminRoles && adminRoles.length > 0) {
+          console.log("Admin roles found:", adminRoles);
           adminRoles.forEach(item => {
             if (item.user_id) {
               adminUserIds.add(item.user_id);
             }
           });
+        } else {
+          console.log("No admin roles found in the database");
         }
         
-        console.log("Admin users:", Array.from(adminUserIds));
+        console.log("Admin users set:", Array.from(adminUserIds));
 
-        setUsers(
-          (usersRaw || []).map(profile => ({
+        // Map profiles to UserAdmin objects with role information
+        const mappedUsers = (usersRaw || []).map(profile => {
+          const isAdmin = adminUserIds.has(profile.id);
+          console.log(`User ${profile.id} (${profile.full_name}) isAdmin:`, isAdmin);
+          
+          return {
             id: profile.id,
             email: profile.email,
             full_name: profile.full_name,
             created_at: profile.created_at,
-            role: adminUserIds.has(profile.id) ? "admin" : "user",
+            role: isAdmin ? "admin" : "user",
             strike_count: profile.strike_count || 0,
             status: profile.strike_count >= 3
               ? "suspended"
@@ -65,8 +72,11 @@ export function useUsersAdminData() {
                 : "active",
             listings_count: 0, // will be filled in useAdminDashboard
             last_login: null,
-          }))
-        );
+          };
+        });
+        
+        console.log("Mapped users with roles:", mappedUsers);
+        setUsers(mappedUsers);
       } catch (err) {
         console.error("Unexpected error fetching users:", err);
         setError(err instanceof Error ? err.message : String(err));

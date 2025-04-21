@@ -25,6 +25,7 @@ export async function assignOrRemoveAdminRole(targetUserId: string, role: string
 
 export async function checkUserRoles(userId: string) {
   try {
+    console.log("Checking admin role for user:", userId);
     // Direct query to user_roles table to check for admin role
     // This is secure because it's only called from the admin panel
     // which already verifies the user is an admin via AdminRoute.tsx
@@ -39,6 +40,7 @@ export async function checkUserRoles(userId: string) {
       return { success: false, error, roles: [] };
     }
     
+    console.log("Admin role check result:", data);
     const isAdmin = data && data.length > 0;
     return { success: true, roles: isAdmin ? ['admin'] : [] };
   } catch (e) {

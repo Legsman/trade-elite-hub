@@ -20,6 +20,7 @@ export function useIsAdmin() {
     const check = async () => {
       setChecking(true);
       try {
+        console.log("Checking admin status for user:", user.id);
         // Use the rpc function to check admin status
         // This is crucial to avoid infinite recursion
         const { data, error } = await supabase
@@ -33,7 +34,7 @@ export function useIsAdmin() {
         } else {
           // The function returns an array of records with is_admin property
           const isUserAdmin = data && data.length > 0 && data[0].is_admin;
-          console.log("Admin status check result:", isUserAdmin);
+          console.log("Admin status check result:", isUserAdmin, data);
           setIsAdmin(!!isUserAdmin);
         }
       } catch (e) {

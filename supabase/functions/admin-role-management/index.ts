@@ -14,6 +14,7 @@ serve(async (req) => {
 
   try {
     const { targetUserId, role, action } = await req.json();
+    console.log(`Admin role management request: ${action} ${role} for user ${targetUserId}`);
 
     if (!targetUserId || !role || !["add", "remove"].includes(action)) {
       return new Response(JSON.stringify({ error: "Invalid input" }), { headers: corsHeaders, status: 400 });
@@ -43,11 +44,15 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: "Unauthorized" }), { headers: corsHeaders, status: 401 });
     }
 
+    console.log(`Request made by user: ${user.id}`);
+
     // Use the security definer function to check if user is admin
     // This avoids potential recursion in RLS policies
     const { data: isAdmin } = await supabaseAdmin.rpc("is_admin", {
       _user_id: user.id,
     });
+    
+    console.log(`Requesting user is admin: ${isAdmin}`);
     
     if (!isAdmin) {
       return new Response(JSON.stringify({ error: "Admin only" }), { headers: corsHeaders, status: 403 });
@@ -56,11 +61,13 @@ serve(async (req) => {
     // Only an admin can proceed!
     let resp;
     if (action === "add") {
+      console.log(`Adding admin role for user ${targetUserId}`);
       // Insert admin role (if not present)
       resp = await supabaseAdmin
         .from("user_roles")
         .upsert({ user_id: targetUserId, role }, { onConflict: "user_id,role" });
     } else if (action === "remove") {
+      console.log(`Removing admin role for user ${targetUserId}`);
       // Remove the admin role
       resp = await supabaseAdmin
         .from("user_roles")
@@ -74,6 +81,7 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: resp.error.message }), { headers: corsHeaders, status: 400 });
     }
 
+    console.log(`Successfully ${action === 'add' ? 'added' : 'removed'} admin role for user ${targetUserId}`);
     return new Response(JSON.stringify({ success: true }), { headers: corsHeaders });
   } catch (e) {
     console.error("Edge function error:", e);
