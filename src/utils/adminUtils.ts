@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 // Securely assign or remove admin role by calling edge function
 export async function assignOrRemoveAdminRole(targetUserId: string, role: string, action: "add" | "remove") {
   try {
+    console.log(`Attempting to ${action} ${role} role for user ${targetUserId}`);
+    
     // This function calls our edge function which uses the service role key
     // to bypass RLS policies and avoid recursion
     const { data, error } = await supabase.functions.invoke("admin-role-management", {
@@ -14,6 +16,8 @@ export async function assignOrRemoveAdminRole(targetUserId: string, role: string
       console.error("Error in edge function assignOrRemoveAdminRole:", error);
       return { success: false, error };
     }
+    
+    console.log(`Admin role ${action} response:`, data);
     
     if (data && data.success) return { success: true };
     return { success: false, error: data?.error || "Failed" };

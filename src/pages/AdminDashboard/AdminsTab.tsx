@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -12,9 +12,11 @@ interface AdminsTabProps {
 }
 
 const AdminsTab: React.FC<AdminsTabProps> = ({ users, promoteAdmin, demoteAdmin, currentUserId }) => {
-  console.log("AdminsTab received users:", users);
-  console.log("AdminsTab users with admin role:", users.filter(user => user.role === "admin"));
-  console.log("Current user ID:", currentUserId);
+  useEffect(() => {
+    console.log("AdminsTab mounted with users:", users);
+    console.log("AdminsTab users with admin role:", users.filter(user => user.role === "admin"));
+    console.log("Current user ID:", currentUserId);
+  }, [users, currentUserId]);
   
   return (
     <div className="space-y-4">

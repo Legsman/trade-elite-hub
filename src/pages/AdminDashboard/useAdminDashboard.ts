@@ -20,6 +20,10 @@ export function useAdminDashboard() {
     () => Object.fromEntries(users.map(u => [u.id, u.full_name])),
     [users]
   );
+  
+  console.log("useAdminDashboard - Users and their roles:", users.map(u => ({ name: u.full_name, role: u.role })));
+  console.log("useAdminDashboard - Admin users:", users.filter(u => u.role === "admin"));
+  
   const { listings, loading: loadingListings, setListings, error: listingsError } = useListingsAdminData(userIdToName);
   const { reports, loading: loadingReports, setReports, error: reportsError } = useReportsAdminData(userIdToName);
   const { stats, analyticsData, setStats } = useAdminStats(users, listings, reports);

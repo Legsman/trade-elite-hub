@@ -25,9 +25,11 @@ export function useUsersAdminData() {
           setUsers([]);
           return;
         }
+
+        console.log("Raw users data fetched:", usersRaw);
         
-        // Fetch all admin roles with explicit logging
-        console.log("Fetching admin roles...");
+        // Fetch all admin roles with explicit logging - CRITICAL for seeing admin status
+        console.log("Fetching admin roles from user_roles table...");
         const { data: adminRoles, error: adminRolesError } = await supabase
           .from('user_roles')
           .select('user_id, role')
@@ -80,6 +82,7 @@ export function useUsersAdminData() {
         });
         
         console.log("Mapped users with roles:", mappedUsers);
+        console.log("Admin users after mapping:", mappedUsers.filter(u => u.role === "admin"));
         setUsers(mappedUsers);
       } catch (err) {
         console.error("Unexpected error fetching users:", err);
