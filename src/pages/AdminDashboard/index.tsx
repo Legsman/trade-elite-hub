@@ -1,5 +1,6 @@
+
 import MainLayout from "@/components/layout/MainLayout";
-import { Shield } from "lucide-react";
+import { Shield, AlertCircle } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import OverviewTab from "./OverviewTab";
 import UsersTab from "./UsersTab";
@@ -9,12 +10,13 @@ import AdminsTab from "./AdminsTab";
 import { Loading } from "@/components/ui/loading";
 import { useAdminDashboard } from "./useAdminDashboard";
 import { formatDate } from "./adminUtils";
-import { useAuth } from "@/hooks/auth";
-import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 
 const AdminDashboard = () => {
   const {
     loading,
+    fetchError,
     stats,
     analyticsData,
     listings,
@@ -46,6 +48,27 @@ const AdminDashboard = () => {
       <MainLayout>
         <div className="container py-12">
           <Loading message="Loading administrative data..." />
+        </div>
+      </MainLayout>
+    );
+  }
+
+  if (fetchError) {
+    return (
+      <MainLayout>
+        <div className="container py-12">
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Error loading admin data</AlertTitle>
+            <AlertDescription>
+              {fetchError}. Please refresh the page to try again.
+            </AlertDescription>
+          </Alert>
+          <div className="mt-4">
+            <Button onClick={() => window.location.reload()}>
+              Refresh Page
+            </Button>
+          </div>
         </div>
       </MainLayout>
     );
@@ -86,6 +109,7 @@ const AdminDashboard = () => {
               handleRejectItem={handleRejectItem}
             />
           </TabsContent>
+          
           <TabsContent value="users">
             <UsersTab
               searchQuery={searchQuery}
@@ -98,6 +122,7 @@ const AdminDashboard = () => {
               handleUnsuspendUser={handleUnsuspendUser}
             />
           </TabsContent>
+          
           <TabsContent value="listings">
             <ListingsTab
               searchQuery={searchQuery}
@@ -110,6 +135,7 @@ const AdminDashboard = () => {
               handleRejectItem={handleRejectItem}
             />
           </TabsContent>
+          
           <TabsContent value="reports">
             <ReportsTab
               reportedItems={reportedItems}
@@ -118,6 +144,7 @@ const AdminDashboard = () => {
               handleRejectItem={handleRejectItem}
             />
           </TabsContent>
+          
           <TabsContent value="admins">
             <AdminsTab
               users={users}

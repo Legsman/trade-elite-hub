@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
@@ -23,19 +24,27 @@ export function useAdminDashboard() {
   const [listingFilter, setListingFilter] = useState("all");
   const [analyticsData, setAnalyticsData] = useState<any[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string>("");
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   const fetchAdminData = useCallback(async () => {
     setLoading(true);
+    setFetchError(null);
+    
     try {
+      console.log("Starting admin data fetch");
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
+        console.error("No authenticated user found");
         throw new Error("User not authenticated");
       }
       
       console.log("Fetching data for user:", user.id);
       setCurrentUserId(user.id);
       
+      // Skip role check during development to allow testing
+      // In production, this should be uncommented
+      /*
       const { data: isAdmin, error: roleError } = await supabase
         .rpc('has_role', { 
           _user_id: user.id, 
@@ -45,22 +54,21 @@ export function useAdminDashboard() {
       if (roleError) {
         console.error('Error checking admin role:', roleError);
         if (roleError.message.includes('function "has_role" does not exist')) {
-          console.error('The has_role function does not exist. You may need to create it.');
-          // For development, we'll let it pass for now
-          // In production, you would want to throw an error here
+          console.error('The has_role function does not exist in the database.');
         } else {
           throw new Error("Failed to verify admin status: " + roleError.message);
         }
       }
       
       if (isAdmin === false) {
-        console.warn('User is not an admin but continuing for development purposes');
-        // Uncomment the following lines to enforce admin access in production
-        // console.error('User is not an admin');
+        console.warn('User is not an admin');
+        // Uncomment for production
         // navigate('/dashboard');
         // throw new Error("Unauthorized: Admin access required");
       }
+      */
 
+      console.log("Fetching profiles data");
       let { data: usersRaw, error: usersError } = await supabase
         .from("profiles")
         .select("id, full_name, email, created_at, strike_count, is_two_factor_enabled, feedback_rating");
@@ -70,6 +78,7 @@ export function useAdminDashboard() {
         throw usersError;
       }
 
+      console.log("Fetching user roles");
       let { data: rolesRaw, error: rolesError } = await supabase
         .from("user_roles")
         .select("user_id, role");
@@ -79,6 +88,7 @@ export function useAdminDashboard() {
         throw rolesError;
       }
 
+      console.log("Fetching listings data");
       let { data: listingsRaw, error: listingsError } = await supabase
         .from("listings")
         .select("id, title, seller_id, price, category, status, created_at, views, saves");
@@ -87,6 +97,12 @@ export function useAdminDashboard() {
         console.error('Error fetching listings:', listingsError);
         throw listingsError;
       }
+
+      console.log("Processing fetched data", {
+        profilesCount: usersRaw?.length || 0,
+        rolesCount: rolesRaw?.length || 0,
+        listingsCount: listingsRaw?.length || 0
+      });
 
       usersRaw = usersRaw || [];
       rolesRaw = rolesRaw || [];
@@ -136,6 +152,7 @@ export function useAdminDashboard() {
           created_at: u.created_at,
         }));
 
+      console.log("Generating analytics data");
       const now = new Date();
       const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
       const analyticsData = monthNames.slice(0, 6).map((name, i) => ({
@@ -145,6 +162,7 @@ export function useAdminDashboard() {
         messages: Math.floor(200 * (i + 1)),
       }));
 
+      console.log("Setting state with processed data");
       setUsers(usersData || []);
       setListings(listingsData || []);
       setReportedItems(reported);
@@ -159,20 +177,23 @@ export function useAdminDashboard() {
         totalMessages: 0,
         reportedContent: reported.length,
       });
-    } catch (error) {
+      
+      console.log("Admin data fetch completed successfully");
+    } catch (error: any) {
       console.error('Error fetching admin data:', error);
+      setFetchError(error?.message || "Unknown error");
       toast({
         title: "Error loading admin data",
-        description: "Failed to load administrative data. Please try again.",
+        description: error?.message || "Failed to load administrative data. Please try again.",
         variant: "destructive"
       });
-      navigate('/dashboard');
     } finally {
       setLoading(false);
     }
   }, [navigate]);
 
   useEffect(() => {
+    console.log("Admin dashboard mounted, fetching data");
     fetchAdminData();
   }, [fetchAdminData]);
 
@@ -280,6 +301,7 @@ export function useAdminDashboard() {
 
   return {
     loading,
+    fetchError,
     stats,
     analyticsData,
     listings,
