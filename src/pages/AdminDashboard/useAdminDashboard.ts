@@ -1,3 +1,4 @@
+
 import { useMemo, useCallback, useState, useEffect } from "react";
 import { useUsersAdminData } from "./hooks/useUsersAdminData";
 import { useListingsAdminData } from "./hooks/useListingsAdminData";
@@ -7,6 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { assignOrRemoveAdminRole } from "@/utils/adminUtils";
+import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from "./constants";
 
 export function useAdminDashboard() {
   const navigate = useNavigate();
@@ -24,6 +26,27 @@ export function useAdminDashboard() {
   const { listings, loading: loadingListings, setListings } = useListingsAdminData(userIdToName);
   const { reports, loading: loadingReports, setReports } = useReportsAdminData(userIdToName);
   const { stats, analyticsData, setStats } = useAdminStats(users, listings, reports);
+
+  const refetchData = useCallback(async () => {
+    try {
+      // Re-fetch all data sources
+      const { users: newUsers, loading: newUsersLoading } = await useUsersAdminData();
+      if (!newUsersLoading) setUsers(newUsers);
+
+      const newUserIdToName = Object.fromEntries(newUsers.map(u => [u.id, u.full_name]));
+      
+      const { listings: newListings, loading: newListingsLoading } = await useListingsAdminData(newUserIdToName);
+      if (!newListingsLoading) setListings(newListings);
+      
+      const { reports: newReports, loading: newReportsLoading } = await useReportsAdminData(newUserIdToName);
+      if (!newReportsLoading) setReports(newReports);
+      
+      setFetchError(null);
+    } catch (error) {
+      console.error("Failed to refresh data:", error);
+      setFetchError(error instanceof Error ? error.message : "Failed to refresh data");
+    }
+  }, []);
 
   const promoteAdmin = useCallback(async (userId: string) => {
     const { success, error } = await assignOrRemoveAdminRole(userId, "admin", "add");
@@ -146,6 +169,7 @@ export function useAdminDashboard() {
     users, setUsers,
     listings, setListings,
     reports, setReports,
+    reportedItems: reports, // Add alias for backward compatibility
     stats, analyticsData, setStats,
     loading: loadingUsers || loadingListings || loadingReports,
     searchQuery,
@@ -163,6 +187,7 @@ export function useAdminDashboard() {
     promoteAdmin,
     demoteAdmin,
     currentUserId,
-    fetchError
+    fetchError,
+    refetchData
   };
 }

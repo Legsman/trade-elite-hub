@@ -3,15 +3,28 @@ import MainLayout from "@/components/layout/MainLayout";
 import { Shield } from "lucide-react";
 import { useAdminDashboard } from "./AdminDashboard/useAdminDashboard";
 import AdminTabsLayout from "./AdminDashboard/AdminTabsLayout";
+import { formatDate } from "@/utils/adminUtils";
 
 const AdminDashboard = () => {
   const {
     users,
     listings,
-    reports,
+    reports, // Use reports rather than reportedItems
     stats,
     analyticsData,
     loading,
+    searchQuery,
+    setSearchQuery,
+    userFilter,
+    setUserFilter,
+    listingFilter,
+    setListingFilter,
+    handleApproveItem,
+    handleRejectItem,
+    handleSuspendUser,
+    handleUnsuspendUser,
+    filteredUsers,
+    filteredListings
   } = useAdminDashboard();
 
   if (loading) {
@@ -44,6 +57,19 @@ const AdminDashboard = () => {
           listings={listings}
           reports={reports}
           users={users}
+          formatDate={formatDate}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          userFilter={userFilter}
+          setUserFilter={setUserFilter}
+          listingFilter={listingFilter}
+          setListingFilter={setListingFilter}
+          filteredUsers={filteredUsers}
+          filteredListings={filteredListings}
+          handleApproveItem={handleApproveItem}
+          handleRejectItem={handleRejectItem}
+          handleSuspendUser={handleSuspendUser}
+          handleUnsuspendUser={handleUnsuspendUser}
         />
       </div>
     </MainLayout>

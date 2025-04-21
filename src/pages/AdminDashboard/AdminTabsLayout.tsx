@@ -12,6 +12,19 @@ type AdminTabsLayoutProps = {
   listings: ListingAdmin[];
   reports: ReportAdmin[];
   users: UserAdmin[];
+  formatDate: (dateString: string) => string;
+  searchQuery: string;
+  setSearchQuery: (q: string) => void;
+  userFilter: string;
+  setUserFilter: (f: string) => void;
+  listingFilter: string;
+  setListingFilter: (f: string) => void;
+  filteredUsers: UserAdmin[];
+  filteredListings: ListingAdmin[];
+  handleApproveItem: (id: string, type: string) => void;
+  handleRejectItem: (id: string, type: string) => void;
+  handleSuspendUser: (id: string) => void;
+  handleUnsuspendUser: (id: string) => void;
 };
 
 export function AdminTabsLayout({
@@ -20,6 +33,19 @@ export function AdminTabsLayout({
   listings,
   reports,
   users,
+  formatDate,
+  searchQuery,
+  setSearchQuery,
+  userFilter,
+  setUserFilter,
+  listingFilter,
+  setListingFilter,
+  filteredUsers,
+  filteredListings,
+  handleApproveItem,
+  handleRejectItem,
+  handleSuspendUser,
+  handleUnsuspendUser,
 }: AdminTabsLayoutProps) {
   return (
     <Tabs defaultValue="overview" className="space-y-6">
@@ -35,16 +61,42 @@ export function AdminTabsLayout({
           analyticsData={analyticsData}
           listings={listings}
           reportedItems={reports}
+          formatDate={formatDate}
+          handleApproveItem={handleApproveItem}
+          handleRejectItem={handleRejectItem}
         />
       </TabsContent>
       <TabsContent value="users">
-        <UsersTab users={users} />
+        <UsersTab
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          userFilter={userFilter}
+          setUserFilter={setUserFilter}
+          filteredUsers={filteredUsers}
+          formatDate={formatDate}
+          handleSuspendUser={handleSuspendUser}
+          handleUnsuspendUser={handleUnsuspendUser}
+        />
       </TabsContent>
       <TabsContent value="listings">
-        <ListingsTab listings={listings} />
+        <ListingsTab
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          listingFilter={listingFilter}
+          setListingFilter={setListingFilter}
+          filteredListings={filteredListings}
+          formatDate={formatDate}
+          handleApproveItem={handleApproveItem}
+          handleRejectItem={handleRejectItem}
+        />
       </TabsContent>
       <TabsContent value="reports">
-        <ReportsTab reportedItems={reports} />
+        <ReportsTab
+          reportedItems={reports}
+          formatDate={formatDate}
+          handleApproveItem={handleApproveItem}
+          handleRejectItem={handleRejectItem}
+        />
       </TabsContent>
     </Tabs>
   );
