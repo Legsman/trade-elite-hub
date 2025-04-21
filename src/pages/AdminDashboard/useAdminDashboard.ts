@@ -15,7 +15,7 @@ export const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.ey
 export function useAdminDashboard() {
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [isRefetching, setIsRefetching] = useState<boolean>(false);
-  const { createProcessingToast, updateToast } = useAdminToastManager();
+  const { toast } = useAdminToastManager();
 
   const { users, loading: loadingUsers, setUsers, error: usersError, refetchUsers } = useUsersAdminData();
   const userIdToName = useMemo(
@@ -71,29 +71,34 @@ export function useAdminDashboard() {
       setIsRefetching(true);
       setFetchError(null);
       
-      const toastId = createProcessingToast("refresh");
+      const toastId = "refresh-data";
+      toast.loading({
+        id: toastId,
+        title: "Refreshing Data",
+        description: "Fetching latest data from the server..."
+      });
       
       await refetchUsers();
       
-      // Slight delay to ensure UI updates are visible
-      setTimeout(() => {
-        updateToast(toastId, "success", "refresh");
-        setIsRefetching(false);
-      }, 500);
+      toast.success({
+        id: toastId,
+        title: "Data Refreshed",
+        description: "Dashboard data has been updated successfully"
+      });
       
     } catch (error) {
       console.error("Failed to refresh data:", error);
       setFetchError(error instanceof Error ? error.message : "Failed to refresh data");
       
-      updateToast(null, "error", "refresh", {
-        title: "Error refreshing data",
-        description: "Please try again or contact support",
-        variant: "destructive"
+      toast.error({
+        id: "refresh-error",
+        title: "Error Refreshing Data",
+        description: "Please try again or contact support"
       });
-
+    } finally {
       setIsRefetching(false);
     }
-  }, [refetchUsers, isRefetching, createProcessingToast, updateToast]);
+  }, [refetchUsers, isRefetching, toast]);
 
   const handleRoleOperationWithRefresh = useCallback(async (operationFn: Function, ...args: any[]) => {
     try {
@@ -101,17 +106,7 @@ export function useAdminDashboard() {
       
       if (result?.success) {
         // Only refresh if the operation was successful
-        const refreshToastId = createProcessingToast("refresh", {
-          title: "Refreshing",
-          description: "Updating data..."
-        });
-        
         await refetchData();
-        
-        updateToast(refreshToastId, "success", "refresh", {
-          title: "Updated",
-          description: "Data has been refreshed successfully"
-        });
       }
       
       return result;
@@ -119,7 +114,7 @@ export function useAdminDashboard() {
       console.error("Error during role operation:", error);
       return { success: false, error };
     }
-  }, [refetchData, createProcessingToast, updateToast]);
+  }, [refetchData]);
 
   const enhancedPromoteAdmin = useCallback((userId: string) => {
     return handleRoleOperationWithRefresh(promoteAdmin, userId);

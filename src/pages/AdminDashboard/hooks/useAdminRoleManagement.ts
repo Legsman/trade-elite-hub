@@ -6,14 +6,21 @@ import { useAdminToastManager } from "@/hooks/useAdminToastManager";
 
 export function useAdminRoleManagement(setUsers: React.Dispatch<React.SetStateAction<UserAdmin[]>>) {
   const [loadingUserId, setLoadingUserId] = useState<string | null>(null);
-  const { createProcessingToast, updateToast } = useAdminToastManager();
+  const { toast } = useAdminToastManager();
 
   const promoteAdmin = useCallback(async (userId: string) => {
     console.log("Attempting to promote user to admin:", userId);
     if (loadingUserId) return { success: false, error: "Another operation is in progress" }; 
     
     setLoadingUserId(userId);
-    const toastId = createProcessingToast("promote");
+    const toastId = `promote-${userId}`;
+    
+    // Show loading toast
+    toast.loading({
+      id: toastId,
+      title: "Processing",
+      description: "Promoting user to admin..."
+    });
     
     // Optimistic update
     setUsers((prev: UserAdmin[]) =>
@@ -26,7 +33,8 @@ export function useAdminRoleManagement(setUsers: React.Dispatch<React.SetStateAc
       const { success, error, message } = await assignOrRemoveAdminRole(userId, "admin", "add");
       
       if (success) {
-        updateToast(toastId, "success", "promote", {
+        toast.success({
+          id: toastId,
           title: "Success", 
           description: message || "User has been made an admin."
         });
@@ -41,7 +49,11 @@ export function useAdminRoleManagement(setUsers: React.Dispatch<React.SetStateAc
           )
         );
         
-        updateToast(toastId, "error", "promote", undefined, error);
+        toast.error({
+          id: toastId,
+          title: "Failed to promote user", 
+          description: error ? String(error) : "An unknown error occurred"
+        });
         return { success: false, error };
       }
     } catch (error) {
@@ -53,19 +65,30 @@ export function useAdminRoleManagement(setUsers: React.Dispatch<React.SetStateAc
         )
       );
       
-      updateToast(toastId, "error", "promote", undefined, error);
+      toast.error({
+        id: toastId,
+        title: "Failed to promote user",
+        description: error ? String(error) : "An unknown error occurred"
+      });
       return { success: false, error };
     } finally {
       setLoadingUserId(null);
     }
-  }, [setUsers, loadingUserId, createProcessingToast, updateToast]);
+  }, [setUsers, loadingUserId, toast]);
 
   const demoteAdmin = useCallback(async (userId: string) => {
     console.log("Attempting to demote admin:", userId);
     if (loadingUserId) return { success: false, error: "Another operation is in progress" };
     
     setLoadingUserId(userId);
-    const toastId = createProcessingToast("demote");
+    const toastId = `demote-${userId}`;
+    
+    // Show loading toast
+    toast.loading({
+      id: toastId,
+      title: "Processing",
+      description: "Removing admin privileges..."
+    });
     
     // Optimistic update
     setUsers((prev: UserAdmin[]) =>
@@ -78,7 +101,8 @@ export function useAdminRoleManagement(setUsers: React.Dispatch<React.SetStateAc
       const { success, error, message } = await assignOrRemoveAdminRole(userId, "admin", "remove");
       
       if (success) {
-        updateToast(toastId, "success", "demote", {
+        toast.success({
+          id: toastId,
           title: "Success", 
           description: message || "User has been demoted from admin."
         });
@@ -93,7 +117,11 @@ export function useAdminRoleManagement(setUsers: React.Dispatch<React.SetStateAc
           )
         );
         
-        updateToast(toastId, "error", "demote", undefined, error);
+        toast.error({
+          id: toastId,
+          title: "Failed to demote user", 
+          description: error ? String(error) : "An unknown error occurred"
+        });
         return { success: false, error };
       }
     } catch (error) {
@@ -105,12 +133,16 @@ export function useAdminRoleManagement(setUsers: React.Dispatch<React.SetStateAc
         )
       );
       
-      updateToast(toastId, "error", "demote", undefined, error);
+      toast.error({
+        id: toastId,
+        title: "Failed to demote user",
+        description: error ? String(error) : "An unknown error occurred"
+      });
       return { success: false, error };
     } finally {
       setLoadingUserId(null);
     }
-  }, [setUsers, loadingUserId, createProcessingToast, updateToast]);
+  }, [setUsers, loadingUserId, toast]);
 
   return {
     promoteAdmin,

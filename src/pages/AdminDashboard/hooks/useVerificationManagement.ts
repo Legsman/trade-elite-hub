@@ -6,7 +6,7 @@ import { useAdminToastManager } from "@/hooks/useAdminToastManager";
 
 export function useVerificationManagement(setUsers: React.Dispatch<React.SetStateAction<UserAdmin[]>>) {
   const [pendingOperation, setPendingOperation] = useState<string | null>(null);
-  const { createProcessingToast, updateToast } = useAdminToastManager();
+  const { toast } = useAdminToastManager();
 
   const toggleVerifiedStatus = useCallback(async (userId: string, currentStatus: "verified" | "unverified") => {
     if (pendingOperation === userId) {
@@ -19,10 +19,16 @@ export function useVerificationManagement(setUsers: React.Dispatch<React.SetStat
     
     // Set pending operation to prevent multiple actions on the same user
     setPendingOperation(userId);
-
-    // Create the processing toast
-    const toastAction = action === "add" ? "verify" : "unverify";
-    const toastId = createProcessingToast(toastAction);
+    
+    // Create a unique toast ID for this operation
+    const toastId = `verify-${userId}`;
+    
+    // Show initial loading toast
+    toast.loading({
+      id: toastId,
+      title: "Processing",
+      description: `${action === "add" ? "Verifying" : "Unverifying"} user...`
+    });
     
     // Optimistic update
     setUsers((prev: UserAdmin[]) =>
@@ -35,7 +41,8 @@ export function useVerificationManagement(setUsers: React.Dispatch<React.SetStat
       const { success, error, message } = await assignOrRemoveVerifiedStatus(userId, action);
       
       if (success) {
-        updateToast(toastId, "success", toastAction, {
+        toast.success({
+          id: toastId,
           title: "Success", 
           description: message || `User has been ${action === "add" ? "verified" : "unverified"}`
         });
@@ -50,7 +57,11 @@ export function useVerificationManagement(setUsers: React.Dispatch<React.SetStat
           )
         );
         
-        updateToast(toastId, "error", toastAction, undefined, error);
+        toast.error({
+          id: toastId,
+          title: `Failed to ${action === "add" ? "verify" : "unverify"} user`, 
+          description: error ? String(error) : "An unknown error occurred"
+        });
         return { success: false, error };
       }
     } catch (error) {
@@ -63,12 +74,16 @@ export function useVerificationManagement(setUsers: React.Dispatch<React.SetStat
         )
       );
       
-      updateToast(toastId, "error", toastAction, undefined, error);
+      toast.error({
+        id: toastId,
+        title: `Failed to ${action === "add" ? "verify" : "unverify"} user`,
+        description: error ? String(error) : "An unknown error occurred"
+      });
       return { success: false, error };
     } finally {
       setPendingOperation(null);
     }
-  }, [setUsers, pendingOperation, createProcessingToast, updateToast]);
+  }, [setUsers, pendingOperation, toast]);
 
   return {
     toggleVerifiedStatus,
