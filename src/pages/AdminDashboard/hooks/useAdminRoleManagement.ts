@@ -14,7 +14,7 @@ export function useAdminRoleManagement(setUsers: React.Dispatch<React.SetStateAc
     setLoadingUserId(userId);
     const toastId = toast({ 
       title: "Processing", 
-      description: "Promoting user to admin... This may take up to 13 seconds.",
+      description: "Promoting user to admin...",
     });
     
     // Optimistic update
@@ -30,7 +30,7 @@ export function useAdminRoleManagement(setUsers: React.Dispatch<React.SetStateAc
       if (success) {
         toast({ 
           title: "Success", 
-          description: message || "User has been made an admin. Database will refresh shortly.",
+          description: message || "User has been made an admin.",
         });
       } else {
         console.error("Failed to promote admin:", error);
@@ -74,7 +74,7 @@ export function useAdminRoleManagement(setUsers: React.Dispatch<React.SetStateAc
     setLoadingUserId(userId);
     const toastId = toast({ 
       title: "Processing", 
-      description: "Removing admin privileges... This may take up to 13 seconds.",
+      description: "Removing admin privileges...",
     });
     
     // Optimistic update
@@ -90,7 +90,7 @@ export function useAdminRoleManagement(setUsers: React.Dispatch<React.SetStateAc
       if (success) {
         toast({ 
           title: "Success", 
-          description: message || "User has been demoted from admin. Database will refresh shortly.",
+          description: message || "User has been demoted from admin.",
         });
       } else {
         console.error("Failed to demote admin:", error);

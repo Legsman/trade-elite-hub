@@ -95,13 +95,7 @@ export function useAdminDashboard() {
   const handleRoleOperationWithRefresh = useCallback(async (operationFn: Function, ...args: any[]) => {
     try {
       await operationFn(...args);
-      
-      // Wait for the propagation delay before refreshing
-      await new Promise(resolve => setTimeout(resolve, 13000));
-      
-      // Only refresh after the delay
       await refetchData();
-      
     } catch (error) {
       console.error("Error during role operation:", error);
     }
