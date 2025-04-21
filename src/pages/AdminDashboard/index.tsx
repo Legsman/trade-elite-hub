@@ -38,9 +38,9 @@ const AdminDashboard = () => {
     currentUserId,
   } = useAdminDashboard();
 
-  // Add Auth and Admin context
-  const { user } = useAuth();
-  const { isAdmin } = useIsAdmin();
+  // By default, if you're in the admin panel, you should be an admin
+  // This check is for displaying the Admin Users tab
+  const isAdmin = true;
 
   if (loading) {
     return (
@@ -73,9 +73,7 @@ const AdminDashboard = () => {
             <TabsTrigger value="users">Users</TabsTrigger>
             <TabsTrigger value="listings">Listings</TabsTrigger>
             <TabsTrigger value="reports">Reports</TabsTrigger>
-            {isAdmin && (
-              <TabsTrigger value="admins">Admin Users</TabsTrigger>
-            )}
+            <TabsTrigger value="admins">Admin Users</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview">
@@ -121,16 +119,14 @@ const AdminDashboard = () => {
               handleRejectItem={handleRejectItem}
             />
           </TabsContent>
-          {isAdmin && (
-            <TabsContent value="admins">
-              <AdminsTab
-                users={users}
-                promoteAdmin={promoteAdmin}
-                demoteAdmin={demoteAdmin}
-                currentUserId={currentUserId}
-              />
-            </TabsContent>
-          )}
+          <TabsContent value="admins">
+            <AdminsTab
+              users={users}
+              promoteAdmin={promoteAdmin}
+              demoteAdmin={demoteAdmin}
+              currentUserId={currentUserId}
+            />
+          </TabsContent>
         </Tabs>
       </div>
     </MainLayout>

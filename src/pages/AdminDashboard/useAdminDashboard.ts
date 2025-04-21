@@ -278,8 +278,6 @@ export function useAdminDashboard() {
     return matchesSearch;
   }), [listings, searchQuery, listingFilter]);
 
-  
-
   return {
     loading,
     stats,
