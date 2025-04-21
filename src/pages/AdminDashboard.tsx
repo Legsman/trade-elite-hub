@@ -5,13 +5,13 @@ import { Shield, Users, BarChart2, FileText, AlertTriangle, Check, X, Search } f
 import MainLayout from "@/components/layout/MainLayout";
 import { useAuth } from "@/hooks/auth";
 import { supabase } from "@/integrations/supabase/client";
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardFooter, 
-  CardHeader, 
-  CardTitle 
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -50,6 +50,9 @@ import OverviewTab from "./AdminDashboard/OverviewTab";
 import UsersTab from "./AdminDashboard/UsersTab";
 import ListingsTab from "./AdminDashboard/ListingsTab";
 import ReportsTab from "./AdminDashboard/ReportsTab";
+
+// Import the constants from useAdminDashboard
+import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from "./AdminDashboard/useAdminDashboard";
 
 const AdminDashboard = () => {
   const { user } = useAuth();
@@ -93,8 +96,8 @@ const AdminDashboard = () => {
         .select("id, title, seller_id, price, category, status, created_at, views, saves");
       if (listingsError) throw listingsError;
 
-      // Use a generic query for reports since it's not in the TypeScript types
-      const { data: reportsRaw, error: reportsError } = await fetch(
+      // Use a generic fetch for reports since the supabase client types do not recognize it yet
+      const reportsRaw = await fetch(
         `${SUPABASE_URL}/rest/v1/reports?select=*`,
         {
           headers: {
@@ -103,8 +106,6 @@ const AdminDashboard = () => {
           },
         }
       ).then(response => response.json());
-
-      if (reportsError) throw reportsError;
 
       const userRolesMap = new Map();
       rolesRaw.forEach(({ user_id, role }) => {
