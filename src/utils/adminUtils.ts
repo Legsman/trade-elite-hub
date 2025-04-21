@@ -27,14 +27,15 @@ export async function checkUserRoles(userId: string) {
   try {
     // This bypasses RLS by using a direct RPC call to our security definer function
     const { data, error } = await supabase
-      .rpc('get_user_roles', { _user_id: userId });
+      .rpc('rpc_is_admin');
       
     if (error) {
       console.error("Error checking user roles:", error);
       return { success: false, error, roles: [] };
     }
     
-    return { success: true, roles: data || [] };
+    const isAdmin = data && data.length > 0 && data[0].is_admin;
+    return { success: true, roles: isAdmin ? ['admin'] : [] };
   } catch (e) {
     console.error("Exception checking user roles:", e);
     return { success: false, error: e, roles: [] };

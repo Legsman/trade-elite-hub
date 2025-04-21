@@ -12,6 +12,7 @@ export function useCurrentAdminUser() {
         // This approach avoids any potential RLS recursion
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
+          console.log("Current admin user ID:", user.id);
           setCurrentUserId(user.id);
         }
       } catch (error) {

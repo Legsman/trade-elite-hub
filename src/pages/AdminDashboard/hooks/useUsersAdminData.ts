@@ -26,25 +26,49 @@ export function useUsersAdminData() {
           return;
         }
         
-        // Fetch admin roles directly using SQL query via RPC
+        // Fetch user roles directly using the RPC function
         // This avoids recursion by using a security definer function
         const { data: rolesData, error: rolesError } = await supabase
-          .rpc('get_user_roles');
+          .rpc('rpc_is_admin');
           
         if (rolesError) {
-          console.error("Error fetching user roles:", rolesError);
+          console.error("Error checking admin status:", rolesError);
+          // Continue with available data
+        }
+        
+        // Determine if current user is admin (for debugging)
+        const isCurrentUserAdmin = rolesData && rolesData.length > 0 && rolesData[0].is_admin;
+        console.log("Current user admin status:", isCurrentUserAdmin);
+        
+        // Fetch all user roles from user_roles table
+        // This approach is secured by the admin check in AdminRoute.tsx
+        const { data: userRoles, error: userRolesError } = await supabase
+          .from('user_roles')
+          .select('user_id, role');
+          
+        if (userRolesError) {
+          console.error("Error fetching user roles:", userRolesError);
           // Continue with available data
         }
 
         // Create a map of user IDs to their roles
         const userRolesMap = new Map();
-        if (rolesData) {
-          rolesData.forEach((item: any) => {
+        if (userRoles && userRoles.length > 0) {
+          userRoles.forEach((item: any) => {
             if (item.user_id && item.role) {
-              userRolesMap.set(item.user_id, item.role);
+              // If user has admin role, set it (prioritize admin role)
+              if (item.role === 'admin') {
+                userRolesMap.set(item.user_id, 'admin');
+              } 
+              // Only set non-admin role if user doesn't already have admin role
+              else if (!userRolesMap.has(item.user_id)) {
+                userRolesMap.set(item.user_id, item.role);
+              }
             }
           });
         }
+        
+        console.log("User roles map:", Object.fromEntries(userRolesMap));
 
         setUsers(
           (usersRaw || []).map(profile => ({
