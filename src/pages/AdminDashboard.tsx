@@ -93,10 +93,16 @@ const AdminDashboard = () => {
         .select("id, title, seller_id, price, category, status, created_at, views, saves");
       if (listingsError) throw listingsError;
 
-      // Fetch reports using custom query to avoid TypeScript errors
-      const { data: reportsRaw, error: reportsError } = await supabase
-        .from('reports')
-        .select('*');
+      // Use a generic query for reports since it's not in the TypeScript types
+      const { data: reportsRaw, error: reportsError } = await fetch(
+        `${SUPABASE_URL}/rest/v1/reports?select=*`,
+        {
+          headers: {
+            'apikey': SUPABASE_PUBLISHABLE_KEY,
+            'Authorization': `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+          },
+        }
+      ).then(response => response.json());
 
       if (reportsError) throw reportsError;
 
@@ -130,7 +136,7 @@ const AdminDashboard = () => {
         seller_name: userIdToName[listing.seller_id] || "Unknown",
       }));
 
-      // Process reports data - explicitly cast to ensure TypeScript recognizes the type
+      // Convert raw reports data to our typed Report interface
       const reports: Supabase.Report[] = (reportsRaw || []).map((report: any) => ({
         id: report.id,
         type: report.type,

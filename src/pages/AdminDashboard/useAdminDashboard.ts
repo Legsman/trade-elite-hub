@@ -5,6 +5,9 @@ import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { assignOrRemoveAdminRole } from "@/utils/adminUtils";
 
+const SUPABASE_URL = "https://hwnsooioeqydhyukenfe.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh3bnNvb2lvZXF5ZGh5dWtlbmZlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUxODI5NjgsImV4cCI6MjA2MDc1ODk2OH0.trG5sAD9qaxe5gwpxQ2ZtIKteBZkFEJnpYMbSYIf9tY";
+
 export function useAdminDashboard() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -104,16 +107,25 @@ export function useAdminDashboard() {
         listingsRaw = [];
       }
 
-      // For typed reports, we need to use a raw query since supabase client doesn't know about reports table yet
+      // For reports, use the Fetch API directly since the table isn't in the type definitions
       console.log("Fetching reports data");
-      const { data: reportsRaw, error: reportsError } = await supabase
-        .from('reports')
-        .select('*');
+      const reportsResponse = await fetch(
+        `${SUPABASE_URL}/rest/v1/reports?select=*`,
+        {
+          headers: {
+            'apikey': SUPABASE_PUBLISHABLE_KEY,
+            'Authorization': `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+          },
+        }
+      );
       
-      if (reportsError) {
+      if (!reportsResponse.ok) {
+        const reportsError = await reportsResponse.text();
         console.error('Error fetching reports:', reportsError);
-        throw new Error(`Failed to fetch reports: ${reportsError.message}`);
+        throw new Error(`Failed to fetch reports: ${reportsError}`);
       }
+      
+      const reportsRaw = await reportsResponse.json();
 
       console.log("Processing fetched data", {
         profilesCount: usersRaw?.length || 0,
@@ -158,7 +170,7 @@ export function useAdminDashboard() {
         seller_name: userIdToName[listing.seller_id] || "Unknown",
       }));
 
-      // Process reports data - explicitly typed as Supabase.Report[] to fix TypeScript errors
+      // Process reports data - explicitly typed as Supabase.Report[]
       const reportsData: Supabase.Report[] = (reportsRaw || []).map((report: any) => ({
         id: report.id,
         type: report.type,
