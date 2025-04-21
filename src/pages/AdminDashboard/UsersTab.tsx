@@ -45,7 +45,7 @@ const UsersTab: React.FC<UsersTabProps> = ({
 }) => {
   useEffect(() => {
     console.log("UsersTab - filteredUsers:", filteredUsers);
-    console.log("UsersTab - admin users:", filteredUsers.filter(u => u.role === "admin").map(u => u.full_name));
+    console.log("UsersTab - verified users:", filteredUsers.filter(u => u.verified_status === "verified").map(u => u.full_name));
   }, [filteredUsers]);
 
   return (
@@ -110,18 +110,13 @@ const UsersTab: React.FC<UsersTabProps> = ({
                       {user.role === 'admin' ? (
                         <Badge variant="default">Always Verified</Badge>
                       ) : (
-                        <Select
-                          value={user.verified_status}
-                          onValueChange={(value) => toggleVerifiedStatus(user.id, value as "verified" | "unverified")}
+                        <Badge 
+                          variant={user.verified_status === "verified" ? "default" : "outline"}
+                          className="cursor-pointer hover:bg-secondary"
+                          onClick={() => toggleVerifiedStatus(user.id, user.verified_status)}
                         >
-                          <SelectTrigger className="w-[130px]">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="verified">Verified</SelectItem>
-                            <SelectItem value="unverified">Unverified</SelectItem>
-                          </SelectContent>
-                        </Select>
+                          {user.verified_status === "verified" ? "Verified" : "Unverified"}
+                        </Badge>
                       )}
                     </TableCell>
                     <TableCell>{formatDate(user.created_at)}</TableCell>

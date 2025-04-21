@@ -1,4 +1,3 @@
-
 import { useCallback } from "react";
 import { assignOrRemoveAdminRole, assignOrRemoveVerifiedStatus } from "@/utils/adminUtils";
 import { toast } from "@/hooks/use-toast";
@@ -7,22 +6,33 @@ import { UserAdmin, ListingAdmin, ReportAdmin } from "../types";
 export function useAdminActions(setUsers: any, setListings: any, setReports: any) {
   const promoteAdmin = useCallback(async (userId: string) => {
     console.log("Attempting to promote user to admin:", userId);
+    
+    // Optimistically update UI first
+    setUsers((prev: UserAdmin[]) =>
+      prev.map(u =>
+        u.id === userId ? { ...u, role: "admin", verified_status: "verified" } : u
+      )
+    );
+    
+    // Make the actual API call
     const { success, error, message } = await assignOrRemoveAdminRole(userId, "admin", "add");
+    
     if (success) {
-      setUsers((prev: UserAdmin[]) =>
-        prev.map(u =>
-          u.id === userId ? { ...u, role: "admin", verified_status: "verified" } : u
-        )
-      );
       toast({ 
         title: "Admin promoted", 
         description: message || "User has been made an admin" 
       });
     } else {
       console.error("Failed to promote admin:", error);
+      // Revert the optimistic update if operation failed
+      setUsers((prev: UserAdmin[]) =>
+        prev.map(u =>
+          u.id === userId ? { ...u, role: "user" } : u
+        )
+      );
       toast({ 
         title: "Failed to promote", 
-        description: error?.message || error || "Failed", 
+        description: error?.message || String(error) || "Failed", 
         variant: "destructive" 
       });
     }
@@ -30,22 +40,33 @@ export function useAdminActions(setUsers: any, setListings: any, setReports: any
 
   const demoteAdmin = useCallback(async (userId: string) => {
     console.log("Attempting to demote admin:", userId);
+    
+    // Optimistically update UI first
+    setUsers((prev: UserAdmin[]) =>
+      prev.map(u =>
+        u.id === userId ? { ...u, role: "user" } : u
+      )
+    );
+    
+    // Make the actual API call
     const { success, error, message } = await assignOrRemoveAdminRole(userId, "admin", "remove");
+    
     if (success) {
-      setUsers((prev: UserAdmin[]) =>
-        prev.map(u =>
-          u.id === userId ? { ...u, role: "user" } : u
-        )
-      );
       toast({ 
         title: "Admin removed", 
         description: message || "User has been demoted from admin" 
       });
     } else {
       console.error("Failed to demote admin:", error);
+      // Revert the optimistic update if operation failed
+      setUsers((prev: UserAdmin[]) =>
+        prev.map(u =>
+          u.id === userId ? { ...u, role: "admin" } : u
+        )
+      );
       toast({ 
         title: "Failed to demote", 
-        description: error?.message || error || "Failed", 
+        description: error?.message || String(error) || "Failed", 
         variant: "destructive" 
       });
     }
@@ -54,23 +75,33 @@ export function useAdminActions(setUsers: any, setListings: any, setReports: any
   const toggleVerifiedStatus = useCallback(async (userId: string, currentStatus: "verified" | "unverified") => {
     console.log("Toggling verified status for user:", userId, "Current status:", currentStatus);
     const action = currentStatus === "unverified" ? "add" : "remove";
+    
+    // Optimistically update UI first
+    setUsers((prev: UserAdmin[]) =>
+      prev.map(u =>
+        u.id === userId ? { ...u, verified_status: action === "add" ? "verified" : "unverified" } : u
+      )
+    );
+    
+    // Make the actual API call
     const { success, error, message } = await assignOrRemoveVerifiedStatus(userId, action);
     
     if (success) {
-      setUsers((prev: UserAdmin[]) =>
-        prev.map(u =>
-          u.id === userId ? { ...u, verified_status: action === "add" ? "verified" : "unverified" } : u
-        )
-      );
       toast({ 
         title: `User ${action === "add" ? "verified" : "unverified"}`, 
         description: message || `User has been ${action === "add" ? "verified" : "unverified"}`
       });
     } else {
       console.error("Failed to update verification status:", error);
+      // Revert the optimistic update if operation failed
+      setUsers((prev: UserAdmin[]) =>
+        prev.map(u =>
+          u.id === userId ? { ...u, verified_status: currentStatus } : u
+        )
+      );
       toast({ 
         title: "Failed to update verification status", 
-        description: error?.message || error || "Failed", 
+        description: error?.message || String(error) || "Failed", 
         variant: "destructive" 
       });
     }
