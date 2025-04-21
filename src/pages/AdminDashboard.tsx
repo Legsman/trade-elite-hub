@@ -39,10 +39,6 @@ const AdminDashboard = () => {
     refetchData
   } = useAdminDashboard();
 
-  console.log("AdminDashboard - Loading state:", loading);
-  console.log("AdminDashboard - Error state:", fetchError);
-  console.log("AdminDashboard - Data loaded:", { users: users.length, listings: listings.length, reports: reports.length });
-
   if (loading) {
     return (
       <MainLayout>

@@ -1,13 +1,9 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
-// Securely assign or remove admin role by calling edge function
 export async function assignOrRemoveAdminRole(targetUserId: string, role: string, action: "add" | "remove") {
   try {
     console.log(`Attempting to ${action} ${role} role for user ${targetUserId}`);
     
-    // This function calls our edge function which uses the service role key
-    // to bypass RLS policies and avoid recursion
     const { data, error } = await supabase.functions.invoke("admin-role-management", {
       body: { targetUserId, role, action }
     });
@@ -19,11 +15,10 @@ export async function assignOrRemoveAdminRole(targetUserId: string, role: string
     
     console.log(`Admin role ${action} response:`, data);
     
-    // Always wait for the database to update, even on success
-    console.log("Waiting for database propagation...");
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // Increased delay to ensure database propagation
+    console.log("Waiting for database propagation (2s)...");
+    await new Promise(resolve => setTimeout(resolve, 2000));
     
-    // Handle both success cases - where it was already done or newly done
     if (data && (data.success || data.message?.includes("already") || data.message?.includes("not found"))) {
       return { 
         success: true, 
@@ -43,7 +38,6 @@ export async function assignOrRemoveVerifiedStatus(targetUserId: string, action:
   try {
     console.log(`Attempting to ${action} verified status for user ${targetUserId}`);
     
-    // Reuse the admin-role-management function but with 'verified' role
     const { data, error } = await supabase.functions.invoke("admin-role-management", {
       body: { targetUserId, role: 'verified', action }
     });
@@ -55,11 +49,10 @@ export async function assignOrRemoveVerifiedStatus(targetUserId: string, action:
     
     console.log(`Verified status ${action} response:`, data);
     
-    // Always wait for the database to update, even on success
-    console.log("Waiting for database propagation...");
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // Increased delay to ensure database propagation
+    console.log("Waiting for database propagation (2s)...");
+    await new Promise(resolve => setTimeout(resolve, 2000));
     
-    // Handle all success cases with a consistent response
     if (data && (data.success || data.message?.includes("already") || data.message?.includes("not found"))) {
       return { 
         success: true, 

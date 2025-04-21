@@ -46,6 +46,9 @@ export function useUsersAdminData() {
       const usersWithRoles: UserAdmin[] = await Promise.all(
         profilesData.map(async (profile) => {
           try {
+            // Add slight delay between role checks to prevent rate limiting
+            await new Promise(resolve => setTimeout(resolve, 50));
+            
             // Use the security definer function to check if user is admin
             const { data: isAdminData, error: adminError } = await supabase
               .rpc('is_admin', { _user_id: profile.id });
@@ -56,7 +59,8 @@ export function useUsersAdminData() {
             
             const isAdmin = isAdminData || false;
             
-            // For verified status, use the has_role function
+            // For verified status, use the has_role function with a small delay
+            await new Promise(resolve => setTimeout(resolve, 50));
             const { data: hasVerifiedRole, error: verifiedError } = await supabase
               .rpc('has_role', { 
                 _user_id: profile.id, 
@@ -81,11 +85,10 @@ export function useUsersAdminData() {
               verified_status: verifiedStatus,
               strike_count: profile.strike_count || 0,
               last_visited: profile.updated_at,
-              listings_count: 0  // This could be enhanced by joining with listings table if needed
+              listings_count: 0
             };
           } catch (userError) {
             console.error(`Error processing user ${profile.id}:`, userError);
-            // Return a default user with error state
             return {
               id: profile.id,
               email: profile.email,
@@ -118,6 +121,8 @@ export function useUsersAdminData() {
 
   const refetchUsers = useCallback(async () => {
     console.log("Manually refetching users data...");
+    // Add a delay before refetching to ensure DB changes have propagated
+    await new Promise(resolve => setTimeout(resolve, 2000));
     await fetchUsers();
   }, [fetchUsers]);
 
