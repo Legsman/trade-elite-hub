@@ -23,24 +23,7 @@ export function useIsAdmin() {
         // Explicitly log the user ID we're checking
         console.log("Checking admin status for user ID:", user.id);
         
-        // Insert admin role if it doesn't exist for this user (TEMPORARY FIX)
-        // This is just for debugging purposes to ensure the admin role exists
-        const { error: insertError } = await supabase
-          .from("user_roles")
-          .upsert({ 
-            user_id: user.id, 
-            role: "admin" 
-          }, { 
-            onConflict: 'user_id,role' 
-          });
-          
-        if (insertError) {
-          console.error("Error upserting admin role:", insertError);
-        } else {
-          console.log("Admin role upserted for user:", user.id);
-        }
-        
-        // Now check if the user has the admin role
+        // Check if the user has the admin role
         const { data, error } = await supabase
           .from("user_roles")
           .select("role")
