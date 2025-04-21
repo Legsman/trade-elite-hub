@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
@@ -279,7 +278,7 @@ export function useAdminDashboard() {
     return matchesSearch;
   }), [listings, searchQuery, listingFilter]);
 
-  const currentUserId = users.find(u => u.email === supabase.auth.user()?.email)?.id || "";
+  
 
   return {
     loading,
