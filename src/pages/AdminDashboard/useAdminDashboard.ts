@@ -1,4 +1,3 @@
-
 import { useMemo, useCallback, useState, useEffect } from "react";
 import { useUsersAdminData } from "./hooks/useUsersAdminData";
 import { useListingsAdminData } from "./hooks/useListingsAdminData";
@@ -31,7 +30,6 @@ export function useAdminDashboard() {
   const { reports, loading: loadingReports, setReports, error: reportsError } = useReportsAdminData(userIdToName);
   const { stats, analyticsData, setStats } = useAdminStats(users, listings, reports);
 
-  // Detect and update the fetchError state
   useEffect(() => {
     const combinedError = usersError || listingsError || reportsError;
     if (combinedError) {
@@ -44,12 +42,8 @@ export function useAdminDashboard() {
 
   const refetchData = useCallback(async () => {
     try {
-      // Reset errors
       setFetchError(null);
-      
-      // We'll trigger refetches in the individual hooks by updating their dependencies
-      setUsers([...users]); // This will trigger a re-render which should initiate refetching in the hooks
-      
+      setUsers([...users]);
       toast({
         title: "Refreshing data",
         description: "Attempting to fetch fresh admin data"

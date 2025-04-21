@@ -14,6 +14,7 @@ export function useReportsAdminData(userIdToName: Record<string, string> = {}) {
         setLoading(true);
         setError(null);
         
+        // Use direct query to avoid potential recursion with RLS policies
         const { data: reportsRaw, error: reportsError } = await supabase
           .from("reports")
           .select("*");

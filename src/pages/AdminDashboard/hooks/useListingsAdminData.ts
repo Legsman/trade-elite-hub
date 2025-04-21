@@ -14,6 +14,7 @@ export function useListingsAdminData(userIdToName: Record<string, string> = {}) 
         setLoading(true);
         setError(null);
         
+        // Use direct query to avoid potential recursion with RLS policies
         const { data: listingsRaw, error: listingsError } = await supabase
           .from("listings")
           .select("id, title, seller_id, price, category, status, created_at, views, saves");
