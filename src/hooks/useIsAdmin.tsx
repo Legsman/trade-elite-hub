@@ -20,23 +20,19 @@ export function useIsAdmin() {
     const check = async () => {
       setChecking(true);
       try {
-        // Explicitly log the user ID we're checking
-        console.log("Checking admin status for user ID:", user.id);
-        
-        // Check if the user has the admin role
+        // Check if the user has the admin role using the database function
         const { data, error } = await supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", user.id)
-          .eq("role", "admin")
-          .maybeSingle();
+          .rpc('has_role', { 
+            _user_id: user.id, 
+            _role: 'admin' 
+          });
 
         if (cancelled) return;
         
         console.log("Admin check result:", data, error); // Debug log
         
         if (error) {
-          console.error("Error fetching admin role:", error);
+          console.error("Error checking admin role:", error);
           setIsAdmin(false);
         } else {
           setIsAdmin(!!data);
