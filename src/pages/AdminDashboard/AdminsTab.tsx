@@ -13,6 +13,7 @@ interface AdminsTabProps {
 
 const AdminsTab: React.FC<AdminsTabProps> = ({ users, promoteAdmin, demoteAdmin, currentUserId }) => {
   console.log("AdminsTab received users:", users);
+  console.log("AdminsTab users with admin role:", users.filter(user => user.role === "admin"));
   console.log("Current user ID:", currentUserId);
   
   return (
@@ -30,41 +31,44 @@ const AdminsTab: React.FC<AdminsTabProps> = ({ users, promoteAdmin, demoteAdmin,
             </TableRow>
           </TableHeader>
           <TableBody>
-            {users.map((user) => (
-              <TableRow key={user.id}>
-                <TableCell>{user.full_name}</TableCell>
-                <TableCell>{user.email}</TableCell>
-                <TableCell>
-                  <Badge variant={user.role === "admin" ? "default" : "outline"}>
-                    {user.role}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <Badge
-                    variant={
-                      user.status === "active"
-                        ? "outline"
-                        : user.status === "warning"
-                        ? "secondary"
-                        : "destructive"
-                    }
-                  >
-                    {user.status}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  {user.role !== "admin" ? (
-                    <Button size="sm" onClick={() => promoteAdmin(user.id)}>
-                      Make Admin
-                    </Button>
-                  ) : (
-                    <Button size="sm" variant="outline" onClick={() => demoteAdmin(user.id)} disabled={user.id === currentUserId}>
-                      Remove Admin
-                    </Button>
-                  )}
-                </TableCell>
-              </TableRow>
-            ))}
+            {users.map((user) => {
+              console.log(`Rendering user ${user.full_name} with role: ${user.role}`);
+              return (
+                <TableRow key={user.id}>
+                  <TableCell>{user.full_name}</TableCell>
+                  <TableCell>{user.email}</TableCell>
+                  <TableCell>
+                    <Badge variant={user.role === "admin" ? "default" : "outline"}>
+                      {user.role}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge
+                      variant={
+                        user.status === "active"
+                          ? "outline"
+                          : user.status === "warning"
+                          ? "secondary"
+                          : "destructive"
+                      }
+                    >
+                      {user.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    {user.role !== "admin" ? (
+                      <Button size="sm" onClick={() => promoteAdmin(user.id)}>
+                        Make Admin
+                      </Button>
+                    ) : (
+                      <Button size="sm" variant="outline" onClick={() => demoteAdmin(user.id)} disabled={user.id === currentUserId}>
+                        Remove Admin
+                      </Button>
+                    )}
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </div>

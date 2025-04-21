@@ -26,7 +26,7 @@ export function useUsersAdminData() {
           return;
         }
         
-        // Fetch all admin roles directly from user_roles table with explicit logging
+        // Fetch all admin roles with explicit logging
         console.log("Fetching admin roles...");
         const { data: adminRoles, error: adminRolesError } = await supabase
           .from('user_roles')
