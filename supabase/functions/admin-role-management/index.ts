@@ -19,13 +19,14 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: "Invalid input" }), { headers: corsHeaders, status: 400 });
     }
 
-    // Authenticate the caller
-    const supabaseClient = createClient(
+    // Create a Supabase client with the service role key
+    // This bypasses RLS policies and prevents recursion
+    const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Who is making the call?
+    // Authenticate the caller
     const authHeader = req.headers.get("authorization");
     if (!authHeader) {
       return new Response(JSON.stringify({ error: "No authorization provided" }), { headers: corsHeaders, status: 401 });
@@ -36,14 +37,15 @@ serve(async (req) => {
     const {
       data: { user },
       error: userError,
-    } = await supabaseClient.auth.getUser(jwt);
+    } = await supabaseAdmin.auth.getUser(jwt);
 
     if (!user || userError) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), { headers: corsHeaders, status: 401 });
     }
 
-    // Now check if that user is admin using our security definer function
-    const { data: isAdmin } = await supabaseClient.rpc("is_admin", {
+    // Use the security definer function to check if user is admin
+    // This avoids potential recursion in RLS policies
+    const { data: isAdmin } = await supabaseAdmin.rpc("is_admin", {
       _user_id: user.id,
     });
     
@@ -55,24 +57,26 @@ serve(async (req) => {
     let resp;
     if (action === "add") {
       // Insert admin role (if not present)
-      resp = await supabaseClient
+      resp = await supabaseAdmin
         .from("user_roles")
         .upsert({ user_id: targetUserId, role }, { onConflict: "user_id,role" });
     } else if (action === "remove") {
       // Remove the admin role
-      resp = await supabaseClient
+      resp = await supabaseAdmin
         .from("user_roles")
         .delete()
         .eq("user_id", targetUserId)
         .eq("role", role);
     }
 
-    if (resp.error) {
+    if (resp && resp.error) {
+      console.error("Admin role management error:", resp.error);
       return new Response(JSON.stringify({ error: resp.error.message }), { headers: corsHeaders, status: 400 });
     }
 
     return new Response(JSON.stringify({ success: true }), { headers: corsHeaders });
   } catch (e) {
+    console.error("Edge function error:", e);
     return new Response(JSON.stringify({ error: e.message || "Internal server error" }), { headers: corsHeaders, status: 500 });
   }
 });

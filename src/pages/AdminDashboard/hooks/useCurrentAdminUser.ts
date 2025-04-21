@@ -8,6 +8,8 @@ export function useCurrentAdminUser() {
   useEffect(() => {
     async function fetchInitialData() {
       try {
+        // Get the current user via supabase auth
+        // This approach avoids any potential RLS recursion
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
           setCurrentUserId(user.id);

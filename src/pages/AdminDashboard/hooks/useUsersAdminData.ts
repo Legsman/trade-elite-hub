@@ -14,6 +14,7 @@ export function useUsersAdminData() {
         setLoading(true);
         setError(null);
         
+        // Fetch profiles data
         const { data: usersRaw, error: usersError } = await supabase
           .from("profiles")
           .select("id, full_name, email, created_at, strike_count, is_two_factor_enabled, feedback_rating");
@@ -25,21 +26,25 @@ export function useUsersAdminData() {
           return;
         }
         
-        // Fetch roles for users - using direct query to avoid recursion
-        const { data: rolesRaw, error: rolesError } = await supabase
-          .from("user_roles")
-          .select("user_id, role");
+        // Fetch admin roles directly using SQL query via RPC
+        // This avoids recursion by using a security definer function
+        const { data: rolesData, error: rolesError } = await supabase
+          .rpc('get_user_roles');
           
         if (rolesError) {
           console.error("Error fetching user roles:", rolesError);
-          setError(rolesError.message);
           // Continue with available data
         }
 
+        // Create a map of user IDs to their roles
         const userRolesMap = new Map();
-        (rolesRaw || []).forEach(({ user_id, role }: any) => {
-          userRolesMap.set(user_id, role);
-        });
+        if (rolesData) {
+          rolesData.forEach((item: any) => {
+            if (item.user_id && item.role) {
+              userRolesMap.set(item.user_id, item.role);
+            }
+          });
+        }
 
         setUsers(
           (usersRaw || []).map(profile => ({

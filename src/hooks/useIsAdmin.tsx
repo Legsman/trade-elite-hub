@@ -20,7 +20,8 @@ export function useIsAdmin() {
     const check = async () => {
       setChecking(true);
       try {
-        // Use the security definer function that won't cause recursion
+        // Use the security definer function to check admin status
+        // This is crucial to avoid infinite recursion
         const { data, error } = await supabase
           .rpc('is_admin', { _user_id: user.id });
 
