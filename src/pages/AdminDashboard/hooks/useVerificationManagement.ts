@@ -24,9 +24,11 @@ export function useVerificationManagement(setUsers: React.Dispatch<React.SetStat
     
     if (success) {
       toast({ 
+        id: toastId,
         title: "Success", 
         description: message || `User has been ${action === "add" ? "verified" : "unverified"}`
       });
+      return { success: true };
     } else {
       console.error("Failed to update verification status:", error);
       
@@ -37,10 +39,12 @@ export function useVerificationManagement(setUsers: React.Dispatch<React.SetStat
       );
       
       toast({ 
+        id: toastId,
         title: "Failed to update verification status", 
         description: error?.message || String(error) || "Failed", 
         variant: "destructive" 
       });
+      return { success: false, error };
     }
   }, [setUsers]);
 

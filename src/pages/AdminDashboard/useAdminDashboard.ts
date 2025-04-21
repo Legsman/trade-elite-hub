@@ -94,8 +94,23 @@ export function useAdminDashboard() {
 
   const handleRoleOperationWithRefresh = useCallback(async (operationFn: Function, ...args: any[]) => {
     try {
-      await operationFn(...args);
-      await refetchData();
+      const result = await operationFn(...args);
+      
+      if (result?.success) {
+        // Only refresh if the operation was successful
+        const refreshToastId = toast({
+          title: "Refreshing",
+          description: "Updating data..."
+        });
+        
+        await refetchData();
+        
+        toast({
+          id: refreshToastId,
+          title: "Updated",
+          description: "Data has been refreshed successfully"
+        });
+      }
     } catch (error) {
       console.error("Error during role operation:", error);
     }
