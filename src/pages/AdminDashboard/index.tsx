@@ -52,6 +52,12 @@ const AdminDashboard = () => {
     );
   }
 
+  console.log("Admin Dashboard Rendering - TabsContent:", {
+    users: users.length,
+    currentUserId,
+    showingAdminTab: isAdmin
+  });
+
   return (
     <MainLayout>
       <div className="container py-8">
@@ -132,4 +138,5 @@ const AdminDashboard = () => {
     </MainLayout>
   );
 };
+
 export default AdminDashboard;
