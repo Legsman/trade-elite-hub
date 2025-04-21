@@ -1,13 +1,11 @@
-
 import { useCallback } from "react";
-import { assignOrRemoveAdminRole } from "@/utils/adminUtils";
+import { assignOrRemoveAdminRole, assignOrRemoveVerifiedStatus } from "@/utils/adminUtils";
 import { toast } from "@/hooks/use-toast";
 import { UserAdmin, ListingAdmin, ReportAdmin } from "../types";
 
-// Callbacks for admin actions: approve, reject, promote, demote, suspend, unsuspend
-
 export function useAdminActions(setUsers: any, setListings: any, setReports: any) {
   const promoteAdmin = useCallback(async (userId: string) => {
+    console.log("Attempting to promote user to admin:", userId);
     const { success, error } = await assignOrRemoveAdminRole(userId, "admin", "add");
     if (success) {
       setUsers((prev: UserAdmin[]) =>
@@ -22,6 +20,7 @@ export function useAdminActions(setUsers: any, setListings: any, setReports: any
   }, [setUsers]);
 
   const demoteAdmin = useCallback(async (userId: string) => {
+    console.log("Attempting to demote admin:", userId);
     const { success, error } = await assignOrRemoveAdminRole(userId, "admin", "remove");
     if (success) {
       setUsers((prev: UserAdmin[]) =>
@@ -32,6 +31,30 @@ export function useAdminActions(setUsers: any, setListings: any, setReports: any
       toast({ title: "Admin removed", description: "User has been demoted from admin" });
     } else {
       toast({ title: "Failed to demote", description: error?.message || error || "Failed", variant: "destructive" });
+    }
+  }, [setUsers]);
+
+  const toggleVerifiedStatus = useCallback(async (userId: string, currentStatus: "verified" | "unverified") => {
+    console.log("Toggling verified status for user:", userId, "Current status:", currentStatus);
+    const action = currentStatus === "unverified" ? "add" : "remove";
+    const { success, error } = await assignOrRemoveVerifiedStatus(userId, action);
+    
+    if (success) {
+      setUsers((prev: UserAdmin[]) =>
+        prev.map(u =>
+          u.id === userId ? { ...u, verified_status: action === "add" ? "verified" : "unverified" } : u
+        )
+      );
+      toast({ 
+        title: `User ${action === "add" ? "verified" : "unverified"}`, 
+        description: `User has been ${action === "add" ? "verified" : "unverified"}`
+      });
+    } else {
+      toast({ 
+        title: "Failed to update verification status", 
+        description: error?.message || error || "Failed", 
+        variant: "destructive" 
+      });
     }
   }, [setUsers]);
 
@@ -90,6 +113,7 @@ export function useAdminActions(setUsers: any, setListings: any, setReports: any
   return {
     promoteAdmin,
     demoteAdmin,
+    toggleVerifiedStatus,
     handleApproveItem,
     handleRejectItem,
     handleSuspendUser,

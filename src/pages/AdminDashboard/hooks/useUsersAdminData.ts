@@ -101,7 +101,7 @@ export function useUsersAdminData() {
           verified_status: isVerified ? "verified" : "unverified",
           strike_count: profile.strike_count || 0,
           status: userStatus,
-          listings_count: 0, // will be filled in useAdminDashboard
+          listings_count: 0,
           last_login: null,
         };
       });
