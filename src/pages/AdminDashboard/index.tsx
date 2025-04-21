@@ -13,7 +13,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { formatDate } from "@/utils/adminUtils"; // Import formatDate from utils
+import { formatDate } from "@/utils/adminUtils"; 
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -41,8 +41,7 @@ const AdminDashboard = () => {
     promoteAdmin,
     demoteAdmin,
     currentUserId,
-    refetchData,
-    devMode
+    refetchData
   } = useAdminDashboard();
 
   // Redirect to /admin if on root path
@@ -51,9 +50,6 @@ const AdminDashboard = () => {
       navigate("/admin", { replace: true });
     }
   }, [location.pathname, navigate]);
-
-  // By default, if you're in the admin panel, you should be an admin
-  const isAdmin = true;
 
   if (loading) {
     return (
@@ -65,7 +61,7 @@ const AdminDashboard = () => {
     );
   }
 
-  if (fetchError && !devMode) {
+  if (fetchError) {
     console.error("Admin dashboard error:", fetchError);
     return (
       <MainLayout>
@@ -75,19 +71,12 @@ const AdminDashboard = () => {
             <AlertTitle>Error loading admin data</AlertTitle>
             <AlertDescription>
               {typeof fetchError === 'string' ? fetchError : 'An unexpected error occurred'}. 
-              This is likely due to a database or permissions issue in development mode.
+              Please try again or contact system support.
             </AlertDescription>
           </Alert>
           <div className="mt-4 space-x-4">
             <Button onClick={() => refetchData()}>
               Try Again
-            </Button>
-            <Button variant="outline" onClick={() => {
-              // Force development mode for admin data
-              localStorage.setItem('dev_admin_mode', 'true');
-              window.location.reload();
-            }}>
-              Enable Dev Mode
             </Button>
             <Button variant="outline" onClick={() => navigate('/dashboard')}>
               Return to Dashboard
@@ -116,16 +105,6 @@ const AdminDashboard = () => {
   return (
     <MainLayout>
       <div className="container py-8">
-        {devMode && (
-          <Alert className="mb-4">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Development Mode</AlertTitle>
-            <AlertDescription>
-              Running in development mode with mock data. Database connections are bypassed.
-            </AlertDescription>
-          </Alert>
-        )}
-        
         <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between mb-8">
           <div className="flex items-center">
             <Shield className="h-8 w-8 mr-3 text-primary" />

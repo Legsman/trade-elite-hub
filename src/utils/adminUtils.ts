@@ -22,22 +22,17 @@ export async function assignOrRemoveAdminRole(targetUserId: string, role: string
 
 export async function checkUserRoles(userId: string) {
   try {
-    // Simplified function that doesn't trigger recursive RLS policies
-    // For development purposes, we're assuming the check succeeds
-    return { success: true, roles: [{ role: 'admin' }] };
+    const { data, error } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId);
+      
+    if (error) {
+      console.error("Error checking user roles:", error);
+      return { success: false, error, roles: [] };
+    }
     
-    // In production, this would be:
-    // const { data, error } = await supabase
-    //   .from("user_roles")
-    //   .select("*")
-    //   .eq("user_id", userId);
-    //   
-    // if (error) {
-    //   console.error("Error checking user roles:", error);
-    //   return { success: false, error, roles: [] };
-    // }
-    // 
-    // return { success: true, roles: data };
+    return { success: true, roles: data };
   } catch (e) {
     console.error("Exception checking user roles:", e);
     return { success: false, error: e, roles: [] };

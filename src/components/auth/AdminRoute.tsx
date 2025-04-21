@@ -1,10 +1,9 @@
 
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/auth";
-import { ReactNode, useEffect, useState } from "react";
+import { ReactNode } from "react";
 import { Loading } from "@/components/ui/loading";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
-import { toast } from "@/hooks/use-toast";
 
 type AdminRouteProps = {
   children: ReactNode;
@@ -14,29 +13,8 @@ export const AdminRoute = ({ children }: AdminRouteProps) => {
   const { user, loading } = useAuth();
   const { isAdmin, checking: checkingAdmin } = useIsAdmin();
   const location = useLocation();
-  const [bypassAdminCheck, setBypassAdminCheck] = useState(false);
 
-  useEffect(() => {
-    // Check if dev mode is already set in localStorage
-    const isDevMode = localStorage.getItem('dev_admin_mode') === 'true';
-    
-    // If dev mode is enabled or user is logged in, bypass admin check
-    if ((user && !bypassAdminCheck) || isDevMode) {
-      console.log("Development mode: Bypassing admin check");
-      setBypassAdminCheck(true);
-      
-      if (!isDevMode) {
-        localStorage.setItem('dev_admin_mode', 'true');
-      }
-      
-      toast({
-        title: "Development Mode",
-        description: "Admin check bypassed for development purposes.",
-      });
-    }
-  }, [user, bypassAdminCheck]);
-
-  console.log("AdminRoute - User:", !!user, "Loading:", loading, "Is Admin:", isAdmin, "Checking Admin:", checkingAdmin, "Bypass:", bypassAdminCheck);
+  console.log("AdminRoute - User:", !!user, "Loading:", loading, "Is Admin:", isAdmin, "Checking Admin:", checkingAdmin);
 
   if (loading) {
     return <Loading fullScreen message="Authenticating..." />;
@@ -47,16 +25,11 @@ export const AdminRoute = ({ children }: AdminRouteProps) => {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // In development mode, allow access immediately once bypassAdminCheck is true
-  if (bypassAdminCheck) {
-    return <>{children}</>;
-  }
-
   if (checkingAdmin) {
     return <Loading fullScreen message="Verifying admin privileges..." />;
   }
 
-  // Only check actual admin status if we're not bypassing the check
+  // Only allow access if user is admin
   if (isAdmin) {
     return <>{children}</>;
   }
