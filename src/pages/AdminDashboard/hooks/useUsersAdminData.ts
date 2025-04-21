@@ -25,7 +25,7 @@ export function useUsersAdminData() {
           return;
         }
         
-        // Fetch roles for users
+        // Fetch roles for users - using direct query to avoid recursion
         const { data: rolesRaw, error: rolesError } = await supabase
           .from("user_roles")
           .select("user_id, role");

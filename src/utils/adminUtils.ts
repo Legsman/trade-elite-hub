@@ -22,6 +22,7 @@ export async function assignOrRemoveAdminRole(targetUserId: string, role: string
 
 export async function checkUserRoles(userId: string) {
   try {
+    // Use direct query to avoid recursion issues
     const { data, error } = await supabase
       .from("user_roles")
       .select("role")

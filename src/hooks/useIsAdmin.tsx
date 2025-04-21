@@ -22,10 +22,7 @@ export function useIsAdmin() {
       try {
         // Use the security definer function that won't cause recursion
         const { data, error } = await supabase
-          .rpc('has_role', { 
-            _user_id: user.id, 
-            _role: 'admin' 
-          });
+          .rpc('is_admin', { _user_id: user.id });
 
         if (cancelled) return;
         

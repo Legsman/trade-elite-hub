@@ -42,11 +42,11 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: "Unauthorized" }), { headers: corsHeaders, status: 401 });
     }
 
-    // Now check if that user is admin
-    const { data: isAdmin } = await supabaseClient.rpc("has_role", {
+    // Now check if that user is admin using our security definer function
+    const { data: isAdmin } = await supabaseClient.rpc("is_admin", {
       _user_id: user.id,
-      _role: "admin",
     });
+    
     if (!isAdmin) {
       return new Response(JSON.stringify({ error: "Admin only" }), { headers: corsHeaders, status: 403 });
     }
