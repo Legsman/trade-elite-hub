@@ -3,9 +3,10 @@ import React, { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { UserAdmin } from "./types";
 
 interface AdminsTabProps {
-  users: any[];
+  users: UserAdmin[];
   promoteAdmin: (userId: string) => void;
   demoteAdmin: (userId: string) => void;
   currentUserId: string;
@@ -47,14 +48,12 @@ const AdminsTab: React.FC<AdminsTabProps> = ({ users, promoteAdmin, demoteAdmin,
                   <TableCell>
                     <Badge
                       variant={
-                        user.status === "active"
-                          ? "outline"
-                          : user.status === "warning"
-                          ? "secondary"
-                          : "destructive"
+                        user.strike_count >= 3
+                          ? "destructive"
+                          : "outline"
                       }
                     >
-                      {user.status}
+                      {user.strike_count >= 3 ? "Suspended" : "Active"}
                     </Badge>
                   </TableCell>
                   <TableCell>

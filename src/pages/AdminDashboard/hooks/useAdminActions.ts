@@ -16,6 +16,7 @@ export function useAdminActions(setUsers: any, setListings: any, setReports: any
       );
       toast({ title: "Admin promoted", description: "User has been made an admin" });
     } else {
+      console.error("Failed to promote admin:", error);
       toast({ title: "Failed to promote", description: error?.message || error || "Failed", variant: "destructive" });
     }
   }, [setUsers]);
@@ -31,6 +32,7 @@ export function useAdminActions(setUsers: any, setListings: any, setReports: any
       );
       toast({ title: "Admin removed", description: "User has been demoted from admin" });
     } else {
+      console.error("Failed to demote admin:", error);
       toast({ title: "Failed to demote", description: error?.message || error || "Failed", variant: "destructive" });
     }
   }, [setUsers]);
@@ -51,6 +53,7 @@ export function useAdminActions(setUsers: any, setListings: any, setReports: any
         description: `User has been ${action === "add" ? "verified" : "unverified"}`
       });
     } else {
+      console.error("Failed to update verification status:", error);
       toast({ 
         title: "Failed to update verification status", 
         description: error?.message || error || "Failed", 
