@@ -41,6 +41,7 @@ export function useAdminDashboard() {
   const {
     promoteAdmin,
     demoteAdmin,
+    toggleVerifiedStatus,
     handleApproveItem,
     handleRejectItem,
     handleSuspendUser,
@@ -92,6 +93,7 @@ export function useAdminDashboard() {
     filteredListings,
     promoteAdmin,
     demoteAdmin,
+    toggleVerifiedStatus,
     currentUserId,
     fetchError,
     refetchData

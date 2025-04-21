@@ -28,6 +28,7 @@ type AdminTabsLayoutProps = {
   handleUnsuspendUser: (id: string) => void;
   promoteAdmin: (userId: string) => void;
   demoteAdmin: (userId: string) => void;
+  toggleVerifiedStatus: (userId: string, currentStatus: "verified" | "unverified") => void;
   currentUserId: string;
 };
 
@@ -52,6 +53,7 @@ export function AdminTabsLayout({
   handleUnsuspendUser,
   promoteAdmin,
   demoteAdmin,
+  toggleVerifiedStatus,
   currentUserId,
 }: AdminTabsLayoutProps) {
   return (
@@ -84,6 +86,7 @@ export function AdminTabsLayout({
           formatDate={formatDate}
           handleSuspendUser={handleSuspendUser}
           handleUnsuspendUser={handleUnsuspendUser}
+          toggleVerifiedStatus={toggleVerifiedStatus}
         />
       </TabsContent>
       <TabsContent value="listings">

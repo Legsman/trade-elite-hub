@@ -40,6 +40,7 @@ const AdminDashboard = () => {
     users,
     promoteAdmin,
     demoteAdmin,
+    toggleVerifiedStatus,
     currentUserId,
     refetchData
   } = useAdminDashboard();
@@ -148,6 +149,7 @@ const AdminDashboard = () => {
               formatDate={formatDate}
               handleSuspendUser={handleSuspendUser}
               handleUnsuspendUser={handleUnsuspendUser}
+              toggleVerifiedStatus={toggleVerifiedStatus}
             />
           </TabsContent>
           
