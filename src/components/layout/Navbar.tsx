@@ -20,9 +20,11 @@ import {
 } from "@/components/ui/sheet";
 import { useAuth } from "@/hooks/auth";
 import { toast } from "@/hooks/use-toast";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 
 const Navbar = () => {
   const { user, supabaseUser, logout } = useAuth();
+  const { isAdmin } = useIsAdmin();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const navigate = useNavigate();
 
@@ -85,6 +87,11 @@ const Navbar = () => {
                     <Link to="/profile" className="text-lg font-semibold hover:text-purple transition-colors">
                       My Profile
                     </Link>
+                    {isAdmin && (
+                      <Link to="/admin" className="text-lg font-semibold hover:text-purple transition-colors">
+                        Admin Panel
+                      </Link>
+                    )}
                     <button 
                       onClick={handleLogout}
                       className="text-lg font-semibold text-left hover:text-purple transition-colors"
@@ -116,6 +123,11 @@ const Navbar = () => {
           <Link to="/contact" className="text-sm font-medium transition-colors hover:text-purple">
             Contact
           </Link>
+          {isAdmin && isAuthenticated && (
+            <Link to="/admin" className="text-sm font-medium transition-colors hover:text-purple">
+              Admin
+            </Link>
+          )}
         </nav>
 
         <div className="flex items-center gap-2">

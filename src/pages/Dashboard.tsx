@@ -297,12 +297,17 @@ const Dashboard = () => {
         </div>
 
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid grid-cols-5 sm:w-[600px]">
+          <TabsList className={`grid ${isAdmin ? 'grid-cols-6' : 'grid-cols-5'} sm:w-${isAdmin ? '700' : '600'}px`}>
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="listings">Listings</TabsTrigger>
             <TabsTrigger value="saved">Saved</TabsTrigger>
             <TabsTrigger value="messages">Messages</TabsTrigger>
             <TabsTrigger value="notifications">Alerts</TabsTrigger>
+            {isAdmin && (
+              <TabsTrigger value="admin" onClick={() => navigate("/admin")}>
+                Admin
+              </TabsTrigger>
+            )}
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
