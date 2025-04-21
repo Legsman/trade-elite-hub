@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Shield, Users, BarChart2, FileText, AlertTriangle, Check, X, Search } from "lucide-react";
@@ -64,7 +65,7 @@ const AdminDashboard = () => {
   });
   const [users, setUsers] = useState([]);
   const [listings, setListings] = useState([]);
-  const [reportedItems, setReportedItems] = useState([]);
+  const [reportedItems, setReportedItems] = useState<Supabase.Report[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [userFilter, setUserFilter] = useState("all");
   const [listingFilter, setListingFilter] = useState("all");
@@ -92,6 +93,7 @@ const AdminDashboard = () => {
         .select("id, title, seller_id, price, category, status, created_at, views, saves");
       if (listingsError) throw listingsError;
 
+      // Use reports table directly
       let { data: reportsRaw, error: reportsError } = await supabase
         .from("reports")
         .select("*");
@@ -128,12 +130,13 @@ const AdminDashboard = () => {
         seller_name: userIdToName[listing.seller_id] || "Unknown",
       }));
 
-      const reports = (reportsRaw || []).map((report, i) => ({
+      // Process reports data
+      const reports = (reportsRaw || []).map((report) => ({
         id: report.id,
-        type: report.type, // "user", "listing", etc
+        type: report.type,
         item_id: report.item_id,
         item_title: report.item_title || (report.type === "user" ? "User: " + userIdToName[report.item_id] : "Unknown"),
-        reporter_name: userIdToName[report.reporter_id] || "Unknown",
+        reporter_name: report.reporter_name || "System",
         reporter_id: report.reporter_id,
         reason: report.reason,
         status: report.status,

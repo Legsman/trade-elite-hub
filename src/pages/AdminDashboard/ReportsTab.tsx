@@ -14,7 +14,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 
 interface ReportsTabProps {
-  reportedItems: any[];
+  reportedItems: Supabase.Report[];
   formatDate: (dateString: string) => string;
   handleApproveItem: (id: string, type: string) => void;
   handleRejectItem: (id: string, type: string) => void;

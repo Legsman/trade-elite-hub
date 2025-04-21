@@ -20,7 +20,6 @@ export function useIsAdmin() {
     const check = async () => {
       setChecking(true);
       try {
-        // Remove dev admin shortcut—now only use DB role
         const { data, error } = await supabase
           .rpc('has_role', { 
             _user_id: user.id, 

@@ -108,6 +108,19 @@ declare namespace Supabase {
     role: 'unverified' | 'verified' | 'admin';
   }
 
+  // New interface for Reports
+  interface Report {
+    id: string;
+    type: string;
+    item_id: string;
+    item_title: string;
+    reporter_name: string;
+    reporter_id?: string | null;
+    reason: string;
+    status: string;
+    created_at: string;
+  }
+
   // Define a conversation contact with user info and message stats
   interface Contact {
     id: string;

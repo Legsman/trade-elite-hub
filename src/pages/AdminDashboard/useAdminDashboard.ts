@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
@@ -17,7 +18,7 @@ export function useAdminDashboard() {
   });
   const [users, setUsers] = useState<any[]>([]);
   const [listings, setListings] = useState<any[]>([]);
-  const [reportedItems, setReportedItems] = useState<any[]>([]);
+  const [reportedItems, setReportedItems] = useState<Supabase.Report[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [userFilter, setUserFilter] = useState("all");
   const [listingFilter, setListingFilter] = useState("all");
@@ -103,10 +104,12 @@ export function useAdminDashboard() {
         listingsRaw = [];
       }
 
-      // Use reports table for reportedItems
-      let { data: reportsRaw, error: reportsError } = await supabase
-        .from("reports")
-        .select("*");
+      // Fetch reports using custom query
+      console.log("Fetching reports data");
+      const { data: reportsRaw, error: reportsError } = await supabase
+        .from('reports')
+        .select('*');
+      
       if (reportsError) {
         console.error('Error fetching reports:', reportsError);
         throw new Error(`Failed to fetch reports: ${reportsError.message}`);
@@ -115,7 +118,8 @@ export function useAdminDashboard() {
       console.log("Processing fetched data", {
         profilesCount: usersRaw?.length || 0,
         rolesCount: rolesRaw?.length || 0,
-        listingsCount: listingsRaw?.length || 0
+        listingsCount: listingsRaw?.length || 0,
+        reportsCount: reportsRaw?.length || 0
       });
       
       // Create a map of user roles
@@ -154,13 +158,13 @@ export function useAdminDashboard() {
         seller_name: userIdToName[listing.seller_id] || "Unknown",
       }));
 
-      // Use database reports
-      const reports = (reportsRaw || []).map((report, i) => ({
+      // Process reports data
+      const reportsData = (reportsRaw || []).map((report) => ({
         id: report.id,
         type: report.type,
         item_id: report.item_id,
         item_title: report.item_title || (report.type === "user" ? "User: " + userIdToName[report.item_id] : "Unknown"),
-        reporter_name: userIdToName[report.reporter_id] || "Unknown",
+        reporter_name: report.reporter_name || "System",
         reporter_id: report.reporter_id,
         reason: report.reason,
         status: report.status,
@@ -182,7 +186,7 @@ export function useAdminDashboard() {
       console.log("Setting state with processed data");
       setUsers(usersData);
       setListings(listingsData);
-      setReportedItems(reports);
+      setReportedItems(reportsData);
       setAnalyticsData(analyticsData);
 
       // Calculate stats
@@ -193,7 +197,7 @@ export function useAdminDashboard() {
         activeListings: listingsData.filter(l => l.status === "active").length,
         pendingListings: listingsData.filter(l => l.status === "pending").length,
         totalMessages: 0,
-        reportedContent: reports.length,
+        reportedContent: reportsData.length,
       });
       
       console.log("Admin data fetch completed successfully");
