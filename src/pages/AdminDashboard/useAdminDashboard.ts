@@ -27,22 +27,64 @@ export function useAdminDashboard() {
   const fetchAdminData = useCallback(async () => {
     setLoading(true);
     try {
+      // Check if user has admin role first
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error("User not authenticated");
+      }
+      
+      console.log("Fetching data for user:", user.id);
+      
+      // Use the has_role RPC function to check admin status
+      const { data: isAdmin, error: roleError } = await supabase
+        .rpc('has_role', { 
+          _user_id: user.id, 
+          _role: 'admin' 
+        });
+      
+      if (roleError) {
+        console.error('Error checking admin role:', roleError);
+        throw new Error("Failed to verify admin status");
+      }
+      
+      if (!isAdmin) {
+        console.error('User is not an admin');
+        navigate('/dashboard');
+        throw new Error("Unauthorized: Admin access required");
+      }
+
+      // Continue with admin data fetching only if user is an admin
       let { data: usersRaw, error: usersError } = await supabase
         .from("profiles")
         .select("id, full_name, email, created_at, strike_count, is_two_factor_enabled, feedback_rating");
-      if (usersError) throw usersError;
+      
+      if (usersError) {
+        console.error('Error fetching profiles:', usersError);
+        throw usersError;
+      }
 
       let { data: rolesRaw, error: rolesError } = await supabase
         .from("user_roles")
         .select("user_id, role");
-      if (rolesError) throw rolesError;
+      
+      if (rolesError) {
+        console.error('Error fetching roles:', rolesError);
+        throw rolesError;
+      }
 
       let { data: listingsRaw, error: listingsError } = await supabase
         .from("listings")
         .select("id, title, seller_id, price, category, status, created_at, views, saves");
-      if (listingsError) throw listingsError;
+      
+      if (listingsError) {
+        console.error('Error fetching listings:', listingsError);
+        throw listingsError;
+      }
 
+      // Process the data as before
       const userRolesMap = new Map();
+      rolesRaw = rolesRaw || [];
       rolesRaw.forEach(({ user_id, role }) => {
         userRolesMap.set(user_id, role);
       });
@@ -63,7 +105,7 @@ export function useAdminDashboard() {
       });
 
       const userIdToName: Record<string, string> = {};
-      for (const user of usersRaw) {
+      for (const user of (usersRaw || [])) {
         userIdToName[user.id] = user.full_name;
       }
 
@@ -117,10 +159,12 @@ export function useAdminDashboard() {
         description: "Failed to load administrative data. Please try again.",
         variant: "destructive"
       });
+      // Redirect to dashboard if there's an error loading admin data
+      navigate('/dashboard');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [navigate]);
 
   useEffect(() => {
     fetchAdminData();
