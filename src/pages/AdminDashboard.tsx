@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Shield, Users, BarChart2, FileText, AlertTriangle, Check, X, Search } from "lucide-react";
@@ -74,194 +73,98 @@ const AdminDashboard = () => {
   const fetchAdminData = async () => {
     setLoading(true);
     try {
-      // In a real app, we would use admin role RLS policies to access this data
-      // For now, we'll use mock data since we're building the UI
-      
-      // Mock users
-      const mockUsers = [
-        {
-          id: "1",
-          email: "james.smith@example.com",
-          full_name: "James Smith",
-          created_at: "2025-03-10T10:30:00Z",
-          role: "user",
-          strike_count: 0,
-          status: "active",
-          listings_count: 8,
-          last_login: "2025-04-18T14:22:00Z"
-        },
-        {
-          id: "2",
-          email: "sarah.jones@example.com",
-          full_name: "Sarah Jones",
-          created_at: "2025-03-15T09:45:00Z",
-          role: "user",
-          strike_count: 1,
-          status: "active",
-          listings_count: 3,
-          last_login: "2025-04-19T11:05:00Z"
-        },
-        {
-          id: "3",
-          email: "michael.brown@example.com",
-          full_name: "Michael Brown",
-          created_at: "2025-02-28T15:20:00Z",
-          role: "user",
-          strike_count: 2,
-          status: "warning",
-          listings_count: 12,
-          last_login: "2025-04-17T16:48:00Z"
-        },
-        {
-          id: "4",
-          email: "emma.wilson@example.com",
-          full_name: "Emma Wilson",
-          created_at: "2025-04-05T11:10:00Z",
-          role: "admin",
-          strike_count: 0,
-          status: "active",
-          listings_count: 0,
-          last_login: "2025-04-19T09:30:00Z"
-        },
-        {
-          id: "5",
-          email: "david.miller@example.com",
-          full_name: "David Miller",
-          created_at: "2025-01-20T08:15:00Z",
-          role: "user",
-          strike_count: 3,
-          status: "suspended",
-          listings_count: 5,
-          last_login: "2025-04-10T14:20:00Z"
-        }
-      ];
-      
-      // Mock listings
-      const mockListings = [
-        {
-          id: "1",
-          title: "2020 Ferrari 488 Pista",
-          seller_name: "James Smith",
-          seller_id: "1",
-          price: 350000,
-          category: "cars",
-          status: "active",
-          created_at: "2025-03-20T09:30:00Z",
-          views: 245,
-          saves: 18
-        },
-        {
-          id: "2",
-          title: "Rolex Submariner Date",
-          seller_name: "Sarah Jones",
-          seller_id: "2",
-          price: 14500,
-          category: "watches",
-          status: "active",
-          created_at: "2025-04-02T14:15:00Z",
-          views: 189,
-          saves: 27
-        },
-        {
-          id: "3",
-          title: "Luxury Penthouse Apartment",
-          seller_name: "Michael Brown",
-          seller_id: "3",
-          price: 2500000,
-          category: "homes",
-          status: "pending",
-          created_at: "2025-04-18T10:45:00Z",
-          views: 0,
-          saves: 0
-        },
-        {
-          id: "4",
-          title: "Vintage Porsche 911 (1973)",
-          seller_name: "Michael Brown",
-          seller_id: "3",
-          price: 120000,
-          category: "cars",
-          status: "active",
-          created_at: "2025-03-28T08:20:00Z",
-          views: 278,
-          saves: 23
-        },
-        {
-          id: "5",
-          title: "Patek Philippe Nautilus 5711",
-          seller_name: "David Miller",
-          seller_id: "5",
-          price: 135000,
-          category: "watches",
-          status: "suspended",
-          created_at: "2025-02-15T11:30:00Z",
-          views: 412,
-          saves: 56
-        }
-      ];
-      
-      // Mock reported content
-      const mockReported = [
-        {
-          id: "1",
-          type: "listing",
-          item_id: "5",
-          item_title: "Patek Philippe Nautilus 5711",
-          reporter_name: "Emma Wilson",
-          reporter_id: "4",
-          reason: "Counterfeit item",
-          status: "pending",
-          created_at: "2025-04-18T14:30:00Z"
-        },
-        {
-          id: "2",
-          type: "message",
-          item_id: "msg123",
-          item_title: "Message containing contact information",
-          reporter_name: "James Smith",
-          reporter_id: "1",
-          reason: "Sharing contact information",
-          status: "pending",
-          created_at: "2025-04-19T09:15:00Z"
-        },
-        {
-          id: "3",
+      // Fetch real users from 'profiles' table
+      let { data: usersRaw, error: usersError } = await supabase
+        .from("profiles")
+        .select("id, full_name, email, created_at, strike_count, is_two_factor_enabled, feedback_rating");
+
+      if (usersError) throw usersError;
+      // Fetch user roles
+      let { data: rolesRaw, error: rolesError } = await supabase
+        .from("user_roles")
+        .select("user_id, role");
+      if (rolesError) throw rolesError;
+
+      // Fetch listings from 'listings' table
+      let { data: listingsRaw, error: listingsError } = await supabase
+        .from("listings")
+        .select("id, title, seller_id, price, category, status, created_at, views, saves");
+      if (listingsError) throw listingsError;
+
+      // Map user_id to role
+      const userRolesMap = new Map();
+      rolesRaw.forEach(({ user_id, role }) => {
+        userRolesMap.set(user_id, role);
+      });
+
+      // Finalize users with role, add a mock last_login and listings_count (real: count listings by user)
+      const usersData = (usersRaw || []).map(profile => {
+        const listings_count = (listingsRaw || []).filter(l => l.seller_id === profile.id).length;
+        return {
+          id: profile.id,
+          email: profile.email,
+          full_name: profile.full_name,
+          created_at: profile.created_at,
+          role: userRolesMap.get(profile.id) || "user",
+          strike_count: profile.strike_count || 0,
+          status: profile.strike_count >= 3 ? "suspended" : profile.strike_count === 2 ? "warning" : "active",
+          listings_count,
+          last_login: null, // TODO: Pull from 'auth' via useProfileService, not possible directly from profiles
+        };
+      });
+
+      // Get sellers' names for listing mapping
+      const userIdToName = {};
+      for (const user of usersRaw) {
+        userIdToName[user.id] = user.full_name;
+      }
+
+      // Map listings with seller_name
+      const listingsData = (listingsRaw || []).map(listing => ({
+        ...listing,
+        seller_name: userIdToName[listing.seller_id] || "Unknown",
+      }));
+
+      // (There is no universal reported items table. We'll treat 'strike_count' >=2 or status='suspended' as "reports" for demo)
+      const reported = usersData
+        .filter(u => u.strike_count > 0)
+        .map((u, i) => ({
+          id: String(i + 1),
           type: "user",
-          item_id: "3",
-          item_title: "User: Michael Brown",
-          reporter_name: "Sarah Jones",
-          reporter_id: "2",
-          reason: "Harassment",
-          status: "investigating",
-          created_at: "2025-04-17T16:45:00Z"
-        }
-      ];
-      
-      // Mock analytics data
-      const mockAnalyticsData = [
-        { name: "Jan", users: 42, listings: 65, messages: 120 },
-        { name: "Feb", users: 58, listings: 78, messages: 150 },
-        { name: "Mar", users: 75, listings: 95, messages: 210 },
-        { name: "Apr", users: 92, listings: 130, messages: 280 },
-        { name: "May", users: 110, listings: 155, messages: 340 },
-        { name: "Jun", users: 125, listings: 190, messages: 390 },
-      ];
-      
-      // Mock statistics
-      const mockStats = {
-        totalUsers: 156,
-        newUsersToday: 8,
-        activeListings: 87,
-        pendingListings: 12,
-        totalMessages: 1358,
-        reportedContent: 5,
-      };
-      
-      setUsers(mockUsers);
-      setListings(mockListings);
-      setReportedItems(mockReported);
-      setAnalyticsData(mockAnalyticsData);
-      setStats(mockStats);
+          item_id: u.id,
+          item_title: `User: ${u.full_name}`,
+          reporter_name: "System",
+          reporter_id: "",
+          reason: u.strike_count >= 3 ? "Account suspended" : "Warning for user",
+          status: u.strike_count >= 3 ? "pending" : "investigating",
+          created_at: u.created_at,
+        }));
+
+      // Example analytics, just for demo - can improve if real stats are required:
+      const now = new Date();
+      const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      const analyticsData = monthNames.slice(0, 6).map((name, i) => ({
+        name,
+        users: Math.floor(usersData.length * ((i + 1) / 6)),
+        listings: Math.floor(listingsData.length * ((i + 1) / 6)),
+        messages: Math.floor(200 * (i + 1)),
+      }));
+
+      setUsers(usersData || []);
+      setListings(listingsData || []);
+      setReportedItems(reported);
+      setAnalyticsData(analyticsData);
+
+      // Stats:
+      const today = now.toISOString().slice(0, 10);
+      setStats({
+        totalUsers: usersData.length,
+        newUsersToday: usersData.filter(u => (u.created_at || "").slice(0, 10) === today).length,
+        activeListings: listingsData.filter(l => l.status === "active").length,
+        pendingListings: listingsData.filter(l => l.status === "pending").length,
+        totalMessages: 0, // Implement this if you have a messages table
+        reportedContent: reported.length,
+      });
     } catch (error) {
       console.error('Error fetching admin data:', error);
       toast({
