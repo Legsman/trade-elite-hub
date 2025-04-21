@@ -92,6 +92,12 @@ const AdminDashboard = () => {
         .select("id, title, seller_id, price, category, status, created_at, views, saves");
       if (listingsError) throw listingsError;
 
+      let { data: reportsRaw, error: reportsError } = await supabase
+        .from("reports")
+        .select("*");
+
+      if (reportsError) throw reportsError;
+
       const userRolesMap = new Map();
       rolesRaw.forEach(({ user_id, role }) => {
         userRolesMap.set(user_id, role);
@@ -122,19 +128,19 @@ const AdminDashboard = () => {
         seller_name: userIdToName[listing.seller_id] || "Unknown",
       }));
 
-      const reported = usersData
-        .filter(u => u.strike_count > 0)
-        .map((u, i) => ({
-          id: String(i + 1),
-          type: "user",
-          item_id: u.id,
-          item_title: `User: ${u.full_name}`,
-          reporter_name: "System",
-          reporter_id: "",
-          reason: u.strike_count >= 3 ? "Account suspended" : "Warning for user",
-          status: u.strike_count >= 3 ? "pending" : "investigating",
-          created_at: u.created_at,
-        }));
+      const reports = (reportsRaw || []).map((report, i) => ({
+        id: report.id,
+        type: report.type, // "user", "listing", etc
+        item_id: report.item_id,
+        item_title: report.item_title || (report.type === "user" ? "User: " + userIdToName[report.item_id] : "Unknown"),
+        reporter_name: userIdToName[report.reporter_id] || "Unknown",
+        reporter_id: report.reporter_id,
+        reason: report.reason,
+        status: report.status,
+        created_at: report.created_at,
+      }));
+
+      setReportedItems(reports);
 
       const now = new Date();
       const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -147,7 +153,6 @@ const AdminDashboard = () => {
 
       setUsers(usersData || []);
       setListings(listingsData || []);
-      setReportedItems(reported);
       setAnalyticsData(analyticsData);
 
       const today = now.toISOString().slice(0, 10);
@@ -157,7 +162,7 @@ const AdminDashboard = () => {
         activeListings: listingsData.filter(l => l.status === "active").length,
         pendingListings: listingsData.filter(l => l.status === "pending").length,
         totalMessages: 0,
-        reportedContent: reported.length,
+        reportedContent: reports.length,
       });
     } catch (error) {
       console.error('Error fetching admin data:', error);

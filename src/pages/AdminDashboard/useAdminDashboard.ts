@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
@@ -104,6 +103,15 @@ export function useAdminDashboard() {
         listingsRaw = [];
       }
 
+      // Use reports table for reportedItems
+      let { data: reportsRaw, error: reportsError } = await supabase
+        .from("reports")
+        .select("*");
+      if (reportsError) {
+        console.error('Error fetching reports:', reportsError);
+        throw new Error(`Failed to fetch reports: ${reportsError.message}`);
+      }
+
       console.log("Processing fetched data", {
         profilesCount: usersRaw?.length || 0,
         rolesCount: rolesRaw?.length || 0,
@@ -146,20 +154,18 @@ export function useAdminDashboard() {
         seller_name: userIdToName[listing.seller_id] || "Unknown",
       }));
 
-      // Generate reported items from users with strikes
-      const reported = usersData
-        .filter(u => u.strike_count > 0)
-        .map((u, i) => ({
-          id: String(i + 1),
-          type: "user",
-          item_id: u.id,
-          item_title: `User: ${u.full_name}`,
-          reporter_name: "System",
-          reporter_id: "",
-          reason: u.strike_count >= 3 ? "Account suspended" : "Warning for user",
-          status: u.strike_count >= 3 ? "pending" : "investigating",
-          created_at: u.created_at,
-        }));
+      // Use database reports
+      const reports = (reportsRaw || []).map((report, i) => ({
+        id: report.id,
+        type: report.type,
+        item_id: report.item_id,
+        item_title: report.item_title || (report.type === "user" ? "User: " + userIdToName[report.item_id] : "Unknown"),
+        reporter_name: userIdToName[report.reporter_id] || "Unknown",
+        reporter_id: report.reporter_id,
+        reason: report.reason,
+        status: report.status,
+        created_at: report.created_at,
+      }));
 
       // Generate analytics data based on actual data
       console.log("Generating analytics data");
@@ -176,7 +182,7 @@ export function useAdminDashboard() {
       console.log("Setting state with processed data");
       setUsers(usersData);
       setListings(listingsData);
-      setReportedItems(reported);
+      setReportedItems(reports);
       setAnalyticsData(analyticsData);
 
       // Calculate stats
@@ -187,7 +193,7 @@ export function useAdminDashboard() {
         activeListings: listingsData.filter(l => l.status === "active").length,
         pendingListings: listingsData.filter(l => l.status === "pending").length,
         totalMessages: 0,
-        reportedContent: reported.length,
+        reportedContent: reports.length,
       });
       
       console.log("Admin data fetch completed successfully");

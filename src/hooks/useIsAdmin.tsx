@@ -20,17 +20,7 @@ export function useIsAdmin() {
     const check = async () => {
       setChecking(true);
       try {
-        // For testing purposes, hardcode admin if the ID matches this pattern
-        const isTestAdmin = user.id.startsWith('test-admin-');
-        
-        if (isTestAdmin) {
-          console.log("Test admin detected, granting admin access");
-          setIsAdmin(true);
-          setChecking(false);
-          return;
-        }
-        
-        // Check if the user has the admin role using the database function
+        // Remove dev admin shortcut—now only use DB role
         const { data, error } = await supabase
           .rpc('has_role', { 
             _user_id: user.id, 
@@ -39,14 +29,11 @@ export function useIsAdmin() {
 
         if (cancelled) return;
         
-        console.log("Admin check result:", data, error); // Debug log
-        
         if (error) {
           console.error("Error checking admin role:", error);
           setIsAdmin(false);
         } else {
           setIsAdmin(!!data);
-          console.log("Is admin set to:", !!data);
         }
       } catch (e) {
         console.error("Error checking admin status:", e);
