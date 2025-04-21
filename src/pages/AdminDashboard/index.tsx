@@ -12,8 +12,11 @@ import { useAdminDashboard } from "./useAdminDashboard";
 import { formatDate } from "./adminUtils";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 const AdminDashboard = () => {
+  const navigate = useNavigate();
   const {
     loading,
     fetchError,
@@ -38,6 +41,14 @@ const AdminDashboard = () => {
     demoteAdmin,
     currentUserId,
   } = useAdminDashboard();
+
+  // If we're on the root path, redirect to the /admin path
+  useEffect(() => {
+    const currentPath = window.location.pathname;
+    if (currentPath === "/") {
+      navigate("/admin");
+    }
+  }, [navigate]);
 
   // By default, if you're in the admin panel, you should be an admin
   // This check is for displaying the Admin Users tab
