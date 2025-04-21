@@ -17,11 +17,9 @@ export function useAdminSearchFilters(users: UserAdmin[], listings: ListingAdmin
 
       const matchesFilter = userFilter === "all" 
         || (userFilter === "admin" && user.role === "admin")
-        || (userFilter === "active" && user.status === "active")
-        || (userFilter === "warning" && user.status === "warning")
-        || (userFilter === "suspended" && user.status === "suspended")
         || (userFilter === "verified" && user.verified_status === "verified")
-        || (userFilter === "unverified" && user.verified_status === "unverified");
+        || (userFilter === "unverified" && user.verified_status === "unverified")
+        || (userFilter === "suspended" && user.strike_count >= 3);
 
       return matchesSearch && matchesFilter;
     });
