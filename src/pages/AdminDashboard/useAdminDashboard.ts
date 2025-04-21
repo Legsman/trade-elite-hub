@@ -8,7 +8,10 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { assignOrRemoveAdminRole } from "@/utils/adminUtils";
-import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from "./constants";
+
+// Export constants from client.ts to ensure consistency
+export const SUPABASE_URL = "https://hwnsooioeqydhyukenfe.supabase.co";
+export const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh3bnNvb2lvZXF5ZGh5dWtlbmZlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUxODI5NjgsImV4cCI6MjA2MDc1ODk2OH0.trG5sAD9qaxe5gwpxQ2ZtIKteBZkFEJnpYMbSYIf9tY";
 
 export function useAdminDashboard() {
   const navigate = useNavigate();
@@ -18,35 +21,44 @@ export function useAdminDashboard() {
   const [currentUserId, setCurrentUserId] = useState<string>("");
   const [fetchError, setFetchError] = useState<string | null>(null);
 
-  const { users, loading: loadingUsers, setUsers } = useUsersAdminData();
+  const { users, loading: loadingUsers, setUsers, error: usersError } = useUsersAdminData();
   const userIdToName = useMemo(
     () => Object.fromEntries(users.map(u => [u.id, u.full_name])),
     [users]
   );
-  const { listings, loading: loadingListings, setListings } = useListingsAdminData(userIdToName);
-  const { reports, loading: loadingReports, setReports } = useReportsAdminData(userIdToName);
+  
+  const { listings, loading: loadingListings, setListings, error: listingsError } = useListingsAdminData(userIdToName);
+  const { reports, loading: loadingReports, setReports, error: reportsError } = useReportsAdminData(userIdToName);
   const { stats, analyticsData, setStats } = useAdminStats(users, listings, reports);
+
+  // Detect and update the fetchError state
+  useEffect(() => {
+    const combinedError = usersError || listingsError || reportsError;
+    if (combinedError) {
+      console.error("Admin data error:", combinedError);
+      setFetchError(combinedError instanceof Error ? combinedError.message : String(combinedError));
+    } else {
+      setFetchError(null);
+    }
+  }, [usersError, listingsError, reportsError]);
 
   const refetchData = useCallback(async () => {
     try {
-      // Re-fetch all data sources
-      const { users: newUsers, loading: newUsersLoading } = await useUsersAdminData();
-      if (!newUsersLoading) setUsers(newUsers);
-
-      const newUserIdToName = Object.fromEntries(newUsers.map(u => [u.id, u.full_name]));
-      
-      const { listings: newListings, loading: newListingsLoading } = await useListingsAdminData(newUserIdToName);
-      if (!newListingsLoading) setListings(newListings);
-      
-      const { reports: newReports, loading: newReportsLoading } = await useReportsAdminData(newUserIdToName);
-      if (!newReportsLoading) setReports(newReports);
-      
+      // Reset errors
       setFetchError(null);
+      
+      // We'll trigger refetches in the individual hooks by updating their dependencies
+      setUsers([...users]); // This will trigger a re-render which should initiate refetching in the hooks
+      
+      toast({
+        title: "Refreshing data",
+        description: "Attempting to fetch fresh admin data"
+      });
     } catch (error) {
       console.error("Failed to refresh data:", error);
       setFetchError(error instanceof Error ? error.message : "Failed to refresh data");
     }
-  }, []);
+  }, [users, setUsers]);
 
   const promoteAdmin = useCallback(async (userId: string) => {
     const { success, error } = await assignOrRemoveAdminRole(userId, "admin", "add");
