@@ -34,6 +34,7 @@ const AdminDashboard = () => {
     filteredListings,
     promoteAdmin,
     demoteAdmin,
+    toggleVerifiedStatus,
     currentUserId,
     refetchData
   } = useAdminDashboard();
@@ -112,6 +113,7 @@ const AdminDashboard = () => {
           handleUnsuspendUser={handleUnsuspendUser}
           promoteAdmin={promoteAdmin}
           demoteAdmin={demoteAdmin}
+          toggleVerifiedStatus={toggleVerifiedStatus}
           currentUserId={currentUserId}
         />
       </div>
