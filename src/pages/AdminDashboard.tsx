@@ -32,6 +32,9 @@ const AdminDashboard = () => {
     handleUnsuspendUser,
     filteredUsers,
     filteredListings,
+    promoteAdmin,
+    demoteAdmin,
+    currentUserId,
     refetchData
   } = useAdminDashboard();
 
@@ -107,6 +110,9 @@ const AdminDashboard = () => {
           handleRejectItem={handleRejectItem}
           handleSuspendUser={handleSuspendUser}
           handleUnsuspendUser={handleUnsuspendUser}
+          promoteAdmin={promoteAdmin}
+          demoteAdmin={demoteAdmin}
+          currentUserId={currentUserId}
         />
       </div>
     </MainLayout>

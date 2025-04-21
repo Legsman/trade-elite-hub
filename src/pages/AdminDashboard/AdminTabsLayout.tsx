@@ -4,6 +4,7 @@ import OverviewTab from "./OverviewTab";
 import UsersTab from "./UsersTab";
 import ListingsTab from "./ListingsTab";
 import ReportsTab from "./ReportsTab";
+import AdminsTab from "./AdminsTab";
 import { AdminStats, ListingAdmin, ReportAdmin, UserAdmin } from "./types";
 
 type AdminTabsLayoutProps = {
@@ -25,6 +26,9 @@ type AdminTabsLayoutProps = {
   handleRejectItem: (id: string, type: string) => void;
   handleSuspendUser: (id: string) => void;
   handleUnsuspendUser: (id: string) => void;
+  promoteAdmin: (userId: string) => void;
+  demoteAdmin: (userId: string) => void;
+  currentUserId: string;
 };
 
 export function AdminTabsLayout({
@@ -46,14 +50,18 @@ export function AdminTabsLayout({
   handleRejectItem,
   handleSuspendUser,
   handleUnsuspendUser,
+  promoteAdmin,
+  demoteAdmin,
+  currentUserId,
 }: AdminTabsLayoutProps) {
   return (
     <Tabs defaultValue="overview" className="space-y-6">
-      <TabsList className="grid w-full grid-cols-4">
+      <TabsList className="grid w-full grid-cols-5">
         <TabsTrigger value="overview">Overview</TabsTrigger>
         <TabsTrigger value="users">Users</TabsTrigger>
         <TabsTrigger value="listings">Listings</TabsTrigger>
         <TabsTrigger value="reports">Reports</TabsTrigger>
+        <TabsTrigger value="admins">Admins</TabsTrigger>
       </TabsList>
       <TabsContent value="overview">
         <OverviewTab
@@ -96,6 +104,14 @@ export function AdminTabsLayout({
           formatDate={formatDate}
           handleApproveItem={handleApproveItem}
           handleRejectItem={handleRejectItem}
+        />
+      </TabsContent>
+      <TabsContent value="admins">
+        <AdminsTab
+          users={users}
+          promoteAdmin={promoteAdmin}
+          demoteAdmin={demoteAdmin}
+          currentUserId={currentUserId}
         />
       </TabsContent>
     </Tabs>

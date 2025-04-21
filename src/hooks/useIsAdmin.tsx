@@ -20,6 +20,7 @@ export function useIsAdmin() {
     const check = async () => {
       setChecking(true);
       try {
+        // Use the security definer function that won't cause recursion
         const { data, error } = await supabase
           .rpc('has_role', { 
             _user_id: user.id, 

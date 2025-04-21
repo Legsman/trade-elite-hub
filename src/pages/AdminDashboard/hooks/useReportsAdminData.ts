@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { ReportAdmin } from "../types";
-import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from "../constants";
+import { supabase } from "@/integrations/supabase/client";
 
 export function useReportsAdminData(userIdToName: Record<string, string> = {}) {
   const [reports, setReports] = useState<ReportAdmin[]>([]);
@@ -14,22 +14,17 @@ export function useReportsAdminData(userIdToName: Record<string, string> = {}) {
         setLoading(true);
         setError(null);
         
-        const result = await fetch(
-          `${SUPABASE_URL}/rest/v1/reports?select=*`,
-          {
-            headers: {
-              'apikey': SUPABASE_PUBLISHABLE_KEY,
-              'Authorization': `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
-            },
-          }
-        );
+        const { data: reportsRaw, error: reportsError } = await supabase
+          .from("reports")
+          .select("*");
         
-        if (!result.ok) {
-          throw new Error(`Failed to fetch reports: ${result.statusText}`);
+        if (reportsError) {
+          console.error("Error fetching reports:", reportsError);
+          setError(reportsError.message);
+          setReports([]);
+          return;
         }
         
-        const reportsRaw = await result.json();
-
         setReports(
           (reportsRaw || []).map((report: any) => ({
             id: report.id,
