@@ -40,6 +40,7 @@ const AdminDashboard = () => {
     promoteAdmin,
     demoteAdmin,
     currentUserId,
+    refetchData
   } = useAdminDashboard();
 
   // If we're on the root path, redirect to the /admin path
@@ -65,6 +66,7 @@ const AdminDashboard = () => {
   }
 
   if (fetchError) {
+    console.error("Admin dashboard error:", fetchError);
     return (
       <MainLayout>
         <div className="container py-12">
@@ -72,18 +74,36 @@ const AdminDashboard = () => {
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>Error loading admin data</AlertTitle>
             <AlertDescription>
-              {fetchError}. Please refresh the page to try again.
+              {typeof fetchError === 'string' ? fetchError : 'An unexpected error occurred'}. Please try again.
             </AlertDescription>
           </Alert>
-          <div className="mt-4">
-            <Button onClick={() => window.location.reload()}>
-              Refresh Page
+          <div className="mt-4 space-x-4">
+            <Button onClick={() => refetchData()}>
+              Try Again
+            </Button>
+            <Button variant="outline" onClick={() => navigate('/dashboard')}>
+              Return to Dashboard
             </Button>
           </div>
         </div>
       </MainLayout>
     );
   }
+
+  // Provide fallback data if any of the required data is missing
+  const safeStats = stats || {
+    totalUsers: 0,
+    newUsersToday: 0,
+    activeListings: 0,
+    pendingListings: 0,
+    totalMessages: 0,
+    reportedContent: 0,
+  };
+  
+  const safeUsers = users || [];
+  const safeListings = listings || [];
+  const safeReportedItems = reportedItems || [];
+  const safeAnalyticsData = analyticsData || [];
 
   return (
     <MainLayout>
@@ -111,10 +131,10 @@ const AdminDashboard = () => {
 
           <TabsContent value="overview">
             <OverviewTab
-              stats={stats}
-              analyticsData={analyticsData}
-              listings={listings}
-              reportedItems={reportedItems}
+              stats={safeStats}
+              analyticsData={safeAnalyticsData}
+              listings={safeListings}
+              reportedItems={safeReportedItems}
               formatDate={formatDate}
               handleApproveItem={handleApproveItem}
               handleRejectItem={handleRejectItem}
@@ -149,7 +169,7 @@ const AdminDashboard = () => {
           
           <TabsContent value="reports">
             <ReportsTab
-              reportedItems={reportedItems}
+              reportedItems={safeReportedItems}
               formatDate={formatDate}
               handleApproveItem={handleApproveItem}
               handleRejectItem={handleRejectItem}
@@ -158,7 +178,7 @@ const AdminDashboard = () => {
           
           <TabsContent value="admins">
             <AdminsTab
-              users={users}
+              users={safeUsers}
               promoteAdmin={promoteAdmin}
               demoteAdmin={demoteAdmin}
               currentUserId={currentUserId}
