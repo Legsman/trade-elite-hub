@@ -10,7 +10,7 @@ export function useAdminActions(setUsers: any, setListings: any, setReports: any
     if (success) {
       setUsers((prev: UserAdmin[]) =>
         prev.map(u =>
-          u.id === userId ? { ...u, role: "admin" } : u
+          u.id === userId ? { ...u, role: "admin", verified_status: "verified" } : u
         )
       );
       toast({ title: "Admin promoted", description: "User has been made an admin" });

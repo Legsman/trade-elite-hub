@@ -27,62 +27,44 @@ export function useUsersAdminData() {
 
       console.log("Raw users data fetched:", usersRaw);
       
-      // Fetch admin roles from user_roles table
-      console.log("Directly fetching admin roles from user_roles table...");
-      const { data: adminRoles, error: adminRolesError } = await supabase
+      // Fetch ALL roles from user_roles table - we'll process them locally
+      console.log("Fetching all user roles...");
+      const { data: userRoles, error: userRolesError } = await supabase
         .from('user_roles')
-        .select('user_id, role')
-        .eq('role', 'admin');
+        .select('user_id, role');
         
-      if (adminRolesError) {
-        console.error("Error directly fetching admin roles:", adminRolesError);
-      }
-
-      // Fetch verified statuses from user_roles table
-      console.log("Directly fetching verified statuses from user_roles table...");
-      const { data: verifiedStatuses, error: verifiedStatusesError } = await supabase
-        .from('user_roles')
-        .select('user_id, role')
-        .eq('role', 'verified');
-        
-      if (verifiedStatusesError) {
-        console.error("Error directly fetching verified statuses:", verifiedStatusesError);
-      }
-
-      // Create sets for efficient lookups
-      const adminUserIds = new Set();
-      if (adminRoles && adminRoles.length > 0) {
-        console.log("Admin roles found:", adminRoles);
-        adminRoles.forEach(item => {
-          if (item.user_id) {
-            adminUserIds.add(item.user_id);
-          }
-        });
-      } else {
-        console.log("No admin roles found in the database");
+      if (userRolesError) {
+        console.error("Error fetching user roles:", userRolesError);
       }
       
-      const verifiedUserIds = new Set();
-      if (verifiedStatuses && verifiedStatuses.length > 0) {
-        console.log("Verified statuses found:", verifiedStatuses);
-        verifiedStatuses.forEach(item => {
-          if (item.user_id) {
-            verifiedUserIds.add(item.user_id);
+      console.log("User roles fetched:", userRoles);
+
+      // Create maps for role lookups (more efficient than filtering arrays repeatedly)
+      const userRolesMap = new Map();
+      
+      if (userRoles && userRoles.length > 0) {
+        userRoles.forEach(item => {
+          if (!userRolesMap.has(item.user_id)) {
+            userRolesMap.set(item.user_id, []);
           }
+          userRolesMap.get(item.user_id).push(item.role);
         });
-      } else {
-        console.log("No verified statuses found in the database");
       }
       
-      console.log("Admin users set:", Array.from(adminUserIds));
-      console.log("Verified users set:", Array.from(verifiedUserIds));
+      console.log("User roles map created:", Array.from(userRolesMap.entries()));
 
       // Map profiles to UserAdmin objects with role and verified status information
       const mappedUsers: UserAdmin[] = (usersRaw || []).map(profile => {
-        const isAdmin = adminUserIds.has(profile.id);
-        const isVerified = verifiedUserIds.has(profile.id);
+        const userRoles = userRolesMap.get(profile.id) || [];
         
-        console.log(`User ${profile.id} (${profile.full_name}): isAdmin=${isAdmin}, isVerified=${isVerified}`);
+        // A user is admin if they have the 'admin' role
+        const isAdmin = userRoles.includes('admin');
+        
+        // A user is verified if they have the 'verified' role OR if they're an admin
+        // Admins are automatically considered verified
+        const isVerified = isAdmin || userRoles.includes('verified');
+        
+        console.log(`User ${profile.id} (${profile.full_name}): roles=${userRoles.join(',')}, isAdmin=${isAdmin}, isVerified=${isVerified}`);
         
         // Determine status based on strike_count
         let userStatus: "active" | "warning" | "suspended" = "active";

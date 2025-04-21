@@ -123,19 +123,22 @@ const UsersTab: React.FC<UsersTabProps> = ({
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Select
-                        value={user.verified_status}
-                        onValueChange={(value) => toggleVerifiedStatus(user.id, value as "verified" | "unverified")}
-                        disabled={user.role === 'admin'}
-                      >
-                        <SelectTrigger className="w-[130px]">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="verified">Verified</SelectItem>
-                          <SelectItem value="unverified">Unverified</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      {user.role === 'admin' ? (
+                        <Badge variant="default">Always Verified</Badge>
+                      ) : (
+                        <Select
+                          value={user.verified_status}
+                          onValueChange={(value) => toggleVerifiedStatus(user.id, value as "verified" | "unverified")}
+                        >
+                          <SelectTrigger className="w-[130px]">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="verified">Verified</SelectItem>
+                            <SelectItem value="unverified">Unverified</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
                     </TableCell>
                     <TableCell>{formatDate(user.created_at)}</TableCell>
                     <TableCell>{user.listings_count}</TableCell>
