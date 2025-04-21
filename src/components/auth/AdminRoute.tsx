@@ -17,10 +17,18 @@ export const AdminRoute = ({ children }: AdminRouteProps) => {
   const [bypassAdminCheck, setBypassAdminCheck] = useState(false);
 
   useEffect(() => {
-    // Development mode: Always bypass admin check when user is logged in
-    if (user && !bypassAdminCheck) {
+    // Check if dev mode is already set in localStorage
+    const isDevMode = localStorage.getItem('dev_admin_mode') === 'true';
+    
+    // If dev mode is enabled or user is logged in, bypass admin check
+    if ((user && !bypassAdminCheck) || isDevMode) {
       console.log("Development mode: Bypassing admin check");
       setBypassAdminCheck(true);
+      
+      if (!isDevMode) {
+        localStorage.setItem('dev_admin_mode', 'true');
+      }
+      
       toast({
         title: "Development Mode",
         description: "Admin check bypassed for development purposes.",

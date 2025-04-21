@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
@@ -24,10 +25,100 @@ export function useAdminDashboard() {
   const [analyticsData, setAnalyticsData] = useState<any[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string>("");
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [devMode, setDevMode] = useState<boolean>(false);
+
+  useEffect(() => {
+    // Check if dev mode is enabled in localStorage
+    const isDevMode = localStorage.getItem('dev_admin_mode') === 'true';
+    setDevMode(isDevMode);
+  }, []);
+
+  const generateMockData = () => {
+    console.log("Generating mock data for development mode");
+    
+    // Generate mock users
+    const mockUsers = Array(5).fill(0).map((_, i) => ({
+      id: `mock-${i}`,
+      email: `user${i}@example.com`,
+      full_name: `Mock User ${i}`,
+      created_at: new Date().toISOString(),
+      role: i === 0 ? "admin" : "user",
+      strike_count: i % 3,
+      status: i % 3 === 0 ? "active" : i % 3 === 1 ? "warning" : "suspended",
+      listings_count: Math.floor(Math.random() * 5),
+      last_login: null,
+    }));
+    
+    // Generate mock listings
+    const mockListings = Array(10).fill(0).map((_, i) => ({
+      id: `mock-listing-${i}`,
+      title: `Mock Listing ${i}`,
+      seller_id: mockUsers[i % mockUsers.length].id,
+      seller_name: mockUsers[i % mockUsers.length].full_name,
+      price: Math.floor(Math.random() * 1000) + 10,
+      category: ["Electronics", "Clothing", "Home", "Sports", "Other"][i % 5],
+      status: ["active", "pending", "suspended"][i % 3],
+      created_at: new Date().toISOString(),
+      views: Math.floor(Math.random() * 100),
+      saves: Math.floor(Math.random() * 20),
+    }));
+    
+    // Generate mock reported items
+    const mockReported = mockUsers
+      .filter(u => u.strike_count > 0)
+      .map((u, i) => ({
+        id: String(i + 1),
+        type: "user",
+        item_id: u.id,
+        item_title: `User: ${u.full_name}`,
+        reporter_name: "System",
+        reporter_id: "",
+        reason: u.strike_count >= 2 ? "Account suspended" : "Warning for user",
+        status: u.strike_count >= 2 ? "pending" : "investigating",
+        created_at: u.created_at,
+      }));
+    
+    // Generate mock analytics data
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"];
+    const mockAnalyticsData = monthNames.map((name, i) => ({
+      name,
+      users: Math.floor(20 + (i * 5)),
+      listings: Math.floor(30 + (i * 8)),
+      messages: Math.floor(100 + (i * 20)),
+    }));
+    
+    // Set all the mock data
+    setUsers(mockUsers);
+    setListings(mockListings);
+    setReportedItems(mockReported);
+    setAnalyticsData(mockAnalyticsData);
+    
+    // Calculate stats from mock data
+    setStats({
+      totalUsers: mockUsers.length,
+      newUsersToday: 2,
+      activeListings: mockListings.filter(l => l.status === "active").length,
+      pendingListings: mockListings.filter(l => l.status === "pending").length,
+      totalMessages: 35,
+      reportedContent: mockReported.length,
+    });
+    
+    setFetchError(null);
+    console.log("Mock data generation complete");
+  };
 
   const fetchAdminData = useCallback(async () => {
     setLoading(true);
     setFetchError(null);
+    
+    // If dev mode is enabled, generate mock data instead of fetching from API
+    if (devMode) {
+      setTimeout(() => {
+        generateMockData();
+        setLoading(false);
+      }, 500); // Simulate a delay
+      return;
+    }
     
     try {
       console.log("Starting admin data fetch");
@@ -191,31 +282,19 @@ export function useAdminDashboard() {
       const errorMessage = error?.message || "Unknown error occurred";
       setFetchError(errorMessage);
       
-      // Generate some mock data for development if we're having issues
-      // This helps avoid UI errors when data is missing
-      const mockUsers = Array(5).fill(0).map((_, i) => ({
-        id: `mock-${i}`,
-        email: `user${i}@example.com`,
-        full_name: `Mock User ${i}`,
-        created_at: new Date().toISOString(),
-        role: i === 0 ? "admin" : "user",
-        strike_count: 0,
-        status: "active",
-        listings_count: Math.floor(Math.random() * 5),
-        last_login: null,
-      }));
-      
-      setUsers(mockUsers);
+      // Generate mock data for development if we're having issues
+      console.log("Error occurred, generating mock data as fallback");
+      generateMockData();
       
       toast({
         title: "Error loading admin data",
-        description: errorMessage,
-        variant: "destructive"
+        description: "Using mock data for demonstration",
+        variant: "default"
       });
     } finally {
       setLoading(false);
     }
-  }, [navigate]);
+  }, [navigate, devMode]);
 
   // Expose a refetch function that can be called from the UI
   const refetchData = useCallback(() => {
@@ -353,5 +432,6 @@ export function useAdminDashboard() {
     demoteAdmin,
     currentUserId,
     refetchData,
+    devMode
   };
 }

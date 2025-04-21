@@ -41,7 +41,8 @@ const AdminDashboard = () => {
     promoteAdmin,
     demoteAdmin,
     currentUserId,
-    refetchData
+    refetchData,
+    devMode
   } = useAdminDashboard();
 
   // Redirect to /admin if on root path
@@ -64,7 +65,7 @@ const AdminDashboard = () => {
     );
   }
 
-  if (fetchError) {
+  if (fetchError && !devMode) {
     console.error("Admin dashboard error:", fetchError);
     return (
       <MainLayout>
@@ -115,6 +116,16 @@ const AdminDashboard = () => {
   return (
     <MainLayout>
       <div className="container py-8">
+        {devMode && (
+          <Alert className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Development Mode</AlertTitle>
+            <AlertDescription>
+              Running in development mode with mock data. Database connections are bypassed.
+            </AlertDescription>
+          </Alert>
+        )}
+        
         <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between mb-8">
           <div className="flex items-center">
             <Shield className="h-8 w-8 mr-3 text-primary" />
