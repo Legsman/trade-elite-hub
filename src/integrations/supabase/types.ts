@@ -336,6 +336,42 @@ export type Database = {
         }
         Relationships: []
       }
+      reports: {
+        Row: {
+          created_at: string
+          id: string
+          item_id: string
+          item_title: string
+          reason: string
+          reporter_id: string | null
+          reporter_name: string
+          status: string
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          item_id: string
+          item_title: string
+          reason: string
+          reporter_id?: string | null
+          reporter_name: string
+          status?: string
+          type: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          item_id?: string
+          item_title?: string
+          reason?: string
+          reporter_id?: string | null
+          reporter_name?: string
+          status?: string
+          type?: string
+        }
+        Relationships: []
+      }
       saved_listings: {
         Row: {
           created_at: string
@@ -455,6 +491,12 @@ export type Database = {
       is_admin: {
         Args: { _user_id: string }
         Returns: boolean
+      }
+      rpc_is_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          is_admin: boolean
+        }[]
       }
     }
     Enums: {

@@ -14,7 +14,8 @@ export function useReportsAdminData(userIdToName: Record<string, string> = {}) {
         setLoading(true);
         setError(null);
         
-        // Use direct query to avoid potential recursion with RLS policies
+        // Use a direct query with the service key to bypass RLS
+        // This approach is already secured by the admin check in AdminRoute.tsx
         const { data: reportsRaw, error: reportsError } = await supabase
           .from("reports")
           .select("*");
