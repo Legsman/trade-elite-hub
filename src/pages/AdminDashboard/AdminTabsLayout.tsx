@@ -1,4 +1,3 @@
-
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import OverviewTab from "./OverviewTab";
 import UsersTab from "./UsersTab";
@@ -30,6 +29,7 @@ type AdminTabsLayoutProps = {
   demoteAdmin: (userId: string) => void;
   toggleVerifiedStatus: (userId: string, currentStatus: "verified" | "unverified") => void;
   currentUserId: string;
+  loadingUserId?: string | null;
 };
 
 export function AdminTabsLayout({
@@ -55,6 +55,7 @@ export function AdminTabsLayout({
   demoteAdmin,
   toggleVerifiedStatus,
   currentUserId,
+  loadingUserId,
 }: AdminTabsLayoutProps) {
   return (
     <Tabs defaultValue="overview" className="space-y-6">
@@ -87,6 +88,7 @@ export function AdminTabsLayout({
           handleSuspendUser={handleSuspendUser}
           handleUnsuspendUser={handleUnsuspendUser}
           toggleVerifiedStatus={toggleVerifiedStatus}
+          loadingUserId={loadingUserId}
         />
       </TabsContent>
       <TabsContent value="listings">
@@ -115,9 +117,11 @@ export function AdminTabsLayout({
           promoteAdmin={promoteAdmin}
           demoteAdmin={demoteAdmin}
           currentUserId={currentUserId}
+          loadingUserId={loadingUserId}
         />
       </TabsContent>
     </Tabs>
   );
 }
+
 export default AdminTabsLayout;

@@ -32,6 +32,7 @@ interface UsersTabProps {
   handleSuspendUser: (id: string) => void;
   handleUnsuspendUser: (id: string) => void;
   toggleVerifiedStatus: (userId: string, currentStatus: "verified" | "unverified") => void;
+  loadingUserId?: string | null;
 }
 
 const UsersTab: React.FC<UsersTabProps> = ({
@@ -44,6 +45,7 @@ const UsersTab: React.FC<UsersTabProps> = ({
   handleSuspendUser,
   handleUnsuspendUser,
   toggleVerifiedStatus,
+  loadingUserId
 }) => {
   useEffect(() => {
     console.log("UsersTab - filteredUsers:", filteredUsers);
@@ -98,6 +100,7 @@ const UsersTab: React.FC<UsersTabProps> = ({
               </TableRow>
             ) : (
               filteredUsers.map((user) => {
+                const isLoading = loadingUserId === user.id;
                 console.log(`Rendering user ${user.full_name} with role: ${user.role}, verified: ${user.verified_status}`);
                 return (
                   <TableRow key={user.id}>
@@ -117,9 +120,17 @@ const UsersTab: React.FC<UsersTabProps> = ({
                             id={`verify-${user.id}`}
                             checked={user.verified_status === "verified"}
                             onCheckedChange={() => toggleVerifiedStatus(user.id, user.verified_status)}
+                            disabled={isLoading}
                           />
                           <Label htmlFor={`verify-${user.id}`}>
-                            {user.verified_status === "verified" ? "Verified" : "Unverified"}
+                            {isLoading ? (
+                              <span className="flex items-center">
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Updating...
+                              </span>
+                            ) : (
+                              user.verified_status === "verified" ? "Verified" : "Unverified"
+                            )}
                           </Label>
                         </div>
                       )}

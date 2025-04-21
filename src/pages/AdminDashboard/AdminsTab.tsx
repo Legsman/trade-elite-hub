@@ -4,15 +4,23 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { UserAdmin } from "./types";
+import { Loader2 } from "lucide-react";
 
 interface AdminsTabProps {
   users: UserAdmin[];
   promoteAdmin: (userId: string) => void;
   demoteAdmin: (userId: string) => void;
   currentUserId: string;
+  loadingUserId?: string | null;
 }
 
-const AdminsTab: React.FC<AdminsTabProps> = ({ users, promoteAdmin, demoteAdmin, currentUserId }) => {
+const AdminsTab: React.FC<AdminsTabProps> = ({ 
+  users, 
+  promoteAdmin, 
+  demoteAdmin, 
+  currentUserId,
+  loadingUserId 
+}) => {
   useEffect(() => {
     console.log("AdminsTab mounted with users:", users);
     console.log("AdminsTab users with admin role:", users.filter(user => user.role === "admin").map(u => `${u.full_name} (${u.id})`));
@@ -35,7 +43,8 @@ const AdminsTab: React.FC<AdminsTabProps> = ({ users, promoteAdmin, demoteAdmin,
           </TableHeader>
           <TableBody>
             {users.map((user) => {
-              console.log(`AdminsTab rendering user ${user.full_name} with role: ${user.role}`);
+              const isLoading = loadingUserId === user.id;
+              
               return (
                 <TableRow key={user.id}>
                   <TableCell>{user.full_name}</TableCell>
@@ -58,12 +67,35 @@ const AdminsTab: React.FC<AdminsTabProps> = ({ users, promoteAdmin, demoteAdmin,
                   </TableCell>
                   <TableCell>
                     {user.role !== "admin" ? (
-                      <Button size="sm" onClick={() => promoteAdmin(user.id)}>
-                        Make Admin
+                      <Button 
+                        size="sm" 
+                        onClick={() => promoteAdmin(user.id)}
+                        disabled={isLoading}
+                      >
+                        {isLoading ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Promoting...
+                          </>
+                        ) : (
+                          "Make Admin"
+                        )}
                       </Button>
                     ) : (
-                      <Button size="sm" variant="outline" onClick={() => demoteAdmin(user.id)} disabled={user.id === currentUserId}>
-                        Remove Admin
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        onClick={() => demoteAdmin(user.id)} 
+                        disabled={user.id === currentUserId || isLoading}
+                      >
+                        {isLoading ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Removing...
+                          </>
+                        ) : (
+                          "Remove Admin"
+                        )}
                       </Button>
                     )}
                   </TableCell>

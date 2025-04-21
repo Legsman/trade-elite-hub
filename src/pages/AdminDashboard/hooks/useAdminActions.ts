@@ -1,12 +1,15 @@
-
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { assignOrRemoveAdminRole, assignOrRemoveVerifiedStatus } from "@/utils/adminUtils";
 import { toast } from "@/hooks/use-toast";
 import { UserAdmin, ListingAdmin, ReportAdmin } from "../types";
+import { Loader2 } from "lucide-react";
 
 export function useAdminActions(setUsers: any, setListings: any, setReports: any) {
+  const [loadingUserId, setLoadingUserId] = useState<string | null>(null);
+
   const promoteAdmin = useCallback(async (userId: string) => {
     console.log("Attempting to promote user to admin:", userId);
+    setLoadingUserId(userId);
     
     // Optimistically update UI first
     setUsers((prev: UserAdmin[]) =>
@@ -15,35 +18,16 @@ export function useAdminActions(setUsers: any, setListings: any, setReports: any
       )
     );
     
-    // Show processing toast
-    const pendingToast = toast({ 
-      title: "Processing", 
-      description: "Promoting user to admin..." 
-    });
-    
     // Make the actual API call
-    const { success, error, message, alreadyDone } = await assignOrRemoveAdminRole(userId, "admin", "add");
+    const { success, error, message } = await assignOrRemoveAdminRole(userId, "admin", "add");
     
-    // Dismiss the pending toast
-    if (pendingToast && pendingToast.dismiss) {
-      pendingToast.dismiss();
-    }
+    setLoadingUserId(null);
     
     if (success) {
       toast({ 
-        title: "Admin promoted", 
+        title: "Success", 
         description: message || "User has been made an admin" 
       });
-      
-      // Force a refresh of the users data to ensure UI is in sync
-      setTimeout(() => {
-        setUsers((prev: UserAdmin[]) => {
-          const updatedUsers = [...prev]; // Create a new array to trigger re-render
-          return updatedUsers.map(u =>
-            u.id === userId ? { ...u, role: "admin", verified_status: "verified" } : u
-          );
-        });
-      }, 300);
     } else {
       console.error("Failed to promote admin:", error);
       
@@ -64,6 +48,7 @@ export function useAdminActions(setUsers: any, setListings: any, setReports: any
 
   const demoteAdmin = useCallback(async (userId: string) => {
     console.log("Attempting to demote admin:", userId);
+    setLoadingUserId(userId);
     
     // Optimistically update UI first
     setUsers((prev: UserAdmin[]) =>
@@ -72,35 +57,16 @@ export function useAdminActions(setUsers: any, setListings: any, setReports: any
       )
     );
     
-    // Show processing toast
-    const pendingToast = toast({ 
-      title: "Processing", 
-      description: "Removing admin role..." 
-    });
-    
     // Make the actual API call
-    const { success, error, message, alreadyDone } = await assignOrRemoveAdminRole(userId, "admin", "remove");
+    const { success, error, message } = await assignOrRemoveAdminRole(userId, "admin", "remove");
     
-    // Dismiss the pending toast
-    if (pendingToast && pendingToast.dismiss) {
-      pendingToast.dismiss();
-    }
+    setLoadingUserId(null);
     
     if (success) {
       toast({ 
-        title: "Admin removed", 
+        title: "Success", 
         description: message || "User has been demoted from admin" 
       });
-      
-      // Force a refresh of the users data to ensure UI is in sync
-      setTimeout(() => {
-        setUsers((prev: UserAdmin[]) => {
-          const updatedUsers = [...prev]; // Create a new array to trigger re-render
-          return updatedUsers.map(u =>
-            u.id === userId ? { ...u, role: "user" } : u
-          );
-        });
-      }, 300);
     } else {
       console.error("Failed to demote admin:", error);
       
@@ -122,6 +88,7 @@ export function useAdminActions(setUsers: any, setListings: any, setReports: any
   const toggleVerifiedStatus = useCallback(async (userId: string, currentStatus: "verified" | "unverified") => {
     console.log("Toggling verified status for user:", userId, "Current status:", currentStatus);
     const action = currentStatus === "unverified" ? "add" : "remove";
+    setLoadingUserId(userId);
     
     // Optimistically update UI first
     setUsers((prev: UserAdmin[]) =>
@@ -130,38 +97,16 @@ export function useAdminActions(setUsers: any, setListings: any, setReports: any
       )
     );
     
-    // Show processing toast
-    const pendingToast = toast({ 
-      title: "Processing", 
-      description: `${action === "add" ? "Verifying" : "Unverifying"} user...` 
-    });
-    
     // Make the actual API call
-    const { success, error, message, alreadyDone } = await assignOrRemoveVerifiedStatus(userId, action);
+    const { success, error, message } = await assignOrRemoveVerifiedStatus(userId, action);
     
-    // Dismiss the pending toast
-    if (pendingToast && pendingToast.dismiss) {
-      pendingToast.dismiss();
-    }
+    setLoadingUserId(null);
     
     if (success) {
       toast({ 
-        title: `User ${action === "add" ? "verified" : "unverified"}`, 
+        title: "Success", 
         description: message || `User has been ${action === "add" ? "verified" : "unverified"}`
       });
-      
-      // Force a refresh of the users data to ensure UI is in sync
-      setTimeout(() => {
-        setUsers((prev: UserAdmin[]) => {
-          const updatedUsers = [...prev]; // Create a new array to trigger re-render
-          return updatedUsers.map(u =>
-            u.id === userId ? { 
-              ...u, 
-              verified_status: action === "add" ? "verified" : "unverified" 
-            } : u
-          );
-        });
-      }, 300);
     } else {
       console.error("Failed to update verification status:", error);
       
@@ -240,5 +185,6 @@ export function useAdminActions(setUsers: any, setListings: any, setReports: any
     handleRejectItem,
     handleSuspendUser,
     handleUnsuspendUser,
+    loadingUserId,
   };
 }
