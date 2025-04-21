@@ -104,7 +104,7 @@ export function useAdminDashboard() {
         listingsRaw = [];
       }
 
-      // Fetch reports using custom query
+      // For typed reports, we need to use a raw query since supabase client doesn't know about reports table yet
       console.log("Fetching reports data");
       const { data: reportsRaw, error: reportsError } = await supabase
         .from('reports')
@@ -158,8 +158,8 @@ export function useAdminDashboard() {
         seller_name: userIdToName[listing.seller_id] || "Unknown",
       }));
 
-      // Process reports data
-      const reportsData = (reportsRaw || []).map((report) => ({
+      // Process reports data - explicitly typed as Supabase.Report[] to fix TypeScript errors
+      const reportsData: Supabase.Report[] = (reportsRaw || []).map((report: any) => ({
         id: report.id,
         type: report.type,
         item_id: report.item_id,

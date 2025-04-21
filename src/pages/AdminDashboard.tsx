@@ -93,10 +93,10 @@ const AdminDashboard = () => {
         .select("id, title, seller_id, price, category, status, created_at, views, saves");
       if (listingsError) throw listingsError;
 
-      // Use reports table directly
-      let { data: reportsRaw, error: reportsError } = await supabase
-        .from("reports")
-        .select("*");
+      // Fetch reports using custom query to avoid TypeScript errors
+      const { data: reportsRaw, error: reportsError } = await supabase
+        .from('reports')
+        .select('*');
 
       if (reportsError) throw reportsError;
 
@@ -130,8 +130,8 @@ const AdminDashboard = () => {
         seller_name: userIdToName[listing.seller_id] || "Unknown",
       }));
 
-      // Process reports data
-      const reports = (reportsRaw || []).map((report) => ({
+      // Process reports data - explicitly cast to ensure TypeScript recognizes the type
+      const reports: Supabase.Report[] = (reportsRaw || []).map((report: any) => ({
         id: report.id,
         type: report.type,
         item_id: report.item_id,
