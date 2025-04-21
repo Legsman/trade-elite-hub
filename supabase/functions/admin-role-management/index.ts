@@ -68,12 +68,40 @@ serve(async (req) => {
     let resp;
     if (action === "add") {
       console.log(`Adding ${role} role for user ${targetUserId}`);
+      
+      // First check if the role already exists to prevent duplicate key errors
+      const { data: existingRole } = await supabaseAdmin
+        .from("user_roles")
+        .select("*")
+        .eq("user_id", targetUserId)
+        .eq("role", role)
+        .single();
+        
+      if (existingRole) {
+        console.log(`User ${targetUserId} already has role ${role}`);
+        return new Response(JSON.stringify({ success: true, message: "Role already assigned" }), { headers: corsHeaders });
+      }
+      
       // Insert role (if not present)
       resp = await supabaseAdmin
         .from("user_roles")
-        .upsert({ user_id: targetUserId, role }, { onConflict: "user_id,role" });
+        .insert({ user_id: targetUserId, role });
+        
     } else if (action === "remove") {
       console.log(`Removing ${role} role for user ${targetUserId}`);
+      
+      // Check if role exists before attempting to delete
+      const { data: existingRole } = await supabaseAdmin
+        .from("user_roles")
+        .select("*")
+        .eq("user_id", targetUserId)
+        .eq("role", role);
+        
+      if (!existingRole || existingRole.length === 0) {
+        console.log(`User ${targetUserId} doesn't have role ${role} to remove`);
+        return new Response(JSON.stringify({ success: true, message: "Role was not assigned" }), { headers: corsHeaders });
+      }
+      
       // Remove the role
       resp = await supabaseAdmin
         .from("user_roles")

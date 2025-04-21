@@ -22,7 +22,7 @@ export async function assignOrRemoveAdminRole(targetUserId: string, role: string
     if (data && data.success) {
       // Force refetch by waiting for the database to update
       await new Promise(resolve => setTimeout(resolve, 500));
-      return { success: true };
+      return { success: true, message: data.message };
     }
     return { success: false, error: data?.error || "Failed" };
   } catch (e) {
@@ -50,7 +50,7 @@ export async function assignOrRemoveVerifiedStatus(targetUserId: string, action:
     if (data && data.success) {
       // Force refetch by waiting for the database to update
       await new Promise(resolve => setTimeout(resolve, 500));
-      return { success: true };
+      return { success: true, message: data.message };
     }
     return { success: false, error: data?.error || "Failed" };
   } catch (e) {

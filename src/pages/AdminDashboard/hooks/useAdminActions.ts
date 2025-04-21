@@ -7,40 +7,54 @@ import { UserAdmin, ListingAdmin, ReportAdmin } from "../types";
 export function useAdminActions(setUsers: any, setListings: any, setReports: any) {
   const promoteAdmin = useCallback(async (userId: string) => {
     console.log("Attempting to promote user to admin:", userId);
-    const { success, error } = await assignOrRemoveAdminRole(userId, "admin", "add");
+    const { success, error, message } = await assignOrRemoveAdminRole(userId, "admin", "add");
     if (success) {
       setUsers((prev: UserAdmin[]) =>
         prev.map(u =>
           u.id === userId ? { ...u, role: "admin", verified_status: "verified" } : u
         )
       );
-      toast({ title: "Admin promoted", description: "User has been made an admin" });
+      toast({ 
+        title: "Admin promoted", 
+        description: message || "User has been made an admin" 
+      });
     } else {
       console.error("Failed to promote admin:", error);
-      toast({ title: "Failed to promote", description: error?.message || error || "Failed", variant: "destructive" });
+      toast({ 
+        title: "Failed to promote", 
+        description: error?.message || error || "Failed", 
+        variant: "destructive" 
+      });
     }
   }, [setUsers]);
 
   const demoteAdmin = useCallback(async (userId: string) => {
     console.log("Attempting to demote admin:", userId);
-    const { success, error } = await assignOrRemoveAdminRole(userId, "admin", "remove");
+    const { success, error, message } = await assignOrRemoveAdminRole(userId, "admin", "remove");
     if (success) {
       setUsers((prev: UserAdmin[]) =>
         prev.map(u =>
           u.id === userId ? { ...u, role: "user" } : u
         )
       );
-      toast({ title: "Admin removed", description: "User has been demoted from admin" });
+      toast({ 
+        title: "Admin removed", 
+        description: message || "User has been demoted from admin" 
+      });
     } else {
       console.error("Failed to demote admin:", error);
-      toast({ title: "Failed to demote", description: error?.message || error || "Failed", variant: "destructive" });
+      toast({ 
+        title: "Failed to demote", 
+        description: error?.message || error || "Failed", 
+        variant: "destructive" 
+      });
     }
   }, [setUsers]);
 
   const toggleVerifiedStatus = useCallback(async (userId: string, currentStatus: "verified" | "unverified") => {
     console.log("Toggling verified status for user:", userId, "Current status:", currentStatus);
     const action = currentStatus === "unverified" ? "add" : "remove";
-    const { success, error } = await assignOrRemoveVerifiedStatus(userId, action);
+    const { success, error, message } = await assignOrRemoveVerifiedStatus(userId, action);
     
     if (success) {
       setUsers((prev: UserAdmin[]) =>
@@ -50,7 +64,7 @@ export function useAdminActions(setUsers: any, setListings: any, setReports: any
       );
       toast({ 
         title: `User ${action === "add" ? "verified" : "unverified"}`, 
-        description: `User has been ${action === "add" ? "verified" : "unverified"}`
+        description: message || `User has been ${action === "add" ? "verified" : "unverified"}`
       });
     } else {
       console.error("Failed to update verification status:", error);

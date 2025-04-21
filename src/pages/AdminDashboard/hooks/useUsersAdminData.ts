@@ -43,32 +43,56 @@ export function useUsersAdminData() {
       // Process each profile to get their roles using the security definer function
       const usersWithRoles: UserAdmin[] = await Promise.all(
         profilesData.map(async (profile) => {
-          // Use the security definer function to check if user is admin
-          const { data: isAdminData } = await supabase
-            .rpc('is_admin', { _user_id: profile.id });
+          try {
+            // Use the security definer function to check if user is admin
+            const { data: isAdminData, error: adminError } = await supabase
+              .rpc('is_admin', { _user_id: profile.id });
+              
+            if (adminError) {
+              console.error(`Error checking admin role for user ${profile.id}:`, adminError);
+            }
             
-          const isAdmin = isAdminData || false;
-          
-          // For verified status, we need to use another function or approach
-          const { data: hasVerifiedRole } = await supabase
-            .rpc('has_role', { 
-              _user_id: profile.id, 
-              _role: 'verified' 
-            });
-          
-          console.log(`User ${profile.id} (${profile.full_name}): isAdmin=${isAdmin}, isVerified=${hasVerifiedRole}`);
-          
-          return {
-            id: profile.id,
-            email: profile.email,
-            full_name: profile.full_name,
-            created_at: profile.created_at,
-            role: isAdmin ? "admin" : "user",
-            verified_status: (isAdmin || hasVerifiedRole) ? "verified" : "unverified",
-            strike_count: profile.strike_count || 0,
-            last_visited: profile.updated_at,
-            listings_count: 0  // This could be enhanced by joining with listings table if needed
-          };
+            const isAdmin = isAdminData || false;
+            
+            // For verified status, we need to use another function or approach
+            const { data: hasVerifiedRole, error: verifiedError } = await supabase
+              .rpc('has_role', { 
+                _user_id: profile.id, 
+                _role: 'verified' 
+              });
+            
+            if (verifiedError) {
+              console.error(`Error checking verified role for user ${profile.id}:`, verifiedError);
+            }
+            
+            console.log(`User ${profile.id} (${profile.full_name}): isAdmin=${isAdmin}, isVerified=${hasVerifiedRole}`);
+            
+            return {
+              id: profile.id,
+              email: profile.email,
+              full_name: profile.full_name,
+              created_at: profile.created_at,
+              role: isAdmin ? "admin" : "user",
+              verified_status: (isAdmin || hasVerifiedRole) ? "verified" : "unverified",
+              strike_count: profile.strike_count || 0,
+              last_visited: profile.updated_at,
+              listings_count: 0  // This could be enhanced by joining with listings table if needed
+            };
+          } catch (userError) {
+            console.error(`Error processing user ${profile.id}:`, userError);
+            // Return a default user with error state
+            return {
+              id: profile.id,
+              email: profile.email,
+              full_name: profile.full_name || "Unknown User",
+              created_at: profile.created_at,
+              role: "user",
+              verified_status: "unverified",
+              strike_count: profile.strike_count || 0,
+              last_visited: profile.updated_at,
+              listings_count: 0
+            };
+          }
         })
       );
       
