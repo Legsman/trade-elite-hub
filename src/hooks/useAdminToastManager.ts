@@ -12,7 +12,7 @@ interface ToastWithIdOptions extends ToastOptions {
 }
 
 export function useAdminToastManager() {
-  const { toast: toastFunction, dismiss, update } = useToast();
+  const { toast: toastFunction, dismiss } = useToast();
   
   // Store active toast IDs to avoid duplicates
   const activeToastIds = new Map<string, string>();
@@ -60,12 +60,17 @@ export function useAdminToastManager() {
         const existingToastId = activeToastIds.get(id);
         
         if (existingToastId) {
-          // Use the update function imported from useToast
-          update(existingToastId, {
+          // Create a new toast with the updated content
+          // and dismiss the old one
+          dismiss(existingToastId);
+          const newToastId = toastFunction({
             title,
             description,
-            duration: 5000, // Reset duration
-          });
+            duration: 5000,
+          }).id;
+          
+          // Update the mapping
+          activeToastIds.set(id, newToastId);
         }
         
         return { id };
@@ -80,12 +85,16 @@ export function useAdminToastManager() {
         const existingToastId = activeToastIds.get(id);
         
         if (existingToastId) {
-          // Use the update function imported from useToast
-          update(existingToastId, {
+          // Dismiss the existing toast and create a new one
+          dismiss(existingToastId);
+          const newToastId = toastFunction({
             title, 
             description,
             variant: "default"
-          });
+          }).id;
+          
+          // Update the mapping
+          activeToastIds.set(id, newToastId);
         }
         
         // Clean up after success
@@ -112,12 +121,16 @@ export function useAdminToastManager() {
         const existingToastId = activeToastIds.get(id);
         
         if (existingToastId) {
-          // Use the update function imported from useToast
-          update(existingToastId, {
+          // Dismiss the existing toast and create a new one
+          dismiss(existingToastId);
+          const newToastId = toastFunction({
             title,
             description,
             variant: "destructive"
-          });
+          }).id;
+          
+          // Update the mapping
+          activeToastIds.set(id, newToastId);
         }
         
         // Clean up after error
