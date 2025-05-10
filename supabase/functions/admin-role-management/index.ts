@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.192.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4"
 
@@ -6,8 +7,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Increased propagation delay to 13 seconds to ensure DB changes propagate fully
-const PROPAGATION_DELAY_MS = 13000;
+// Reduced propagation delay to 2 seconds to match frontend timing
+const PROPAGATION_DELAY_MS = 2000;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -160,7 +161,7 @@ serve(async (req) => {
       }), { headers: corsHeaders, status: 400 });
     }
 
-    // Add a significant delay to allow database changes to propagate fully
+    // Add a reduced delay to allow database changes to propagate
     console.log(`Waiting for database propagation (${PROPAGATION_DELAY_MS}ms)...`);
     await new Promise(resolve => setTimeout(resolve, PROPAGATION_DELAY_MS));
     
