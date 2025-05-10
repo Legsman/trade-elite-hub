@@ -38,7 +38,7 @@ const AdminDashboard = () => {
     toggleVerifiedStatus,
     currentUserId,
     refetchData,
-    loadingUserId,
+    isPendingForUser,
     isRefetching
   } = useAdminDashboard();
 
@@ -135,7 +135,7 @@ const AdminDashboard = () => {
           demoteAdmin={demoteAdmin}
           toggleVerifiedStatus={toggleVerifiedStatus}
           currentUserId={currentUserId}
-          loadingUserId={loadingUserId}
+          isPendingForUser={isPendingForUser}
           isRefetching={isRefetching}
           onRefresh={refetchData}
         />

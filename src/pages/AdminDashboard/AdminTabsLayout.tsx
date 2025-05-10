@@ -30,7 +30,7 @@ type AdminTabsLayoutProps = {
   demoteAdmin: (userId: string) => void;
   toggleVerifiedStatus: (userId: string, currentStatus: "verified" | "unverified") => void;
   currentUserId: string;
-  loadingUserId?: string | null;
+  isPendingForUser?: (userId: string) => boolean;
   isRefetching?: boolean;
   onRefresh?: () => Promise<void>;
 };
@@ -58,7 +58,7 @@ export function AdminTabsLayout({
   demoteAdmin,
   toggleVerifiedStatus,
   currentUserId,
-  loadingUserId,
+  isPendingForUser,
   isRefetching,
   onRefresh,
 }: AdminTabsLayoutProps) {
@@ -93,7 +93,7 @@ export function AdminTabsLayout({
           handleSuspendUser={handleSuspendUser}
           handleUnsuspendUser={handleUnsuspendUser}
           toggleVerifiedStatus={toggleVerifiedStatus}
-          loadingUserId={loadingUserId}
+          isPendingForUser={isPendingForUser}
           isRefetching={isRefetching}
           onRefresh={onRefresh}
         />
@@ -124,7 +124,7 @@ export function AdminTabsLayout({
           promoteAdmin={promoteAdmin}
           demoteAdmin={demoteAdmin}
           currentUserId={currentUserId}
-          loadingUserId={loadingUserId}
+          isPendingForUser={isPendingForUser}
           isRefetching={isRefetching}
         />
       </TabsContent>

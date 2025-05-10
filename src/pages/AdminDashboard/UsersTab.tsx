@@ -34,7 +34,7 @@ interface UsersTabProps {
   toggleVerifiedStatus: (userId: string, currentStatus: "verified" | "unverified") => void;
   isPendingForUser?: (userId: string) => boolean;
   isRefetching?: boolean;
-  onRefresh?: () => void;
+  onRefresh?: () => Promise<void>;
 }
 
 const UsersTab: React.FC<UsersTabProps> = ({
