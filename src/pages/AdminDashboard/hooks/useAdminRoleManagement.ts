@@ -38,7 +38,7 @@ export function useAdminRoleManagement(
         throw new Error(data?.message || "Failed to promote user");
       }
       
-      return { success: true, message: data.message };
+      return { success: true, message: data.message || "User promoted to admin successfully" };
       
     } catch (error) {
       console.error("Error promoting user:", error);
@@ -89,7 +89,7 @@ export function useAdminRoleManagement(
         throw new Error(data?.message || "Failed to demote user");
       }
       
-      return { success: true, message: data.message };
+      return { success: true, message: data.message || "User removed from admin role successfully" };
       
     } catch (error) {
       console.error("Error demoting user:", error);

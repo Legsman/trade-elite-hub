@@ -57,7 +57,7 @@ export function useAdminOperationToasts() {
         }
       } else {
         // Operation failed at the function level
-        console.error("Operation failed:", result?.error);
+        console.error("Operation failed:", result?.error || "Unknown error");
         toast.error({
           title: "Operation Failed",
           description: result?.error?.message || "Please try again later",
@@ -80,5 +80,48 @@ export function useAdminOperationToasts() {
     }
   }, [toast]);
 
-  return { handleRoleOperationWithRefresh };
+  // New function to handle content moderation operations
+  const handleContentOperation = useCallback(async (
+    operationType: string,
+    operationFn: Function,
+    ...args: any[]
+  ) => {
+    const targetId = args[0] || 'unknown';
+    const operationId = `${operationType}_${targetId}`;
+    
+    try {
+      // Execute the operation without loading toast for immediate actions
+      const result = await operationFn(...args);
+      
+      if (result?.success) {
+        toast.success({
+          title: `${operationType.charAt(0).toUpperCase() + operationType.slice(1)} Successful`,
+          description: result.message || `${operationType} operation completed successfully`,
+          id: operationId
+        });
+        return { success: true, result };
+      } else {
+        console.error(`${operationType} operation failed:`, result?.error || "Unknown error");
+        toast.error({
+          title: `${operationType} Failed`,
+          description: result?.error?.message || "Please try again later",
+          id: operationId
+        });
+        return { success: false, result };
+      }
+    } catch (error) {
+      console.error(`Exception during ${operationType} operation:`, error);
+      toast.error({
+        title: "Unexpected Error",
+        description: error instanceof Error ? error.message : "An unexpected error occurred",
+        id: operationId
+      });
+      return { success: false, error };
+    }
+  }, [toast]);
+
+  return { 
+    handleRoleOperationWithRefresh,
+    handleContentOperation
+  };
 }

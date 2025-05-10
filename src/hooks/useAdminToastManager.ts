@@ -1,5 +1,6 @@
 
 import { useToast } from "@/hooks/use-toast";
+import { useRef } from "react";
 
 interface ToastOptions {
   title: string;
@@ -14,8 +15,8 @@ interface ToastWithIdOptions extends ToastOptions {
 export function useAdminToastManager() {
   const { toast: toastFunction, dismiss } = useToast();
   
-  // Store active toast IDs to avoid duplicates
-  const activeToastIds = new Map<string, string>();
+  // Use a ref to store active toast IDs to preserve between renders
+  const activeToastIdsRef = useRef(new Map<string, string>());
   
   // Generate a unique operation ID based on operation type and target
   const getOperationId = (operation: string, targetId?: string): string => {
@@ -28,8 +29,8 @@ export function useAdminToastManager() {
       const toastId = id || crypto.randomUUID();
       
       // If there's an existing toast with this ID, dismiss it first
-      if (activeToastIds.has(toastId)) {
-        const existingToastId = activeToastIds.get(toastId);
+      if (activeToastIdsRef.current.has(toastId)) {
+        const existingToastId = activeToastIdsRef.current.get(toastId);
         if (existingToastId) {
           dismiss(existingToastId);
         }
@@ -43,8 +44,10 @@ export function useAdminToastManager() {
         variant: "default"
       }).id;
       
+      console.log(`Creating loading toast: ID=${toastId}, title=${title}`);
+      
       // Store the mapping
-      activeToastIds.set(toastId, newToastId);
+      activeToastIdsRef.current.set(toastId, newToastId);
       
       return {
         id: toastId,
@@ -55,10 +58,12 @@ export function useAdminToastManager() {
     },
     
     update: ({ title, description, id }: ToastWithIdOptions) => {
-      if (id && activeToastIds.has(id)) {
-        const existingToastId = activeToastIds.get(id);
+      if (id && activeToastIdsRef.current.has(id)) {
+        const existingToastId = activeToastIdsRef.current.get(id);
         
         if (existingToastId) {
+          console.log(`Updating toast: ID=${id}, title=${title}`);
+          
           // Create a new toast with the updated content
           // and dismiss the old one
           dismiss(existingToastId);
@@ -69,21 +74,24 @@ export function useAdminToastManager() {
           }).id;
           
           // Update the mapping
-          activeToastIds.set(id, newToastId);
+          activeToastIdsRef.current.set(id, newToastId);
         }
         
         return { id };
       } else {
         // If no existing toast, create a new one
+        console.log(`No toast found with ID ${id}, creating new info toast`);
         return toastManager.info({ title, description, id });
       }
     },
     
     success: ({ title, description, id }: ToastWithIdOptions) => {
-      if (id && activeToastIds.has(id)) {
-        const existingToastId = activeToastIds.get(id);
+      if (id && activeToastIdsRef.current.has(id)) {
+        const existingToastId = activeToastIdsRef.current.get(id);
         
         if (existingToastId) {
+          console.log(`Updating toast to success: ID=${id}, title=${title}`);
+          
           // Dismiss the existing toast and create a new one
           dismiss(existingToastId);
           const newToastId = toastFunction({
@@ -93,13 +101,17 @@ export function useAdminToastManager() {
           }).id;
           
           // Update the mapping
-          activeToastIds.set(id, newToastId);
+          activeToastIdsRef.current.set(id, newToastId);
         }
         
         // Clean up after success
-        setTimeout(() => activeToastIds.delete(id), 5000);
+        setTimeout(() => {
+          console.log(`Removing toast ID ${id} after success`);
+          activeToastIdsRef.current.delete(id);
+        }, 5000);
         return { id };
       } else {
+        console.log(`Creating new success toast: title=${title}`);
         const newToastId = toastFunction({
           title,
           description,
@@ -107,19 +119,24 @@ export function useAdminToastManager() {
         }).id;
         
         const uniqueId = id || crypto.randomUUID();
-        activeToastIds.set(uniqueId, newToastId);
+        activeToastIdsRef.current.set(uniqueId, newToastId);
         
         // Clean up after success
-        setTimeout(() => activeToastIds.delete(uniqueId), 5000);
+        setTimeout(() => {
+          console.log(`Removing toast ID ${uniqueId} after success`);
+          activeToastIdsRef.current.delete(uniqueId);
+        }, 5000);
         return { id: uniqueId };
       }
     },
     
     error: ({ title, description, id }: ToastWithIdOptions) => {
-      if (id && activeToastIds.has(id)) {
-        const existingToastId = activeToastIds.get(id);
+      if (id && activeToastIdsRef.current.has(id)) {
+        const existingToastId = activeToastIdsRef.current.get(id);
         
         if (existingToastId) {
+          console.log(`Updating toast to error: ID=${id}, title=${title}`);
+          
           // Dismiss the existing toast and create a new one
           dismiss(existingToastId);
           const newToastId = toastFunction({
@@ -129,13 +146,17 @@ export function useAdminToastManager() {
           }).id;
           
           // Update the mapping
-          activeToastIds.set(id, newToastId);
+          activeToastIdsRef.current.set(id, newToastId);
         }
         
         // Clean up after error
-        setTimeout(() => activeToastIds.delete(id), 5000);
+        setTimeout(() => {
+          console.log(`Removing toast ID ${id} after error`);
+          activeToastIdsRef.current.delete(id);
+        }, 5000);
         return { id };
       } else {
+        console.log(`Creating new error toast: title=${title}`);
         const newToastId = toastFunction({
           title,
           description,
@@ -143,15 +164,19 @@ export function useAdminToastManager() {
         }).id;
         
         const uniqueId = id || crypto.randomUUID();
-        activeToastIds.set(uniqueId, newToastId);
+        activeToastIdsRef.current.set(uniqueId, newToastId);
         
         // Clean up after error
-        setTimeout(() => activeToastIds.delete(uniqueId), 5000);
+        setTimeout(() => {
+          console.log(`Removing toast ID ${uniqueId} after error`);
+          activeToastIdsRef.current.delete(uniqueId);
+        }, 5000);
         return { id: uniqueId };
       }
     },
     
     info: ({ title, description, id }: ToastWithIdOptions) => {
+      console.log(`Creating info toast: title=${title}`);
       const uniqueId = id || crypto.randomUUID();
       const newToastId = toastFunction({
         title,
@@ -159,10 +184,13 @@ export function useAdminToastManager() {
         variant: "default"
       }).id;
       
-      activeToastIds.set(uniqueId, newToastId);
+      activeToastIdsRef.current.set(uniqueId, newToastId);
       
       // Clean up after info
-      setTimeout(() => activeToastIds.delete(uniqueId), 5000);
+      setTimeout(() => {
+        console.log(`Removing toast ID ${uniqueId} after info`);
+        activeToastIdsRef.current.delete(uniqueId);
+      }, 5000);
       return { id: uniqueId };
     }
   };

@@ -1,8 +1,6 @@
 
 import { useState, useCallback } from "react";
 import { UserAdmin, ListingAdmin, ReportAdmin } from "../types";
-import { supabase } from "@/integrations/supabase/client";
-import { useAdminToastManager } from "@/hooks/useAdminToastManager";
 import { useAdminRoleManagement } from "./useAdminRoleManagement";
 import { useVerificationManagement } from "./useVerificationManagement";
 import { useContentModeration } from "./useContentModeration";
@@ -14,7 +12,6 @@ export function useAdminActions(
   startOperation?: (type: string, id: string) => string,
   finishOperation?: (operationKey: string) => void
 ) {
-  const { toast } = useAdminToastManager();
   const [pendingOperations, setPendingOperations] = useState<Set<string>>(new Set());
   
   // Helper to track operations if startOperation/finishOperation aren't provided
@@ -32,6 +29,7 @@ export function useAdminActions(
         updated.delete(id);
         return updated;
       });
+      return "";
     }
   }, []);
 
@@ -48,7 +46,7 @@ export function useAdminActions(
   const finishOp = useCallback((key: string) => {
     if (finishOperation) {
       finishOperation(key);
-    } else {
+    } else if (key) {
       trackOperation(key, false);
     }
   }, [finishOperation, trackOperation]);

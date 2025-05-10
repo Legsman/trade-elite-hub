@@ -9,16 +9,16 @@ export function useVerificationManagement(
   finishOperation: (key: string) => void
 ) {
   const toggleVerifiedStatus = useCallback(async (userId: string, currentStatus: "verified" | "unverified") => {
-    // Determine the action based on current status
-    const action = currentStatus === "verified" ? "remove" : "add";
-    const operationKey = startOperation("verification", userId);
-    
+    const newStatus = currentStatus === "verified" ? "unverified" : "verified";
+    const action = newStatus === "verified" ? "add" : "remove";
+    const operationKey = startOperation("verify", userId);
+
     try {
-      // Optimistic update on the UI
+      // Optimistic update
       setUsers(prev => 
         prev.map(user => 
           user.id === userId 
-            ? { ...user, verified_status: currentStatus === "verified" ? "unverified" : "verified" } 
+            ? { ...user, verified_status: newStatus } 
             : user
         )
       );
@@ -33,17 +33,20 @@ export function useVerificationManagement(
       });
       
       if (error) {
-        throw new Error(`Failed to ${action} verified status: ${error.message}`);
+        throw new Error(`Failed to toggle verification status: ${error.message}`);
       }
       
       if (!data?.success) {
-        throw new Error(data?.message || `Failed to ${action} verified status`);
+        throw new Error(data?.message || "Failed to toggle verification status");
       }
       
-      return { success: true, message: data.message };
+      return { 
+        success: true, 
+        message: data.message || `User ${newStatus === "verified" ? "verified" : "unverified"} successfully`
+      };
       
     } catch (error) {
-      console.error(`Error ${action === "add" ? "verifying" : "unverifying"} user:`, error);
+      console.error("Error toggling verification status:", error);
       
       // Revert the optimistic update
       setUsers(prev => 
@@ -54,13 +57,13 @@ export function useVerificationManagement(
       
       return { 
         success: false, 
-        error: error instanceof Error ? error : new Error(`Failed to ${action} verified status`) 
+        error: error instanceof Error ? error : new Error("Failed to toggle verification status") 
       };
     } finally {
       finishOperation(operationKey);
     }
   }, [setUsers, startOperation, finishOperation]);
-  
+
   return {
     toggleVerifiedStatus
   };

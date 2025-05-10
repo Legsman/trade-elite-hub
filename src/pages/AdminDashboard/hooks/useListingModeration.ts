@@ -1,14 +1,11 @@
 
 import { useCallback } from "react";
 import { ListingAdmin, ReportAdmin } from "../types";
-import { useAdminToastManager } from "@/hooks/useAdminToastManager";
 
 export function useListingModeration(
   setListings: React.Dispatch<React.SetStateAction<ListingAdmin[]>>,
   setReports: React.Dispatch<React.SetStateAction<ReportAdmin[]>>
 ) {
-  const { toast } = useAdminToastManager();
-
   const handleApproveItem = useCallback((id: string, type: string) => {
     if (type === 'listing') {
       setListings((prev: ListingAdmin[]) =>
@@ -20,11 +17,11 @@ export function useListingModeration(
       );
     }
     
-    toast.success({
-      title: "Item approved",
-      description: `The ${type} has been approved successfully`,
-    });
-  }, [setListings, setReports, toast]);
+    return {
+      success: true,
+      message: `The ${type} has been approved successfully`
+    };
+  }, [setListings, setReports]);
 
   const handleRejectItem = useCallback((id: string, type: string) => {
     if (type === 'listing') {
@@ -37,11 +34,11 @@ export function useListingModeration(
       );
     }
     
-    toast.error({
-      title: "Item rejected",
-      description: `The ${type} has been rejected`,
-    });
-  }, [setListings, setReports, toast]);
+    return {
+      success: true,
+      message: `The ${type} has been rejected`
+    };
+  }, [setListings, setReports]);
 
   return {
     handleApproveItem,
