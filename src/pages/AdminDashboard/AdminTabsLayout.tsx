@@ -1,5 +1,6 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useState, useEffect } from "react";
 import OverviewTab from "./OverviewTab";
 import UsersTab from "./UsersTab";
 import ListingsTab from "./ListingsTab";
@@ -33,6 +34,8 @@ type AdminTabsLayoutProps = {
   isPendingForUser?: (userId: string) => boolean;
   isRefetching?: boolean;
   onRefresh?: () => Promise<void>;
+  activeTab?: string; // Added to remember active tab
+  setActiveTab?: (tab: string) => void; // Added to update active tab
 };
 
 export function AdminTabsLayout({
@@ -61,9 +64,33 @@ export function AdminTabsLayout({
   isPendingForUser,
   isRefetching,
   onRefresh,
+  activeTab = "overview", 
+  setActiveTab,
 }: AdminTabsLayoutProps) {
+  // Internal tab state if no external state is provided
+  const [internalActiveTab, setInternalActiveTab] = useState(activeTab);
+  
+  // Use either the provided setter or the internal one
+  const handleTabChange = (value: string) => {
+    if (setActiveTab) {
+      setActiveTab(value);
+    } else {
+      setInternalActiveTab(value);
+    }
+  };
+
+  // Sync internal state with external state if provided
+  useEffect(() => {
+    if (activeTab && activeTab !== internalActiveTab) {
+      setInternalActiveTab(activeTab);
+    }
+  }, [activeTab]);
+
+  // The active tab value to use in the component
+  const currentTab = setActiveTab ? activeTab : internalActiveTab;
+
   return (
-    <Tabs defaultValue="overview" className="space-y-6">
+    <Tabs value={currentTab} onValueChange={handleTabChange} className="space-y-6">
       <TabsList className="grid w-full grid-cols-5">
         <TabsTrigger value="overview">Overview</TabsTrigger>
         <TabsTrigger value="users">Users</TabsTrigger>

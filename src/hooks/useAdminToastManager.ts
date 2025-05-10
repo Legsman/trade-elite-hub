@@ -27,35 +27,121 @@ export function useAdminToastManager() {
       // Create or update toast
       const toastId = id || crypto.randomUUID();
       
-      return toast({
+      // If there's an existing toast with this ID, dismiss it first
+      if (activeToastIds.has(toastId)) {
+        const existingToastId = activeToastIds.get(toastId);
+        if (existingToastId) {
+          toast.dismiss(existingToastId);
+        }
+      }
+      
+      // Create new toast
+      const newToastId = toast({
         title,
         description,
+        duration: 30000, // Longer duration for loading toasts
         variant: "default"
-      });
+      }).id;
+      
+      // Store the mapping
+      activeToastIds.set(toastId, newToastId);
+      
+      return {
+        id: toastId,
+        update: (options: ToastOptions) => toastManager.update({ ...options, id: toastId }),
+        success: (options: ToastOptions) => toastManager.success({ ...options, id: toastId }),
+        error: (options: ToastOptions) => toastManager.error({ ...options, id: toastId }),
+      };
+    },
+    
+    update: ({ title, description, id }: ToastWithIdOptions) => {
+      if (id && activeToastIds.has(id)) {
+        const existingToastId = activeToastIds.get(id);
+        
+        toast.update(existingToastId!, {
+          title,
+          description,
+          duration: 5000, // Reset duration
+        });
+        
+        return { id };
+      } else {
+        // If no existing toast, create a new one
+        return toastManager.info({ title, description, id });
+      }
     },
     
     success: ({ title, description, id }: ToastWithIdOptions) => {
-      return toast({
-        title,
-        description,
-        variant: "default"
-      });
+      if (id && activeToastIds.has(id)) {
+        const existingToastId = activeToastIds.get(id);
+        
+        toast.update(existingToastId!, {
+          title, 
+          description,
+          variant: "default"
+        });
+        
+        // Clean up after success
+        setTimeout(() => activeToastIds.delete(id), 5000);
+        return { id };
+      } else {
+        const newToastId = toast({
+          title,
+          description,
+          variant: "default"
+        }).id;
+        
+        const uniqueId = id || crypto.randomUUID();
+        activeToastIds.set(uniqueId, newToastId);
+        
+        // Clean up after success
+        setTimeout(() => activeToastIds.delete(uniqueId), 5000);
+        return { id: uniqueId };
+      }
     },
     
     error: ({ title, description, id }: ToastWithIdOptions) => {
-      return toast({
-        title,
-        description,
-        variant: "destructive"
-      });
+      if (id && activeToastIds.has(id)) {
+        const existingToastId = activeToastIds.get(id);
+        
+        toast.update(existingToastId!, {
+          title,
+          description,
+          variant: "destructive"
+        });
+        
+        // Clean up after error
+        setTimeout(() => activeToastIds.delete(id), 5000);
+        return { id };
+      } else {
+        const newToastId = toast({
+          title,
+          description,
+          variant: "destructive"
+        }).id;
+        
+        const uniqueId = id || crypto.randomUUID();
+        activeToastIds.set(uniqueId, newToastId);
+        
+        // Clean up after error
+        setTimeout(() => activeToastIds.delete(uniqueId), 5000);
+        return { id: uniqueId };
+      }
     },
     
     info: ({ title, description, id }: ToastWithIdOptions) => {
-      return toast({
+      const uniqueId = id || crypto.randomUUID();
+      const newToastId = toast({
         title,
         description,
         variant: "default"
-      });
+      }).id;
+      
+      activeToastIds.set(uniqueId, newToastId);
+      
+      // Clean up after info
+      setTimeout(() => activeToastIds.delete(uniqueId), 5000);
+      return { id: uniqueId };
     }
   };
 

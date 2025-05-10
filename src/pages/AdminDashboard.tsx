@@ -1,5 +1,5 @@
 
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import { RefreshCw, Shield } from "lucide-react";
 import { useAdminDashboard } from "./AdminDashboard/useAdminDashboard";
@@ -13,6 +13,8 @@ import { useNavigate } from "react-router-dom";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState<string>("overview");
+  
   const {
     users,
     listings,
@@ -78,6 +80,12 @@ const AdminDashboard = () => {
     );
   }
 
+  // Create a partial refetch function that preserves the active tab
+  const handleRefetchWithTabPreservation = async () => {
+    await refetchData();
+    // Tab state is already preserved by the state in this component
+  };
+
   return (
     <MainLayout>
       <div className="container py-8">
@@ -95,7 +103,7 @@ const AdminDashboard = () => {
           <Button 
             variant="outline" 
             size="sm" 
-            onClick={refetchData} 
+            onClick={handleRefetchWithTabPreservation} 
             disabled={isRefetching}
             className="flex items-center gap-1"
           >
@@ -137,7 +145,9 @@ const AdminDashboard = () => {
           currentUserId={currentUserId}
           isPendingForUser={isPendingForUser}
           isRefetching={isRefetching}
-          onRefresh={refetchData}
+          onRefresh={handleRefetchWithTabPreservation}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
         />
       </div>
     </MainLayout>

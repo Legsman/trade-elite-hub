@@ -1,93 +1,90 @@
 
-import { useCallback, useState } from "react";
-import { assignOrRemoveVerifiedStatus } from "@/utils/adminUtils";
+import { useCallback } from "react";
 import { UserAdmin } from "../types";
+import { supabase } from "@/integrations/supabase/client";
 import { useAdminToastManager } from "@/hooks/useAdminToastManager";
 
-export function useVerificationManagement(setUsers: React.Dispatch<React.SetStateAction<UserAdmin[]>>) {
-  // Track operations by user ID
-  const [pendingOperations, setPendingOperations] = useState<Record<string, boolean>>({});
+export function useVerificationManagement(
+  setUsers: React.Dispatch<React.SetStateAction<UserAdmin[]>>,
+  startOperation: (type: string, id: string) => string,
+  finishOperation: (key: string) => void
+) {
   const { toast } = useAdminToastManager();
-
+  
   const toggleVerifiedStatus = useCallback(async (userId: string, currentStatus: "verified" | "unverified") => {
-    if (pendingOperations[userId]) {
-      console.log("Operation already in progress for this user:", userId);
-      return { success: false, error: "Operation already in progress" };
-    }
-
-    console.log("Toggling verified status for user:", userId, "Current status:", currentStatus);
-    const action = currentStatus === "unverified" ? "add" : "remove";
-    const operationId = `verification_${userId}`;
-    
-    // Set pending operation
-    setPendingOperations(prev => ({ ...prev, [userId]: true }));
+    // Determine the action based on current status
+    const action = currentStatus === "verified" ? "remove" : "add";
+    const operationKey = startOperation("verification", userId);
+    const toastId = `verify_${userId}`;
     
     // Show loading toast
     toast.loading({
-      title: "Processing",
-      description: `${action === "add" ? "Verifying" : "Unverifying"} user...`,
-      id: operationId
+      id: toastId,
+      title: `${action === "add" ? "Verifying" : "Unverifying"} User`,
+      description: "Processing your request..."
     });
     
-    // Optimistic update
-    setUsers((prev: UserAdmin[]) =>
-      prev.map(u =>
-        u.id === userId ? { ...u, verified_status: action === "add" ? "verified" : "unverified" } : u
-      )
-    );
-    
     try {
-      const { success, error, message } = await assignOrRemoveVerifiedStatus(userId, action);
+      // Optimistic update on the UI
+      setUsers(prev => 
+        prev.map(user => 
+          user.id === userId 
+            ? { ...user, verified_status: currentStatus === "verified" ? "unverified" : "verified" } 
+            : user
+        )
+      );
       
-      if (success) {
-        toast.success({
-          title: "Success", 
-          description: message || `User has been ${action === "add" ? "verified" : "unverified"}`,
-          id: operationId
-        });
-        return { success: true };
-      } else {
-        console.error("Failed to update verification status:", error);
-        
-        // Revert optimistic update
-        setUsers((prev: UserAdmin[]) =>
-          prev.map(u =>
-            u.id === userId ? { ...u, verified_status: currentStatus } : u
-          )
-        );
-        
-        toast.error({
-          title: `Failed to ${action === "add" ? "verify" : "unverify"} user`, 
-          description: error ? String(error) : "An unknown error occurred",
-          id: operationId
-        });
-        return { success: false, error };
+      // Call the Supabase Edge Function
+      const { data, error } = await supabase.functions.invoke("admin-role-management", {
+        body: {
+          action: action,
+          role: "verified",
+          targetUserId: userId
+        }
+      });
+      
+      if (error) {
+        throw new Error(`Failed to ${action} verified status: ${error.message}`);
       }
-    } catch (error) {
-      console.error("Exception during verification status update:", error);
       
-      // Revert optimistic update
-      setUsers((prev: UserAdmin[]) =>
-        prev.map(u =>
-          u.id === userId ? { ...u, verified_status: currentStatus } : u
+      if (!data?.success) {
+        throw new Error(data?.message || `Failed to ${action} verified status`);
+      }
+      
+      toast.success({
+        id: toastId,
+        title: "Success",
+        description: `User ${action === "add" ? "verified" : "unverified"} successfully`
+      });
+      
+      return { success: true, message: data.message };
+      
+    } catch (error) {
+      console.error(`Error ${action === "add" ? "verifying" : "unverifying"} user:`, error);
+      
+      // Revert the optimistic update
+      setUsers(prev => 
+        prev.map(user => 
+          user.id === userId ? { ...user, verified_status: currentStatus } : user
         )
       );
       
       toast.error({
-        title: `Failed to ${action === "add" ? "verify" : "unverify"} user`,
-        description: error ? String(error) : "An unknown error occurred",
-        id: operationId
+        id: toastId,
+        title: "Operation Failed",
+        description: error instanceof Error ? error.message : `Failed to ${action} verified status`
       });
-      return { success: false, error };
+      
+      return { 
+        success: false, 
+        error: error instanceof Error ? error : new Error(`Failed to ${action} verified status`) 
+      };
     } finally {
-      // Clear pending operation
-      setPendingOperations(prev => ({ ...prev, [userId]: false }));
+      finishOperation(operationKey);
     }
-  }, [pendingOperations, toast, setUsers]);
-
+  }, [setUsers, toast, startOperation, finishOperation]);
+  
   return {
-    toggleVerifiedStatus,
-    isPending: Object.values(pendingOperations).some(Boolean),
-    pendingUserIds: Object.keys(pendingOperations).filter(key => pendingOperations[key])
+    toggleVerifiedStatus
   };
 }

@@ -16,6 +16,7 @@ export function useAdminDashboard() {
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [isRefetching, setIsRefetching] = useState<boolean>(false);
   const { toast } = useAdminToastManager();
+  const [pendingOperations, setPendingOperations] = useState<Record<string, boolean>>({});
 
   const { users, loading: loadingUsers, setUsers, error: usersError, refetchUsers } = useUsersAdminData();
   const userIdToName = useMemo(
@@ -40,6 +41,28 @@ export function useAdminDashboard() {
 
   const currentUserId = useCurrentAdminUser();
 
+  // We'll track pending operations for specific users
+  const isPendingForUser = useCallback((userId: string): boolean => {
+    return pendingOperations[`user_${userId}`] === true;
+  }, [pendingOperations]);
+
+  const startOperation = useCallback((type: string, id: string) => {
+    const operationKey = `${type}_${id}`;
+    setPendingOperations(prev => ({
+      ...prev,
+      [operationKey]: true
+    }));
+    return operationKey;
+  }, []);
+
+  const finishOperation = useCallback((operationKey: string) => {
+    setPendingOperations(prev => {
+      const updated = {...prev};
+      delete updated[operationKey];
+      return updated;
+    });
+  }, []);
+
   const {
     promoteAdmin,
     demoteAdmin,
@@ -48,10 +71,7 @@ export function useAdminDashboard() {
     handleRejectItem,
     handleSuspendUser,
     handleUnsuspendUser,
-    loadingUserId,
-    pendingOperations,
-    isPendingForUser
-  } = useAdminActions(setUsers, setListings, setReports);
+  } = useAdminActions(setUsers, setListings, setReports, startOperation, finishOperation);
 
   useEffect(() => {
     const combinedError = usersError || listingsError || reportsError;
@@ -74,7 +94,8 @@ export function useAdminDashboard() {
       setIsRefetching(true);
       setFetchError(null);
       
-      toast.loading({
+      // Create a toast for the refresh operation
+      const refreshToast = toast.loading({
         title: "Refreshing Data",
         description: "Fetching latest data from the server...",
         id: refreshToastId
@@ -82,6 +103,7 @@ export function useAdminDashboard() {
       
       await refetchUsers();
       
+      // Update the toast after a successful refresh
       toast.success({
         title: "Data Refreshed",
         description: "Dashboard data has been updated successfully",
@@ -103,20 +125,75 @@ export function useAdminDashboard() {
   }, [refetchUsers, isRefetching, toast]);
 
   const handleRoleOperationWithRefresh = useCallback(async (operationFn: Function, ...args: any[]) => {
+    // Create a unique ID for this operation
+    const operationType = operationFn.name || 'role_operation';
+    const targetId = args[0] || 'unknown';
+    const operationId = `${operationType}_${targetId}`;
+    
     try {
+      // Show loading toast
+      const operationToast = toast.loading({
+        title: "Processing Request",
+        description: "Your request is being processed...",
+        id: operationId
+      });
+      
       const result = await operationFn(...args);
       
       if (result?.success) {
-        // Only refresh if the operation was successful
-        await refetchData();
+        // Only refresh silently in background if the operation was successful
+        setIsRefetching(true);
+        
+        // Update toast to "waiting" state
+        toast.update({
+          title: "Request Successful", 
+          description: "Waiting for server to update...",
+          id: operationId
+        });
+        
+        // Wait for backend to process
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        try {
+          await refetchUsers();
+          toast.success({
+            title: "Operation Complete",
+            description: result.message || "Changes have been applied successfully",
+            id: operationId
+          });
+        } catch (refreshError) {
+          console.error("Error refreshing after operation:", refreshError);
+          // Still mark the operation as successful but note the refresh issue
+          toast.success({
+            title: "Operation Complete",
+            description: "Changes made but there was an issue refreshing the data. You may need to refresh manually.",
+            id: operationId
+          });
+        } finally {
+          setIsRefetching(false);
+        }
+      } else {
+        // Operation failed
+        toast.error({
+          title: "Operation Failed",
+          description: result?.error?.message || "Please try again later",
+          id: operationId
+        });
       }
       
       return result;
     } catch (error) {
       console.error("Error during role operation:", error);
+      
+      toast.error({
+        title: "Error",
+        description: error instanceof Error ? error.message : "An unexpected error occurred",
+        id: operationId
+      });
+      
       return { success: false, error };
     }
-  }, [refetchData]);
+  }, [refetchUsers, toast]);
 
   const enhancedPromoteAdmin = useCallback((userId: string) => {
     return handleRoleOperationWithRefresh(promoteAdmin, userId);
@@ -136,7 +213,7 @@ export function useAdminDashboard() {
     reports, setReports,
     reportedItems: reports,
     stats, analyticsData, setStats,
-    loading: loadingUsers || loadingListings || loadingReports || isRefetching,
+    loading: loadingUsers || loadingListings || loadingReports,
     searchQuery,
     setSearchQuery,
     userFilter,
@@ -155,7 +232,6 @@ export function useAdminDashboard() {
     currentUserId,
     fetchError,
     refetchData,
-    loadingUserId,
     pendingOperations,
     isPendingForUser,
     isRefetching
