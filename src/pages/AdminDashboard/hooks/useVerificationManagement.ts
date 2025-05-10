@@ -34,29 +34,32 @@ export function useVerificationManagement(
         }
       });
       
-      console.log(`Verification toggle response:`, data, error);
+      console.log(`Verification toggle full response:`, { data, error, rawData: JSON.stringify(data) });
       
       if (error) {
         throw new Error(`Failed to toggle verification status: ${error.message}`);
       }
       
-      // Even if data.success is false, check if there's a message indicating it was already done
-      if (data?.message?.includes("already") || data?.message?.includes("not found")) {
+      // Enhanced response handling - assume success unless explicitly failed
+      const isSuccess = !error && (data === null || data === undefined || data.success !== false);
+      const alreadyDone = data?.message?.includes("already") || data?.message?.includes("not found");
+      
+      if (alreadyDone) {
         console.log(`User ${userId} status was already ${newStatus} - considering operation successful`);
         return { 
           success: true, 
-          message: data.message || `User ${newStatus === "verified" ? "verified" : "unverified"} successfully`,
+          message: data?.message || `User ${newStatus === "verified" ? "verified" : "unverified"} successfully`,
           alreadyDone: true
         };
       }
       
-      if (!data?.success) {
+      if (!isSuccess) {
         throw new Error(data?.message || "Failed to toggle verification status");
       }
       
       return { 
         success: true, 
-        message: data.message || `User ${newStatus === "verified" ? "verified" : "unverified"} successfully`,
+        message: data?.message || `User ${newStatus === "verified" ? "verified" : "unverified"} successfully`,
         alreadyDone: false
       };
       

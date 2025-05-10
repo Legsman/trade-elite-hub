@@ -32,13 +32,16 @@ export function useAdminRoleManagement(
         }
       });
       
-      console.log(`Promote admin response:`, data, error);
+      console.log(`Promote admin response:`, { data, error, rawData: JSON.stringify(data) });
       
       if (error) {
         throw new Error(`Failed to promote user: ${error.message}`);
       }
       
-      // Even if data.success is false, check if there's a message indicating it was already done
+      // Enhanced response handling - assume success unless explicitly failed
+      const isSuccess = !error && (data === null || data === undefined || data.success !== false);
+      const alreadyDone = data?.message?.includes("already");
+      
       if (data?.message?.includes("already")) {
         console.log(`User ${userId} was already admin - considering operation successful`);
         return { 
@@ -48,11 +51,11 @@ export function useAdminRoleManagement(
         };
       }
       
-      if (!data?.success) {
+      if (!isSuccess) {
         throw new Error(data?.message || "Failed to promote user");
       }
       
-      return { success: true, message: data.message || "User promoted to admin successfully", alreadyDone: false };
+      return { success: true, message: data?.message || "User promoted to admin successfully", alreadyDone: false };
       
     } catch (error) {
       console.error("Error promoting user:", error);
@@ -97,13 +100,16 @@ export function useAdminRoleManagement(
         }
       });
       
-      console.log(`Demote admin response:`, data, error);
+      console.log(`Demote admin response:`, { data, error, rawData: JSON.stringify(data) });
       
       if (error) {
         throw new Error(`Failed to demote user: ${error.message}`);
       }
       
-      // Even if data.success is false, check if there's a message indicating it was already done
+      // Enhanced response handling - assume success unless explicitly failed
+      const isSuccess = !error && (data === null || data === undefined || data.success !== false);
+      const alreadyDone = data?.message?.includes("not found");
+      
       if (data?.message?.includes("not found")) {
         console.log(`User ${userId} was not an admin - considering operation successful`);
         return { 
@@ -113,11 +119,11 @@ export function useAdminRoleManagement(
         };
       }
       
-      if (!data?.success) {
+      if (!isSuccess) {
         throw new Error(data?.message || "Failed to demote user");
       }
       
-      return { success: true, message: data.message || "User removed from admin role successfully", alreadyDone: false };
+      return { success: true, message: data?.message || "User removed from admin role successfully", alreadyDone: false };
       
     } catch (error) {
       console.error("Error demoting user:", error);

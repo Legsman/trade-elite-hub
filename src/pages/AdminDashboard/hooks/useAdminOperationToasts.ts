@@ -1,4 +1,3 @@
-
 import { useCallback } from "react";
 import { useAdminToastManager } from "@/hooks/useAdminToastManager";
 
@@ -44,8 +43,9 @@ export function useAdminOperationToasts() {
         
         // Silently refresh in background to get latest data
         try {
-          // Wait for backend changes to propagate - match the delay from the edge function
-          await new Promise(resolve => setTimeout(resolve, 2500)); // 2.5 seconds for safety
+          // Wait for backend changes to propagate - add a little extra time beyond the edge function
+          // We use 3 seconds to be safe (edge function uses 2 seconds)
+          await new Promise(resolve => setTimeout(resolve, 3000)); 
           
           // Final success toast
           toast.success({

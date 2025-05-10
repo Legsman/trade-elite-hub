@@ -9,18 +9,23 @@ export async function assignOrRemoveAdminRole(targetUserId: string, role: string
       body: { targetUserId, role, action }
     });
     
+    console.log(`Full edge function response:`, { data, error });
+    
     if (error) {
       console.error("Error in edge function assignOrRemoveAdminRole:", error);
       return { success: false, error };
     }
     
-    console.log(`Admin role ${action} response:`, data);
+    // Check if we have a successful response - assume success if no explicit error
+    // and either data.success is true or not provided
+    const isSuccess = !error && (data === null || data === undefined || data.success !== false);
+    const alreadyDone = data?.message?.includes("already") || data?.message?.includes("not found");
     
-    if (data && (data.success || data.message?.includes("already") || data.message?.includes("not found"))) {
+    if (isSuccess || alreadyDone) {
       return { 
         success: true, 
-        message: data.message || `Role ${action === 'add' ? 'added' : 'removed'} successfully`,
-        alreadyDone: data.message?.includes("already") || data.message?.includes("not found")
+        message: data?.message || `Role ${action === 'add' ? 'added' : 'removed'} successfully`,
+        alreadyDone
       };
     }
     
@@ -39,18 +44,23 @@ export async function assignOrRemoveVerifiedStatus(targetUserId: string, action:
       body: { targetUserId, role: 'verified', action }
     });
     
+    console.log(`Full edge function response:`, { data, error });
+    
     if (error) {
       console.error("Error in edge function assignOrRemoveVerifiedStatus:", error);
       return { success: false, error };
     }
     
-    console.log(`Verified status ${action} response:`, data);
+    // Check if we have a successful response - assume success if no explicit error
+    // and either data.success is true or not provided
+    const isSuccess = !error && (data === null || data === undefined || data.success !== false);
+    const alreadyDone = data?.message?.includes("already") || data?.message?.includes("not found");
     
-    if (data && (data.success || data.message?.includes("already") || data.message?.includes("not found"))) {
+    if (isSuccess || alreadyDone) {
       return { 
         success: true, 
-        message: data.message || `Verification ${action === 'add' ? 'added' : 'removed'} successfully`,
-        alreadyDone: data.message?.includes("already") || data.message?.includes("not found")
+        message: data?.message || `Verification ${action === 'add' ? 'added' : 'removed'} successfully`,
+        alreadyDone
       };
     }
     
