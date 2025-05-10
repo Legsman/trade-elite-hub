@@ -13,6 +13,29 @@ interface AdminDashboardContextType {
   handleRejectItem: (id: string, type: string) => void;
   isLoadingAnalytics?: boolean;
   analyticsError?: string | null;
+  
+  // Additional properties for AdminsTab
+  promoteAdmin: (userId: string) => void;
+  demoteAdmin: (userId: string) => void;
+  currentUserId: string;
+  isPendingForUser: (userId: string) => boolean;
+  isRefetching?: boolean;
+  
+  // Additional properties for UsersTab
+  searchQuery?: string;
+  setSearchQuery?: (query: string) => void;
+  userFilter?: string;
+  setUserFilter?: (filter: string) => void;
+  filteredUsers?: UserAdmin[];
+  handleSuspendUser?: (userId: string) => void;
+  handleUnsuspendUser?: (userId: string) => void;
+  toggleVerifiedStatus?: (userId: string, currentStatus: "verified" | "unverified") => void;
+  onRefresh?: () => void;
+  
+  // Additional properties for ListingsTab
+  listingFilter?: string;
+  setListingFilter?: (filter: string) => void;
+  filteredListings?: ListingAdmin[];
 }
 
 const AdminDashboardContext = createContext<AdminDashboardContextType | undefined>(undefined);

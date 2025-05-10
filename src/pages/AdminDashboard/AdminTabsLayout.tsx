@@ -72,6 +72,37 @@ const AdminTabsLayout: React.FC<AdminTabsLayoutProps> = ({
   isLoadingAnalytics,
   analyticsError,
 }) => {
+  // Create a common context value object that contains all props needed by all tabs
+  const contextValue = {
+    users,
+    listings,
+    reports,
+    stats,
+    analyticsData,
+    formatDate,
+    handleApproveItem,
+    handleRejectItem,
+    isLoadingAnalytics,
+    analyticsError,
+    searchQuery,
+    setSearchQuery,
+    userFilter,
+    setUserFilter,
+    listingFilter,
+    setListingFilter,
+    filteredUsers,
+    filteredListings,
+    handleSuspendUser,
+    handleUnsuspendUser,
+    promoteAdmin,
+    demoteAdmin,
+    toggleVerifiedStatus,
+    currentUserId,
+    isPendingForUser,
+    isRefetching,
+    onRefresh
+  };
+
   return (
     <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="space-y-4">
       <TabsList className="w-full border-b pb-0">
@@ -82,79 +113,27 @@ const AdminTabsLayout: React.FC<AdminTabsLayoutProps> = ({
         <TabsTrigger value="admins">Admins</TabsTrigger>
       </TabsList>
       
-      <TabsContent value="overview" className="py-2">
-        <AdminDashboardProvider 
-          users={users} 
-          listings={listings} 
-          reports={reports} 
-          stats={stats} 
-          analyticsData={analyticsData} 
-          formatDate={formatDate} 
-          handleApproveItem={handleApproveItem} 
-          handleRejectItem={handleRejectItem}
-          isLoadingAnalytics={isLoadingAnalytics}
-          analyticsError={analyticsError}
-        >
+      <AdminDashboardProvider {...contextValue}>
+        <TabsContent value="overview" className="py-2">
           <OverviewTab />
-        </AdminDashboardProvider>
-      </TabsContent>
-      
-      <TabsContent value="users" className="py-2">
-        <UsersTab 
-          users={filteredUsers}
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          userFilter={userFilter}
-          setUserFilter={setUserFilter}
-          handleSuspendUser={handleSuspendUser}
-          handleUnsuspendUser={handleUnsuspendUser}
-          toggleVerifiedStatus={toggleVerifiedStatus}
-          currentUserId={currentUserId}
-          isPendingForUser={isPendingForUser}
-          isRefetching={isRefetching}
-          onRefresh={onRefresh}
-        />
-      </TabsContent>
-      
-      <TabsContent value="listings" className="py-2">
-        <ListingsTab 
-          listings={filteredListings}
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          listingFilter={listingFilter}
-          setListingFilter={setListingFilter}
-          handleApproveItem={handleApproveItem}
-          handleRejectItem={handleRejectItem}
-          isRefetching={isRefetching}
-          onRefresh={onRefresh}
-        />
-      </TabsContent>
-      
-      <TabsContent value="reports" className="py-2">
-        <ReportsTab 
-          reports={reports}
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          handleApproveItem={handleApproveItem}
-          handleRejectItem={handleRejectItem}
-          isRefetching={isRefetching}
-          onRefresh={onRefresh}
-        />
-      </TabsContent>
-      
-      <TabsContent value="admins" className="py-2">
-        <AdminsTab 
-          users={users.filter(u => u.role === "admin")}
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          promoteAdmin={promoteAdmin}
-          demoteAdmin={demoteAdmin}
-          currentUserId={currentUserId}
-          isPendingForUser={isPendingForUser}
-          isRefetching={isRefetching}
-          onRefresh={onRefresh}
-        />
-      </TabsContent>
+        </TabsContent>
+        
+        <TabsContent value="users" className="py-2">
+          <UsersTab />
+        </TabsContent>
+        
+        <TabsContent value="listings" className="py-2">
+          <ListingsTab />
+        </TabsContent>
+        
+        <TabsContent value="reports" className="py-2">
+          <ReportsTab />
+        </TabsContent>
+        
+        <TabsContent value="admins" className="py-2">
+          <AdminsTab />
+        </TabsContent>
+      </AdminDashboardProvider>
     </Tabs>
   );
 };

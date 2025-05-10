@@ -25,11 +25,11 @@ import { useAdminDashboardContext } from "../context/AdminDashboardContext";
 const ListingsTab: React.FC = () => {
   const navigate = useNavigate();
   const {
-    searchQuery,
-    setSearchQuery,
-    listingFilter,
-    setListingFilter,
-    filteredListings,
+    filteredListings = [],
+    searchQuery = "",
+    setSearchQuery = () => {},
+    listingFilter = "all",
+    setListingFilter = () => {},
     formatDate,
     handleApproveItem,
     handleRejectItem,

@@ -25,18 +25,18 @@ import { useAdminDashboardContext } from "../context/AdminDashboardContext";
 
 const UsersTab: React.FC = () => {
   const {
-    searchQuery,
-    setSearchQuery,
-    userFilter,
-    setUserFilter,
-    filteredUsers,
+    searchQuery = "",
+    setSearchQuery = () => {},
+    userFilter = "all",
+    setUserFilter = () => {},
+    filteredUsers = [],
     formatDate,
-    handleSuspendUser,
-    handleUnsuspendUser,
-    toggleVerifiedStatus,
+    handleSuspendUser = () => {},
+    handleUnsuspendUser = () => {},
+    toggleVerifiedStatus = () => {},
     isPendingForUser = () => false,
-    isRefetching,
-    onRefresh,
+    isRefetching = false,
+    onRefresh = () => {},
   } = useAdminDashboardContext();
 
   useEffect(() => {
