@@ -35,7 +35,7 @@ export function useAdminDashboard() {
   // Core data hooks (continued)
   const { listings, loading: loadingListings, setListings, error: listingsError } = useListingsAdminData(userIdToName);
   const { reports, loading: loadingReports, setReports, error: reportsError } = useReportsAdminData(userIdToName);
-  const { stats, analyticsData, setStats } = useAdminStats(users, listings, reports);
+  const { stats, analyticsData, setStats, isLoading: isLoadingAnalytics, error: analyticsError } = useAdminStats(users, listings, reports);
 
   // Search and filtering
   const {
@@ -85,6 +85,8 @@ export function useAdminDashboard() {
     reportedItems: reports,
     stats, analyticsData, setStats,
     loading: loadingUsers || loadingListings || loadingReports,
+    isLoadingAnalytics,
+    analyticsError,
     searchQuery,
     setSearchQuery,
     userFilter,

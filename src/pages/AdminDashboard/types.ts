@@ -44,3 +44,10 @@ export interface AdminStats {
   totalMessages: number;
   reportedContent: number;
 }
+
+export interface AnalyticsDataPoint {
+  name: string;
+  users: number;
+  listings: number;
+  messages: number;
+}

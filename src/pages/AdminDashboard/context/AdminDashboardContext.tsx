@@ -1,55 +1,33 @@
 
-import { createContext, useContext } from "react";
-import { AdminStats, ListingAdmin, ReportAdmin, UserAdmin } from "../types";
+import React, { createContext, useContext } from 'react';
+import { UserAdmin, ListingAdmin, ReportAdmin, AdminStats, AnalyticsDataPoint } from '../types';
 
 interface AdminDashboardContextType {
-  stats: AdminStats;
-  analyticsData: any[];
+  users: UserAdmin[];
   listings: ListingAdmin[];
   reports: ReportAdmin[];
-  users: UserAdmin[];
+  stats: AdminStats;
+  analyticsData: AnalyticsDataPoint[];
   formatDate: (dateString: string) => string;
-  searchQuery: string;
-  setSearchQuery: (q: string) => void;
-  userFilter: string;
-  setUserFilter: (f: string) => void;
-  listingFilter: string;
-  setListingFilter: (f: string) => void;
-  filteredUsers: UserAdmin[];
-  filteredListings: ListingAdmin[];
   handleApproveItem: (id: string, type: string) => void;
   handleRejectItem: (id: string, type: string) => void;
-  handleSuspendUser: (id: string) => void;
-  handleUnsuspendUser: (id: string) => void;
-  promoteAdmin: (userId: string) => void;
-  demoteAdmin: (userId: string) => void;
-  toggleVerifiedStatus: (userId: string, currentStatus: "verified" | "unverified") => void;
-  currentUserId: string;
-  isPendingForUser?: (userId: string) => boolean;
-  isRefetching?: boolean;
-  onRefresh?: () => Promise<void>;
+  isLoadingAnalytics?: boolean;
+  analyticsError?: string | null;
 }
 
-export const AdminDashboardContext = createContext<AdminDashboardContextType | undefined>(undefined);
+const AdminDashboardContext = createContext<AdminDashboardContextType | undefined>(undefined);
 
-export function useAdminDashboardContext() {
+export const useAdminDashboardContext = () => {
   const context = useContext(AdminDashboardContext);
-  if (!context) {
+  if (context === undefined) {
     throw new Error("useAdminDashboardContext must be used within an AdminDashboardProvider");
   }
   return context;
-}
+};
 
-export function AdminDashboardProvider({
+export const AdminDashboardProvider: React.FC<AdminDashboardContextType & { children: React.ReactNode }> = ({
   children,
-  value,
-}: {
-  children: React.ReactNode;
-  value: AdminDashboardContextType;
-}) {
-  return (
-    <AdminDashboardContext.Provider value={value}>
-      {children}
-    </AdminDashboardContext.Provider>
-  );
-}
+  ...contextValues
+}) => (
+  <AdminDashboardContext.Provider value={contextValues}>{children}</AdminDashboardContext.Provider>
+);

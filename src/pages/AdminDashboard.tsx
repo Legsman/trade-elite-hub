@@ -21,6 +21,8 @@ const AdminDashboard = () => {
     reports,
     stats,
     analyticsData,
+    isLoadingAnalytics,
+    analyticsError,
     loading,
     fetchError,
     searchQuery,
@@ -148,6 +150,8 @@ const AdminDashboard = () => {
           onRefresh={handleRefetchWithTabPreservation}
           activeTab={activeTab}
           setActiveTab={setActiveTab}
+          isLoadingAnalytics={isLoadingAnalytics}
+          analyticsError={analyticsError}
         />
       </div>
     </MainLayout>
