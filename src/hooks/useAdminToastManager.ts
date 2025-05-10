@@ -12,7 +12,7 @@ interface ToastWithIdOptions extends ToastOptions {
 }
 
 export function useAdminToastManager() {
-  const { toast } = useToast();
+  const { toast: toastFunction, dismiss, update } = useToast();
   
   // Store active toast IDs to avoid duplicates
   const activeToastIds = new Map<string, string>();
@@ -31,13 +31,13 @@ export function useAdminToastManager() {
       if (activeToastIds.has(toastId)) {
         const existingToastId = activeToastIds.get(toastId);
         if (existingToastId) {
-          // Use toast.dismiss instead of directly calling dismiss
-          toast.dismiss(existingToastId);
+          // Use the dismiss function imported from useToast
+          dismiss(existingToastId);
         }
       }
       
       // Create new toast
-      const newToastId = toast({
+      const newToastId = toastFunction({
         title,
         description,
         duration: 30000, // Longer duration for loading toasts
@@ -60,8 +60,8 @@ export function useAdminToastManager() {
         const existingToastId = activeToastIds.get(id);
         
         if (existingToastId) {
-          // Use toast.update instead of directly calling update
-          toast.update(existingToastId, {
+          // Use the update function imported from useToast
+          update(existingToastId, {
             title,
             description,
             duration: 5000, // Reset duration
@@ -80,8 +80,8 @@ export function useAdminToastManager() {
         const existingToastId = activeToastIds.get(id);
         
         if (existingToastId) {
-          // Use toast.update instead of directly calling update
-          toast.update(existingToastId, {
+          // Use the update function imported from useToast
+          update(existingToastId, {
             title, 
             description,
             variant: "default"
@@ -92,7 +92,7 @@ export function useAdminToastManager() {
         setTimeout(() => activeToastIds.delete(id), 5000);
         return { id };
       } else {
-        const newToastId = toast({
+        const newToastId = toastFunction({
           title,
           description,
           variant: "default"
@@ -112,8 +112,8 @@ export function useAdminToastManager() {
         const existingToastId = activeToastIds.get(id);
         
         if (existingToastId) {
-          // Use toast.update instead of directly calling update
-          toast.update(existingToastId, {
+          // Use the update function imported from useToast
+          update(existingToastId, {
             title,
             description,
             variant: "destructive"
@@ -124,7 +124,7 @@ export function useAdminToastManager() {
         setTimeout(() => activeToastIds.delete(id), 5000);
         return { id };
       } else {
-        const newToastId = toast({
+        const newToastId = toastFunction({
           title,
           description,
           variant: "destructive"
@@ -141,7 +141,7 @@ export function useAdminToastManager() {
     
     info: ({ title, description, id }: ToastWithIdOptions) => {
       const uniqueId = id || crypto.randomUUID();
-      const newToastId = toast({
+      const newToastId = toastFunction({
         title,
         description,
         variant: "default"
