@@ -1,11 +1,12 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState, useEffect } from "react";
-import OverviewTab from "./OverviewTab";
-import UsersTab from "./UsersTab";
-import ListingsTab from "./ListingsTab";
-import ReportsTab from "./ReportsTab";
-import AdminsTab from "./AdminsTab";
+import OverviewTab from "./tabs/OverviewTab";
+import UsersTab from "./tabs/UsersTab";
+import ListingsTab from "./tabs/ListingsTab";
+import ReportsTab from "./tabs/ReportsTab";
+import AdminsTab from "./tabs/AdminsTab";
+import { AdminDashboardProvider } from "./context/AdminDashboardContext";
 import { AdminStats, ListingAdmin, ReportAdmin, UserAdmin } from "./types";
 
 type AdminTabsLayoutProps = {
@@ -34,39 +35,16 @@ type AdminTabsLayoutProps = {
   isPendingForUser?: (userId: string) => boolean;
   isRefetching?: boolean;
   onRefresh?: () => Promise<void>;
-  activeTab?: string; // Added to remember active tab
-  setActiveTab?: (tab: string) => void; // Added to update active tab
+  activeTab?: string;
+  setActiveTab?: (tab: string) => void;
 };
 
-export function AdminTabsLayout({
-  stats,
-  analyticsData,
-  listings,
-  reports,
-  users,
-  formatDate,
-  searchQuery,
-  setSearchQuery,
-  userFilter,
-  setUserFilter,
-  listingFilter,
-  setListingFilter,
-  filteredUsers,
-  filteredListings,
-  handleApproveItem,
-  handleRejectItem,
-  handleSuspendUser,
-  handleUnsuspendUser,
-  promoteAdmin,
-  demoteAdmin,
-  toggleVerifiedStatus,
-  currentUserId,
-  isPendingForUser,
-  isRefetching,
-  onRefresh,
-  activeTab = "overview", 
-  setActiveTab,
-}: AdminTabsLayoutProps) {
+export function AdminTabsLayout(props: AdminTabsLayoutProps) {
+  const {
+    activeTab = "overview",
+    setActiveTab,
+  } = props;
+
   // Internal tab state if no external state is provided
   const [internalActiveTab, setInternalActiveTab] = useState(activeTab);
   
@@ -84,78 +62,38 @@ export function AdminTabsLayout({
     if (activeTab && activeTab !== internalActiveTab) {
       setInternalActiveTab(activeTab);
     }
-  }, [activeTab]);
+  }, [activeTab, internalActiveTab]);
 
   // The active tab value to use in the component
   const currentTab = setActiveTab ? activeTab : internalActiveTab;
 
   return (
-    <Tabs value={currentTab} onValueChange={handleTabChange} className="space-y-6">
-      <TabsList className="grid w-full grid-cols-5">
-        <TabsTrigger value="overview">Overview</TabsTrigger>
-        <TabsTrigger value="users">Users</TabsTrigger>
-        <TabsTrigger value="listings">Listings</TabsTrigger>
-        <TabsTrigger value="reports">Reports</TabsTrigger>
-        <TabsTrigger value="admins">Admins</TabsTrigger>
-      </TabsList>
-      <TabsContent value="overview">
-        <OverviewTab
-          stats={stats}
-          analyticsData={analyticsData}
-          listings={listings}
-          reportedItems={reports}
-          formatDate={formatDate}
-          handleApproveItem={handleApproveItem}
-          handleRejectItem={handleRejectItem}
-        />
-      </TabsContent>
-      <TabsContent value="users">
-        <UsersTab
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          userFilter={userFilter}
-          setUserFilter={setUserFilter}
-          filteredUsers={filteredUsers}
-          formatDate={formatDate}
-          handleSuspendUser={handleSuspendUser}
-          handleUnsuspendUser={handleUnsuspendUser}
-          toggleVerifiedStatus={toggleVerifiedStatus}
-          isPendingForUser={isPendingForUser}
-          isRefetching={isRefetching}
-          onRefresh={onRefresh}
-        />
-      </TabsContent>
-      <TabsContent value="listings">
-        <ListingsTab
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          listingFilter={listingFilter}
-          setListingFilter={setListingFilter}
-          filteredListings={filteredListings}
-          formatDate={formatDate}
-          handleApproveItem={handleApproveItem}
-          handleRejectItem={handleRejectItem}
-        />
-      </TabsContent>
-      <TabsContent value="reports">
-        <ReportsTab
-          reportedItems={reports}
-          formatDate={formatDate}
-          handleApproveItem={handleApproveItem}
-          handleRejectItem={handleRejectItem}
-        />
-      </TabsContent>
-      <TabsContent value="admins">
-        <AdminsTab
-          users={users}
-          promoteAdmin={promoteAdmin}
-          demoteAdmin={demoteAdmin}
-          currentUserId={currentUserId}
-          isPendingForUser={isPendingForUser}
-          isRefetching={isRefetching}
-        />
-      </TabsContent>
-    </Tabs>
+    <AdminDashboardProvider value={props}>
+      <Tabs value={currentTab} onValueChange={handleTabChange} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="users">Users</TabsTrigger>
+          <TabsTrigger value="listings">Listings</TabsTrigger>
+          <TabsTrigger value="reports">Reports</TabsTrigger>
+          <TabsTrigger value="admins">Admins</TabsTrigger>
+        </TabsList>
+        <TabsContent value="overview">
+          <OverviewTab />
+        </TabsContent>
+        <TabsContent value="users">
+          <UsersTab />
+        </TabsContent>
+        <TabsContent value="listings">
+          <ListingsTab />
+        </TabsContent>
+        <TabsContent value="reports">
+          <ReportsTab />
+        </TabsContent>
+        <TabsContent value="admins">
+          <AdminsTab />
+        </TabsContent>
+      </Tabs>
+    </AdminDashboardProvider>
   );
 }
 
