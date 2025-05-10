@@ -32,7 +32,7 @@ interface UsersTabProps {
   handleSuspendUser: (id: string) => void;
   handleUnsuspendUser: (id: string) => void;
   toggleVerifiedStatus: (userId: string, currentStatus: "verified" | "unverified") => void;
-  loadingUserId?: string | null;
+  isPendingForUser?: (userId: string) => boolean;
   isRefetching?: boolean;
   onRefresh?: () => void;
 }
@@ -47,7 +47,7 @@ const UsersTab: React.FC<UsersTabProps> = ({
   handleSuspendUser,
   handleUnsuspendUser,
   toggleVerifiedStatus,
-  loadingUserId,
+  isPendingForUser = () => false,
   isRefetching,
   onRefresh
 }) => {
@@ -126,7 +126,7 @@ const UsersTab: React.FC<UsersTabProps> = ({
               </TableRow>
             ) : (
               filteredUsers.map((user) => {
-                const isLoading = loadingUserId === user.id;
+                const isLoading = isPendingForUser(user.id);
                 console.log(`Rendering user ${user.full_name} with role: ${user.role}, verified: ${user.verified_status}`);
                 return (
                   <TableRow key={user.id}>
@@ -169,7 +169,7 @@ const UsersTab: React.FC<UsersTabProps> = ({
                         variant="outline"
                         size="sm"
                         onClick={() => user.strike_count >= 3 ? handleUnsuspendUser(user.id) : handleSuspendUser(user.id)}
-                        disabled={user.role === 'admin' || isRefetching}
+                        disabled={user.role === 'admin' || isRefetching || isLoading}
                       >
                         {user.strike_count >= 3 ? "Unsuspend" : "Suspend"}
                       </Button>
@@ -183,6 +183,6 @@ const UsersTab: React.FC<UsersTabProps> = ({
       </div>
     </div>
   );
-};
+}
 
 export default UsersTab;

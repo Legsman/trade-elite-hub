@@ -9,14 +9,32 @@ export function useAdminActions(
   setListings: React.Dispatch<React.SetStateAction<ListingAdmin[]>>,
   setReports: React.Dispatch<React.SetStateAction<ReportAdmin[]>>
 ) {
-  const { promoteAdmin, demoteAdmin, loadingUserId } = useAdminRoleManagement(setUsers);
-  const { toggleVerifiedStatus } = useVerificationManagement(setUsers);
+  const { 
+    promoteAdmin, 
+    demoteAdmin, 
+    pendingOperations: rolePendingOperations,
+    isPendingForUser: isRoleOperationPending 
+  } = useAdminRoleManagement(setUsers);
+  
+  const { 
+    toggleVerifiedStatus, 
+    pendingUserIds: verificationPendingUserIds 
+  } = useVerificationManagement(setUsers);
+  
   const {
     handleApproveItem,
     handleRejectItem,
     handleSuspendUser,
     handleUnsuspendUser,
   } = useContentModeration(setUsers, setListings, setReports);
+
+  // Combine pending operations from different hooks
+  const isPendingForUser = (userId: string) => {
+    return (
+      isRoleOperationPending(userId) || 
+      verificationPendingUserIds.includes(userId)
+    );
+  };
 
   return {
     promoteAdmin,
@@ -26,6 +44,8 @@ export function useAdminActions(
     handleRejectItem,
     handleSuspendUser,
     handleUnsuspendUser,
-    loadingUserId,
+    loadingUserId: null, // Deprecated, use pendingOperations instead
+    pendingOperations: rolePendingOperations,
+    isPendingForUser
   };
 }

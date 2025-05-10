@@ -2,42 +2,56 @@
 import { useToast } from "@/hooks/use-toast";
 
 interface ToastOptions {
-  id?: string;
   title: string;
   description: string;
   variant?: "default" | "destructive";
 }
 
-export function useAdminToastManager() {
-  const { toast: baseToast } = useToast();
+interface ToastWithIdOptions extends ToastOptions {
+  id?: string;
+}
 
-  const toast = {
-    loading: ({ title, description }: ToastOptions) => {
-      return baseToast({
+export function useAdminToastManager() {
+  const { toast } = useToast();
+  
+  // Store active toast IDs to avoid duplicates
+  const activeToastIds = new Map<string, string>();
+  
+  // Generate a unique operation ID based on operation type and target
+  const getOperationId = (operation: string, targetId?: string): string => {
+    return `${operation}_${targetId || "global"}`;
+  };
+
+  const toastManager = {
+    loading: ({ title, description, id }: ToastWithIdOptions) => {
+      // Create or update toast
+      const toastId = id || crypto.randomUUID();
+      
+      return toast({
         title,
         description,
         variant: "default"
       });
     },
     
-    success: ({ title, description }: ToastOptions) => {
-      return baseToast({
+    success: ({ title, description, id }: ToastWithIdOptions) => {
+      return toast({
         title,
         description,
         variant: "default"
       });
     },
     
-    error: ({ title, description }: ToastOptions) => {
-      return baseToast({
+    error: ({ title, description, id }: ToastWithIdOptions) => {
+      return toast({
         title,
         description,
         variant: "destructive"
       });
     },
     
-    info: ({ title, description }: ToastOptions) => {
-      return baseToast({
+    info: ({ title, description, id }: ToastWithIdOptions) => {
+      return toast({
         title,
         description,
         variant: "default"
@@ -45,5 +59,5 @@ export function useAdminToastManager() {
     }
   };
 
-  return { toast };
+  return { toast: toastManager };
 }

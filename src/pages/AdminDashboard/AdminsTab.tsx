@@ -11,7 +11,7 @@ interface AdminsTabProps {
   promoteAdmin: (userId: string) => void;
   demoteAdmin: (userId: string) => void;
   currentUserId: string;
-  loadingUserId?: string | null;
+  isPendingForUser?: (userId: string) => boolean;
   isRefetching?: boolean;
 }
 
@@ -20,7 +20,7 @@ const AdminsTab: React.FC<AdminsTabProps> = ({
   promoteAdmin, 
   demoteAdmin, 
   currentUserId,
-  loadingUserId,
+  isPendingForUser = () => false,
   isRefetching
 }) => {
   useEffect(() => {
@@ -54,7 +54,7 @@ const AdminsTab: React.FC<AdminsTabProps> = ({
           </TableHeader>
           <TableBody>
             {users.map((user) => {
-              const isLoading = loadingUserId === user.id;
+              const isLoading = isPendingForUser(user.id);
               
               return (
                 <TableRow key={user.id}>

@@ -1,3 +1,4 @@
+
 import { useCallback, useState, useMemo, useEffect } from "react";
 import { useUsersAdminData } from "./hooks/useUsersAdminData";
 import { useListingsAdminData } from "./hooks/useListingsAdminData";
@@ -47,7 +48,9 @@ export function useAdminDashboard() {
     handleRejectItem,
     handleSuspendUser,
     handleUnsuspendUser,
-    loadingUserId
+    loadingUserId,
+    pendingOperations,
+    isPendingForUser
   } = useAdminActions(setUsers, setListings, setReports);
 
   useEffect(() => {
@@ -67,19 +70,22 @@ export function useAdminDashboard() {
         return;
       }
       
+      const refreshToastId = "refresh_data";
       setIsRefetching(true);
       setFetchError(null);
       
       toast.loading({
         title: "Refreshing Data",
-        description: "Fetching latest data from the server..."
+        description: "Fetching latest data from the server...",
+        id: refreshToastId
       });
       
       await refetchUsers();
       
       toast.success({
         title: "Data Refreshed",
-        description: "Dashboard data has been updated successfully"
+        description: "Dashboard data has been updated successfully",
+        id: refreshToastId
       });
       
     } catch (error) {
@@ -88,7 +94,8 @@ export function useAdminDashboard() {
       
       toast.error({
         title: "Error Refreshing Data",
-        description: "Please try again or contact support"
+        description: "Please try again or contact support",
+        id: "refresh_data"
       });
     } finally {
       setIsRefetching(false);
@@ -149,6 +156,8 @@ export function useAdminDashboard() {
     fetchError,
     refetchData,
     loadingUserId,
+    pendingOperations,
+    isPendingForUser,
     isRefetching
   };
 }

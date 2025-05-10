@@ -5,19 +5,27 @@ import { UserAdmin } from "../types";
 import { useAdminToastManager } from "@/hooks/useAdminToastManager";
 
 export function useAdminRoleManagement(setUsers: React.Dispatch<React.SetStateAction<UserAdmin[]>>) {
-  const [loadingUserId, setLoadingUserId] = useState<string | null>(null);
+  // Track operations by user ID
+  const [pendingOperations, setPendingOperations] = useState<Record<string, boolean>>({});
   const { toast } = useAdminToastManager();
 
   const promoteAdmin = useCallback(async (userId: string) => {
-    console.log("Attempting to promote user to admin:", userId);
-    if (loadingUserId) return { success: false, error: "Another operation is in progress" }; 
+    if (pendingOperations[userId]) {
+      console.log("Operation already in progress for this user:", userId);
+      return { success: false, error: "Another operation is in progress" }; 
+    }
     
-    setLoadingUserId(userId);
+    const operationId = `promote_${userId}`;
+    console.log("Attempting to promote user to admin:", userId);
+    
+    // Set pending operation
+    setPendingOperations(prev => ({ ...prev, [userId]: true }));
     
     // Show loading toast
     toast.loading({
       title: "Processing",
-      description: "Promoting user to admin..."
+      description: "Promoting user to admin...",
+      id: operationId
     });
     
     // Optimistic update
@@ -33,7 +41,8 @@ export function useAdminRoleManagement(setUsers: React.Dispatch<React.SetStateAc
       if (success) {
         toast.success({
           title: "Success", 
-          description: message || "User has been made an admin."
+          description: message || "User has been made an admin.",
+          id: operationId
         });
         return { success: true, message };
       } else {
@@ -48,7 +57,8 @@ export function useAdminRoleManagement(setUsers: React.Dispatch<React.SetStateAc
         
         toast.error({
           title: "Failed to promote user", 
-          description: error ? String(error) : "An unknown error occurred"
+          description: error ? String(error) : "An unknown error occurred",
+          id: operationId
         });
         return { success: false, error };
       }
@@ -63,24 +73,33 @@ export function useAdminRoleManagement(setUsers: React.Dispatch<React.SetStateAc
       
       toast.error({
         title: "Failed to promote user",
-        description: error ? String(error) : "An unknown error occurred"
+        description: error ? String(error) : "An unknown error occurred",
+        id: operationId
       });
       return { success: false, error };
     } finally {
-      setLoadingUserId(null);
+      // Clear pending operation
+      setPendingOperations(prev => ({ ...prev, [userId]: false }));
     }
-  }, [setUsers, loadingUserId, toast]);
+  }, [pendingOperations, toast, setUsers]);
 
   const demoteAdmin = useCallback(async (userId: string) => {
-    console.log("Attempting to demote admin:", userId);
-    if (loadingUserId) return { success: false, error: "Another operation is in progress" };
+    if (pendingOperations[userId]) {
+      console.log("Operation already in progress for this user:", userId);
+      return { success: false, error: "Another operation is in progress" };
+    }
     
-    setLoadingUserId(userId);
+    const operationId = `demote_${userId}`;
+    console.log("Attempting to demote admin:", userId);
+    
+    // Set pending operation
+    setPendingOperations(prev => ({ ...prev, [userId]: true }));
     
     // Show loading toast
     toast.loading({
       title: "Processing",
-      description: "Removing admin privileges..."
+      description: "Removing admin privileges...",
+      id: operationId
     });
     
     // Optimistic update
@@ -96,7 +115,8 @@ export function useAdminRoleManagement(setUsers: React.Dispatch<React.SetStateAc
       if (success) {
         toast.success({
           title: "Success", 
-          description: message || "User has been demoted from admin."
+          description: message || "User has been demoted from admin.",
+          id: operationId
         });
         return { success: true, message };
       } else {
@@ -111,7 +131,8 @@ export function useAdminRoleManagement(setUsers: React.Dispatch<React.SetStateAc
         
         toast.error({
           title: "Failed to demote user", 
-          description: error ? String(error) : "An unknown error occurred"
+          description: error ? String(error) : "An unknown error occurred",
+          id: operationId
         });
         return { success: false, error };
       }
@@ -126,17 +147,20 @@ export function useAdminRoleManagement(setUsers: React.Dispatch<React.SetStateAc
       
       toast.error({
         title: "Failed to demote user",
-        description: error ? String(error) : "An unknown error occurred"
+        description: error ? String(error) : "An unknown error occurred",
+        id: operationId
       });
       return { success: false, error };
     } finally {
-      setLoadingUserId(null);
+      // Clear pending operation
+      setPendingOperations(prev => ({ ...prev, [userId]: false }));
     }
-  }, [setUsers, loadingUserId, toast]);
+  }, [pendingOperations, toast, setUsers]);
 
   return {
     promoteAdmin,
     demoteAdmin,
-    loadingUserId,
+    pendingOperations,
+    isPendingForUser: (userId: string) => pendingOperations[userId] || false
   };
 }
