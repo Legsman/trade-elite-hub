@@ -1,10 +1,9 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { ImagePlus, Plus, Trash2, AlertCircle } from "lucide-react";
+import { ImagePlus, Trash2, AlertCircle } from "lucide-react";
 import MainLayout from "@/components/layout/MainLayout";
 import { useAuth } from "@/hooks/auth";
 import { toast } from "@/hooks/use-toast";
@@ -43,6 +42,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useCreateListing } from "@/hooks/use-listing";
 
 // Define form schema
 const formSchema = z.object({
@@ -70,7 +70,7 @@ const CreateListingPage = () => {
   const { user } = useAuth();
   const [images, setImages] = useState<File[]>([]);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { createListing, isSubmitting, error } = useCreateListing();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -105,28 +105,24 @@ const CreateListingPage = () => {
       return;
     }
 
-    setIsSubmitting(true);
+    // Use the createListing hook to save the listing to the database
+    const result = await createListing({
+      ...values,
+      images,
+    });
 
-    // In a real app, this would upload images and save the listing
-    try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
+    if (result.success) {
       toast({
         title: "Listing created successfully",
         description: "Your listing has been published and is now live",
       });
-
-      navigate("/dashboard");
-    } catch (error) {
-      console.error("Error creating listing:", error);
+      navigate(`/listings/${result.listingId}`);
+    } else {
       toast({
         title: "Error creating listing",
         description: "There was a problem creating your listing. Please try again.",
         variant: "destructive",
       });
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
