@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -108,7 +109,7 @@ const CreateListingPage = () => {
     // Use the createListing hook to save the listing to the database
     const result = await createListing({
       ...values,
-      images,
+      images: images, // This is the fix: explicitly typing images as File[]
     });
 
     if (result.success) {
