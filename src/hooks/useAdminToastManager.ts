@@ -31,7 +31,6 @@ export function useAdminToastManager() {
       if (activeToastIds.has(toastId)) {
         const existingToastId = activeToastIds.get(toastId);
         if (existingToastId) {
-          // Use the dismiss function imported from useToast
           dismiss(existingToastId);
         }
       }

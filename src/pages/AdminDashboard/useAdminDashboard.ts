@@ -1,4 +1,3 @@
-
 import { useCallback, useState, useMemo, useEffect } from "react";
 import { useUsersAdminData } from "./hooks/useUsersAdminData";
 import { useListingsAdminData } from "./hooks/useListingsAdminData";
@@ -124,6 +123,7 @@ export function useAdminDashboard() {
     }
   }, [refetchUsers, isRefetching, toast]);
 
+  // Improved role operation handler
   const handleRoleOperationWithRefresh = useCallback(async (operationFn: Function, ...args: any[]) => {
     // Create a unique ID for this operation
     const operationType = operationFn.name || 'role_operation';
@@ -131,39 +131,42 @@ export function useAdminDashboard() {
     const operationId = `${operationType}_${targetId}`;
     
     try {
-      // Show loading toast
-      const operationToast = toast.loading({
+      // Show initial loading toast
+      toast.loading({
         title: "Processing Request",
         description: "Your request is being processed...",
         id: operationId
       });
       
+      // Perform the operation
       const result = await operationFn(...args);
       
+      // Handle the result based on success
       if (result?.success) {
-        // Only refresh silently in background if the operation was successful
-        setIsRefetching(true);
-        
-        // Update toast to "waiting" state
+        // First toast update - operation was successful on function level
         toast.update({
-          title: "Request Successful", 
-          description: "Waiting for server to update...",
+          title: "Request Processed", 
+          description: "Waiting for database to update...",
           id: operationId
         });
         
-        // Wait for backend to process
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        // Silently refresh in background to get latest data
+        setIsRefetching(true);
         
         try {
+          // Wait for backend changes to propagate
+          await new Promise(resolve => setTimeout(resolve, 2000));
           await refetchUsers();
+          
+          // Final success toast
           toast.success({
             title: "Operation Complete",
             description: result.message || "Changes have been applied successfully",
             id: operationId
           });
         } catch (refreshError) {
-          console.error("Error refreshing after operation:", refreshError);
-          // Still mark the operation as successful but note the refresh issue
+          console.error("Error refreshing after successful operation:", refreshError);
+          // Still mark as success but note the refresh issue
           toast.success({
             title: "Operation Complete",
             description: "Changes made but there was an issue refreshing the data. You may need to refresh manually.",
@@ -173,7 +176,8 @@ export function useAdminDashboard() {
           setIsRefetching(false);
         }
       } else {
-        // Operation failed
+        // Operation failed at the function level
+        console.error("Operation failed:", result?.error);
         toast.error({
           title: "Operation Failed",
           description: result?.error?.message || "Please try again later",
@@ -183,10 +187,11 @@ export function useAdminDashboard() {
       
       return result;
     } catch (error) {
-      console.error("Error during role operation:", error);
+      // Unexpected error during the entire process
+      console.error("Exception during role operation:", error);
       
       toast.error({
-        title: "Error",
+        title: "Unexpected Error",
         description: error instanceof Error ? error.message : "An unexpected error occurred",
         id: operationId
       });
