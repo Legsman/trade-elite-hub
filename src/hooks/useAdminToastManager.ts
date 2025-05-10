@@ -31,6 +31,7 @@ export function useAdminToastManager() {
       if (activeToastIds.has(toastId)) {
         const existingToastId = activeToastIds.get(toastId);
         if (existingToastId) {
+          // Use toast.dismiss instead of directly calling dismiss
           toast.dismiss(existingToastId);
         }
       }
@@ -58,11 +59,14 @@ export function useAdminToastManager() {
       if (id && activeToastIds.has(id)) {
         const existingToastId = activeToastIds.get(id);
         
-        toast.update(existingToastId!, {
-          title,
-          description,
-          duration: 5000, // Reset duration
-        });
+        if (existingToastId) {
+          // Use toast.update instead of directly calling update
+          toast.update(existingToastId, {
+            title,
+            description,
+            duration: 5000, // Reset duration
+          });
+        }
         
         return { id };
       } else {
@@ -75,11 +79,14 @@ export function useAdminToastManager() {
       if (id && activeToastIds.has(id)) {
         const existingToastId = activeToastIds.get(id);
         
-        toast.update(existingToastId!, {
-          title, 
-          description,
-          variant: "default"
-        });
+        if (existingToastId) {
+          // Use toast.update instead of directly calling update
+          toast.update(existingToastId, {
+            title, 
+            description,
+            variant: "default"
+          });
+        }
         
         // Clean up after success
         setTimeout(() => activeToastIds.delete(id), 5000);
@@ -104,11 +111,14 @@ export function useAdminToastManager() {
       if (id && activeToastIds.has(id)) {
         const existingToastId = activeToastIds.get(id);
         
-        toast.update(existingToastId!, {
-          title,
-          description,
-          variant: "destructive"
-        });
+        if (existingToastId) {
+          // Use toast.update instead of directly calling update
+          toast.update(existingToastId, {
+            title,
+            description,
+            variant: "destructive"
+          });
+        }
         
         // Clean up after error
         setTimeout(() => activeToastIds.delete(id), 5000);
