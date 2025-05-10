@@ -21,6 +21,8 @@ export function useAdminRoleManagement(
         )
       );
       
+      console.log(`Sending promote admin request for user ${userId}`);
+      
       // Call the Supabase Edge Function
       const { data, error } = await supabase.functions.invoke("admin-role-management", {
         body: {
@@ -30,15 +32,27 @@ export function useAdminRoleManagement(
         }
       });
       
+      console.log(`Promote admin response:`, data, error);
+      
       if (error) {
         throw new Error(`Failed to promote user: ${error.message}`);
+      }
+      
+      // Even if data.success is false, check if there's a message indicating it was already done
+      if (data?.message?.includes("already")) {
+        console.log(`User ${userId} was already admin - considering operation successful`);
+        return { 
+          success: true, 
+          message: data.message || "User already has admin role", 
+          alreadyDone: true 
+        };
       }
       
       if (!data?.success) {
         throw new Error(data?.message || "Failed to promote user");
       }
       
-      return { success: true, message: data.message || "User promoted to admin successfully" };
+      return { success: true, message: data.message || "User promoted to admin successfully", alreadyDone: false };
       
     } catch (error) {
       console.error("Error promoting user:", error);
@@ -72,6 +86,8 @@ export function useAdminRoleManagement(
         )
       );
       
+      console.log(`Sending demote admin request for user ${userId}`);
+      
       // Call the Supabase Edge Function
       const { data, error } = await supabase.functions.invoke("admin-role-management", {
         body: {
@@ -81,15 +97,27 @@ export function useAdminRoleManagement(
         }
       });
       
+      console.log(`Demote admin response:`, data, error);
+      
       if (error) {
         throw new Error(`Failed to demote user: ${error.message}`);
+      }
+      
+      // Even if data.success is false, check if there's a message indicating it was already done
+      if (data?.message?.includes("not found")) {
+        console.log(`User ${userId} was not an admin - considering operation successful`);
+        return { 
+          success: true, 
+          message: data.message || "User already removed from admin role", 
+          alreadyDone: true 
+        };
       }
       
       if (!data?.success) {
         throw new Error(data?.message || "Failed to demote user");
       }
       
-      return { success: true, message: data.message || "User removed from admin role successfully" };
+      return { success: true, message: data.message || "User removed from admin role successfully", alreadyDone: false };
       
     } catch (error) {
       console.error("Error demoting user:", error);

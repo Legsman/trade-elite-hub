@@ -21,9 +21,20 @@ export function useAdminOperationToasts() {
       
       // Perform the operation
       const result = await operationFn(...args);
+      console.log(`Operation ${operationType} result:`, result);
       
       // Handle the result based on success
       if (result?.success) {
+        // If the operation was already done (role already assigned/removed), show success immediately
+        if (result.alreadyDone) {
+          toast.success({
+            title: "Operation Complete",
+            description: result.message || "Changes were already applied",
+            id: operationId
+          });
+          return { success: true, refreshRequired: false, result };
+        }
+        
         // First toast update - operation was successful on function level
         toast.update({
           title: "Request Processed", 
@@ -33,8 +44,8 @@ export function useAdminOperationToasts() {
         
         // Silently refresh in background to get latest data
         try {
-          // Wait for backend changes to propagate
-          await new Promise(resolve => setTimeout(resolve, 2000));
+          // Wait for backend changes to propagate - match the delay from the edge function
+          await new Promise(resolve => setTimeout(resolve, 2500)); // 2.5 seconds for safety
           
           // Final success toast
           toast.success({
@@ -92,6 +103,7 @@ export function useAdminOperationToasts() {
     try {
       // Execute the operation without loading toast for immediate actions
       const result = await operationFn(...args);
+      console.log(`Content operation ${operationType} result:`, result);
       
       if (result?.success) {
         toast.success({

@@ -23,6 +23,8 @@ export function useVerificationManagement(
         )
       );
       
+      console.log(`Sending verification toggle request: ${action} verified role for user ${userId}`);
+      
       // Call the Supabase Edge Function
       const { data, error } = await supabase.functions.invoke("admin-role-management", {
         body: {
@@ -32,8 +34,20 @@ export function useVerificationManagement(
         }
       });
       
+      console.log(`Verification toggle response:`, data, error);
+      
       if (error) {
         throw new Error(`Failed to toggle verification status: ${error.message}`);
+      }
+      
+      // Even if data.success is false, check if there's a message indicating it was already done
+      if (data?.message?.includes("already") || data?.message?.includes("not found")) {
+        console.log(`User ${userId} status was already ${newStatus} - considering operation successful`);
+        return { 
+          success: true, 
+          message: data.message || `User ${newStatus === "verified" ? "verified" : "unverified"} successfully`,
+          alreadyDone: true
+        };
       }
       
       if (!data?.success) {
@@ -42,7 +56,8 @@ export function useVerificationManagement(
       
       return { 
         success: true, 
-        message: data.message || `User ${newStatus === "verified" ? "verified" : "unverified"} successfully`
+        message: data.message || `User ${newStatus === "verified" ? "verified" : "unverified"} successfully`,
+        alreadyDone: false
       };
       
     } catch (error) {
