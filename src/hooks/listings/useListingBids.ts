@@ -7,35 +7,31 @@ export const useListingBids = (listingIds: string[]) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
+  const [lastListingIds, setLastListingIds] = useState<string[]>([]);
   const MAX_RETRIES = 2;
 
   const fetchHighestBids = useCallback(async () => {
     if (!listingIds.length) return;
     
+    // If we're fetching the same listings and already loading, don't restart the fetch
+    const idsString = listingIds.sort().join(',');
+    const lastIdsString = lastListingIds.sort().join(',');
+    
+    if (isLoading && idsString === lastIdsString) {
+      return;
+    }
+    
     setIsLoading(true);
     setError(null);
+    setLastListingIds(listingIds);
     
     try {
-      // For demo purposes, use mock data instead of Supabase
-      // Remove this in production and use the real Supabase connection
-      const mockBids: Record<string, number> = {
-        '1': 625,
-      };
-      
-      // Simulate a delay for network request
-      setTimeout(() => {
-        setHighestBids(mockBids);
-        setIsLoading(false);
-        setRetryCount(0);
-      }, 800);
-      
-      // Original Supabase code (commented out)
-      /*
       // Get the highest bid for each listing
       const { data, error } = await supabase
         .from("bids")
         .select("listing_id, amount")
         .in("listing_id", listingIds)
+        .eq("status", "active")
         .order("amount", { ascending: false });
         
       if (error) throw error;
@@ -52,11 +48,16 @@ export const useListingBids = (listingIds: string[]) => {
         });
       }
       
-      setHighestBids(bidMap);
-      */
+      setHighestBids(prevBids => ({
+        ...prevBids, // Keep previous bids to avoid flashing
+        ...bidMap    // Update with new data
+      }));
+      setIsLoading(false);
+      setRetryCount(0);
     } catch (err) {
       console.error("Error fetching highest bids:", err);
-      setError("Failed to fetch bid information");
+      
+      // On error, we don't clear the existing data to prevent UI flashing
       
       // Add retry logic with exponential backoff
       if (retryCount < MAX_RETRIES) {
@@ -65,14 +66,15 @@ export const useListingBids = (listingIds: string[]) => {
           setRetryCount(prev => prev + 1);
           fetchHighestBids();
         }, retryDelay);
-      }
-    } finally {
-      // Always set loading to false after max retries
-      if (retryCount >= MAX_RETRIES) {
+      } else {
+        setError("Failed to fetch bid information");
         setIsLoading(false);
+        
+        // We don't show a toast here as this is secondary data - 
+        // listings will still render without bids
       }
     }
-  }, [listingIds, retryCount]);
+  }, [listingIds, retryCount, isLoading, lastListingIds]);
   
   useEffect(() => {
     if (listingIds.length > 0) {
