@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/auth";
@@ -11,7 +12,7 @@ import { PlusCircle, Star } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { UserBidsOffersTabs } from "@/components/listings/UserBidsOffersTabs";
 import { supabase } from "@/integrations/supabase/client";
-import { SoldItemsTab } from "@/components/listings";
+import { SoldItemsTab as ImportedSoldItemsTab } from "@/components/listings";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -212,7 +213,7 @@ const Dashboard = () => {
                 </TabsContent>
                 
                 <TabsContent value="sold">
-                  <SoldItemsTab userId={user.id} />
+                  <ImportedSoldItemsTab userId={user.id} />
                 </TabsContent>
                 
                 <TabsContent value="feedback">
