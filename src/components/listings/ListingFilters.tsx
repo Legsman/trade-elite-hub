@@ -82,7 +82,7 @@ export const ListingFilters = ({
 
       <div className="flex flex-col sm:flex-row gap-4">
         <Select 
-          value={filters.listingType} 
+          value={filters.listingType || "all"} 
           onValueChange={(value) => onFilterChange("listingType", value)}
         >
           <SelectTrigger className="w-full sm:w-[180px]">
@@ -96,7 +96,7 @@ export const ListingFilters = ({
         </Select>
 
         <Select 
-          value={filters.priceRange} 
+          value={filters.priceRange || "any"} 
           onValueChange={(value) => onFilterChange("priceRange", value)}
         >
           <SelectTrigger className="w-full sm:w-[180px]">
@@ -114,7 +114,7 @@ export const ListingFilters = ({
         </Select>
 
         <Select 
-          value={filters.sortBy} 
+          value={filters.sortBy || "newest"} 
           onValueChange={(value) => onFilterChange("sortBy", value)}
         >
           <SelectTrigger className="w-full sm:w-[180px]">

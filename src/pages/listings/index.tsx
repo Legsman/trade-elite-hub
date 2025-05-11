@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Input } from "@/components/ui/input";
@@ -47,7 +48,7 @@ const ListingsPage = () => {
   const condition = searchParams.get("condition") || "";
   const minPrice = searchParams.get("minPrice") || "";
   const maxPrice = searchParams.get("maxPrice") || "";
-  const sortBy = searchParams.get("sortBy") || "createdAt-desc";
+  const sortBy = searchParams.get("sortBy") || "created_at-desc";
   const page = searchParams.get("page") || "1";
   const [priceRange, setPriceRange] = useState<number[]>([
     minPrice ? parseInt(minPrice) : 0,
@@ -274,8 +275,8 @@ const ListingsPage = () => {
                     <SelectValue placeholder="Newest" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="createdAt-desc">Newest</SelectItem>
-                    <SelectItem value="createdAt-asc">Oldest</SelectItem>
+                    <SelectItem value="created_at-desc">Newest</SelectItem>
+                    <SelectItem value="created_at-asc">Oldest</SelectItem>
                     <SelectItem value="price-asc">Price: Low to High</SelectItem>
                     <SelectItem value="price-desc">Price: High to Low</SelectItem>
                   </SelectContent>
