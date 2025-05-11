@@ -33,7 +33,7 @@ export const useBids = ({ listingId, onBidSuccess }: UseBidsOptions = {}) => {
         .from("bids")
         .select(`
           *,
-          user:profiles(
+          profiles(
             full_name,
             avatar_url
           )
@@ -53,9 +53,9 @@ export const useBids = ({ listingId, onBidSuccess }: UseBidsOptions = {}) => {
         amount: Number(item.amount),
         createdAt: new Date(item.created_at),
         status: item.status,
-        user: item.user ? {
-          fullName: item.user.full_name,
-          avatarUrl: item.user.avatar_url,
+        user: item.profiles ? {
+          fullName: item.profiles.full_name,
+          avatarUrl: item.profiles.avatar_url,
         } : undefined
       }));
 

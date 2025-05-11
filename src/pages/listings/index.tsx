@@ -41,7 +41,7 @@ const Listings = () => {
       .map(listing => listing.id)
   );
 
-  const handleFilterChange = (key: keyof FilterState, value: string) => {
+  const handleFilterChange = (key: string, value: string) => {
     setFilters(prev => ({
       ...prev,
       [key]: value,

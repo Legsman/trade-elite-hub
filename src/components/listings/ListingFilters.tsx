@@ -20,7 +20,7 @@ interface ListingFiltersProps {
     priceRange: string;
     sortBy: string;
   };
-  onFilterChange: (key: keyof typeof filters, value: string) => void;
+  onFilterChange: (key: string, value: string) => void;
   onClearFilters: () => void;
   categories?: string[];
 }
