@@ -11,7 +11,7 @@ import { PlusCircle, Star } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { UserBidsOffersTabs } from "@/components/listings/UserBidsOffersTabs";
 import { supabase } from "@/integrations/supabase/client";
-import { ListingSoldItemsTab } from "@/components/listings";
+import { SoldItemsTab } from "@/components/listings";
 
 const Dashboard = () => {
   const navigate = useNavigate();
