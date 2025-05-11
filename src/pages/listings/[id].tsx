@@ -67,7 +67,7 @@ const ListingDetails = () => {
   const { seller, isLoading: sellerLoading } = useSellerProfile(listing?.sellerId);
   const { startConversation } = useStartConversation();
   const { trackEvent } = useAnalytics();
-  const { highestBid, bids, fetchBids, getUserBidStatus } = useBids({ listingId: id });
+  const { highestBid, bids, fetchBids, getUserBidStatus, placeBid } = useBids({ listingId: id });
   
   const [isSaved, setIsSaved] = useState(false);
   const [savingState, setSavingState] = useState(false);
