@@ -5,8 +5,9 @@ import { Separator } from "@/components/ui/separator";
 import { Listing } from "@/types";
 import { useAnalytics } from "@/hooks/use-analytics";
 import { ListingCountdown } from "./ListingCountdown";
-import { Gavel } from "lucide-react";
+import { Gavel, Check } from "lucide-react";
 import { memo } from "react";
+import { Badge } from "@/components/ui/badge";
 
 interface ListingCardProps {
   listing: Listing;
@@ -29,7 +30,7 @@ export const ListingCard = memo(({ listing, onClick, highestBid }: ListingCardPr
 
   // Check if auction is ending soon (within 6 hours)
   const isEndingSoon = () => {
-    if (listing.type !== "auction") return false;
+    if (listing.type !== "auction" || listing.status !== "active") return false;
     
     const now = new Date();
     const hoursRemaining = (listing.expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60);
@@ -66,22 +67,35 @@ export const ListingCard = memo(({ listing, onClick, highestBid }: ListingCardPr
 
   return (
     <Card
-      className="overflow-hidden cursor-pointer transition-all hover:shadow-md"
+      className={`overflow-hidden cursor-pointer transition-all hover:shadow-md ${
+        listing.status === "sold" ? "border-green-500" : ""
+      }`}
       onClick={handleClick}
     >
       <div className="aspect-video relative">
         <img
           src={listing.images[0]}
           alt={listing.title}
-          className="object-cover h-full w-full"
+          className={`object-cover h-full w-full ${
+            listing.status === "sold" ? "opacity-80" : ""
+          }`}
           loading="lazy"
         />
         {getStatusBadge()}
         
         {/* Add badge for auctions ending soon */}
-        {isEndingSoon() && listing.status === "active" && (
+        {isEndingSoon() && (
           <div className="absolute bottom-2 left-2 bg-red-500 text-white text-xs font-medium rounded-full px-2 py-1 animate-pulse">
             Ending Soon
+          </div>
+        )}
+        
+        {/* Overlay SOLD indicator for better visibility */}
+        {listing.status === "sold" && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Badge variant="secondary" className="text-lg font-bold bg-white/80 text-green-600 px-6 py-3 transform rotate-[-20deg]">
+              <Check className="mr-1 h-4 w-4" /> SOLD
+            </Badge>
           </div>
         )}
       </div>
@@ -131,6 +145,7 @@ export const ListingCard = memo(({ listing, onClick, highestBid }: ListingCardPr
             <ListingCountdown 
               expiryDate={listing.expiresAt} 
               isAuction={listing.type === "auction"} 
+              listingStatus={listing.status}
               className="text-xs"
             />
           ) : (

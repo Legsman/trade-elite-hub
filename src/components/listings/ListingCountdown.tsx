@@ -6,6 +6,7 @@ interface ListingCountdownProps {
   expiryDate: Date;
   className?: string;
   isAuction?: boolean;
+  listingStatus?: string; // Add status prop
 }
 
 interface TimeLeft {
@@ -42,8 +43,26 @@ const useCountdownManager = () => {
 export const ListingCountdown = memo(({ 
   expiryDate, 
   className = "", 
-  isAuction = false 
+  isAuction = false,
+  listingStatus = "active" // Default to active
 }: ListingCountdownProps) => {
+  // If listing is sold, show special sold message instead of countdown
+  if (listingStatus === "sold") {
+    return (
+      <div className={`flex items-center ${className}`}>
+        <Clock className="h-4 w-4 mr-1 flex-shrink-0 text-green-600" />
+        <div className="flex flex-col">
+          <span className="text-sm text-muted-foreground">
+            Listing status
+          </span>
+          <div className="font-medium text-sm text-green-600">
+            <span>Sold</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const currentTime = useCountdownManager();
   const [timeLeft, setTimeLeft] = useState<TimeLeft>({
     days: 0,

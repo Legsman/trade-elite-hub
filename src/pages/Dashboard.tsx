@@ -11,6 +11,7 @@ import { PlusCircle, Star } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { UserBidsOffersTabs } from "@/components/listings/UserBidsOffersTabs";
 import { supabase } from "@/integrations/supabase/client";
+import { SoldItemsTab } from "@/components/listings/SoldItemsTab";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -122,7 +123,7 @@ const Dashboard = () => {
 
           {/* Main content */}
           <div className="md:col-span-2">
-            {/* Buying/Selling Mode Toggle - FIX: Wrap this in a Tabs component */}
+            {/* Buying/Selling Mode Toggle */}
             <div className="mb-6">
               <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as "buying" | "selling")}>
                 <TabsList className="w-full border-b rounded-none justify-start">

@@ -56,8 +56,11 @@ import {
   AuctionSection,
   OfferSection,
   BidHistory,
-  CollapsibleBidForm
+  CollapsibleBidForm,
+  ListingDetailSoldAlert,
+  RelistForm
 } from "@/components/listings";
+import { useRelistListing } from "@/hooks/listings/useRelistListing";
 
 const ListingDetails = () => {
   const { id } = useParams();
@@ -68,6 +71,7 @@ const ListingDetails = () => {
   const { startConversation } = useStartConversation();
   const { trackEvent } = useAnalytics();
   const { highestBid, bids, fetchBids, getUserBidStatus, placeBid } = useBids({ listingId: id });
+  const { relistListing, isRelisting } = useRelistListing(id);
   
   const [isSaved, setIsSaved] = useState(false);
   const [savingState, setSavingState] = useState(false);
@@ -75,6 +79,7 @@ const ListingDetails = () => {
   const [messageContent, setMessageContent] = useState("");
   const [sendingMessage, setSendingMessage] = useState(false);
   const [activeTab, setActiveTab] = useState("details");
+  const [relistFormOpen, setRelistFormOpen] = useState(false);
   
   const isLoading = listingLoading || sellerLoading;
 
@@ -222,6 +227,16 @@ const ListingDetails = () => {
     return await placeBid(amount);
   };
 
+  const handleRelistSubmit = async (data) => {
+    const success = await relistListing(data);
+    if (success) {
+      setRelistFormOpen(false);
+      // Redirect to refresh the page with updated data
+      navigate(0);
+    }
+    return success;
+  };
+
   if (isLoading) {
     return (
       <MainLayout>
@@ -249,6 +264,8 @@ const ListingDetails = () => {
   );
 
   const isAuction = listing.type === "auction";
+  const isSold = listing.status === "sold";
+  const isOwner = user?.id === listing.sellerId;
   const displayPrice = isAuction && highestBid ? highestBid : listing.price;
 
   return (
@@ -261,6 +278,13 @@ const ListingDetails = () => {
         >
           <ChevronLeft className="mr-2 h-4 w-4" /> Back to listings
         </Button>
+
+        {isSold && (
+          <ListingDetailSoldAlert 
+            isAuction={isAuction}
+            soldDate={listing.updatedAt}
+          />
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left column - Images and details */}
@@ -322,8 +346,8 @@ const ListingDetails = () => {
                           <p className="font-medium">{formatDate(listing.createdAt)}</p>
                         </div>
                         <div>
-                          <h4 className="text-sm font-medium text-muted-foreground">Expires On</h4>
-                          <p className="font-medium">{formatDate(listing.expiresAt)}</p>
+                          <h4 className="text-sm font-medium text-muted-foreground">Status</h4>
+                          <p className="font-medium capitalize">{listing.status}</p>
                         </div>
                       </div>
                     </div>
@@ -356,7 +380,7 @@ const ListingDetails = () => {
               </TabsContent>
               
               <TabsContent value="offers">
-                {!isAuction && listing.allowBestOffer && (
+                {!isAuction && listing.allowBestOffer && !isSold && (
                   <OfferSection 
                     listingId={listing.id}
                     listingTitle={listing.title}
@@ -365,6 +389,15 @@ const ListingDetails = () => {
                     userId={user?.id}
                   />
                 )}
+                
+                {!isAuction && isSold && (
+                  <div className="p-6 text-center bg-muted rounded-md">
+                    <h3 className="text-lg font-medium mb-2">This item has been sold</h3>
+                    <p className="text-muted-foreground">
+                      This listing is no longer accepting offers as it has already been sold.
+                    </p>
+                  </div>
+                )}
               </TabsContent>
             </Tabs>
           </div>
@@ -372,7 +405,7 @@ const ListingDetails = () => {
           {/* Right column - Price and seller info */}
           <div className="space-y-6">
             {/* Price card */}
-            <Card>
+            <Card className={isSold ? "border-green-500" : ""}>
               <CardHeader>
                 <div className="flex justify-between items-start">
                   <div>
@@ -382,15 +415,20 @@ const ListingDetails = () => {
                       {listing.location}
                     </div>
                   </div>
-                  <Badge variant={isAuction ? "secondary" : "outline"}>
-                    {isAuction ? "Auction" : "For Sale"}
+                  <Badge variant={isSold ? "success" : isAuction ? "secondary" : "outline"}>
+                    {isSold ? "Sold" : isAuction ? "Auction" : "For Sale"}
                   </Badge>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                {/* If auction, show CollapsibleBidForm */}
-                {isAuction ? (
-                  listing.sellerId !== user?.id && user ? (
+                {/* Show appropriate price/bid info */}
+                {isSold ? (
+                  <div className="flex items-baseline">
+                    <span className="text-lg font-medium text-muted-foreground mr-2">Sold for:</span>
+                    <span className="text-3xl font-bold text-green-600">£{displayPrice.toLocaleString()}</span>
+                  </div>
+                ) : isAuction ? (
+                  listing.sellerId !== user?.id && user && !isSold ? (
                     <CollapsibleBidForm
                       listingId={listing.id}
                       currentPrice={listing.price}
@@ -423,7 +461,7 @@ const ListingDetails = () => {
                 ) : (
                   <div className="flex items-baseline">
                     <span className="text-3xl font-bold text-purple">£{listing.price.toLocaleString()}</span>
-                    {listing.allowBestOffer && (
+                    {listing.allowBestOffer && !isSold && (
                       <Badge variant="outline" className="ml-2">
                         Offers Accepted
                       </Badge>
@@ -431,66 +469,89 @@ const ListingDetails = () => {
                   </div>
                 )}
                 
-                {/* Countdown */}
-                <ListingCountdown 
-                  expiryDate={listing.expiresAt} 
-                  isAuction={isAuction}
-                />
+                {/* Countdown - don't show for sold items */}
+                {!isSold ? (
+                  <ListingCountdown 
+                    expiryDate={listing.expiresAt} 
+                    isAuction={isAuction}
+                    listingStatus={listing.status}
+                  />
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    This item is no longer available
+                  </p>
+                )}
                 
-                <div className="flex items-center gap-2">
+                {/* Options for seller to relist if owner */}
+                {isSold && isOwner && (
                   <Button 
-                    className="flex-1"
-                    onClick={handleContact}
-                    disabled={listing.sellerId === user?.id}
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full"
+                    onClick={() => setRelistFormOpen(true)}
                   >
-                    <MessageSquare className="mr-2 h-4 w-4" />
-                    Contact Seller
+                    Relist This Item
                   </Button>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div>
-                          <Button 
-                            variant={isSaved ? "default" : "outline"} 
-                            size="icon"
-                            onClick={handleToggleSave}
-                            disabled={savingState || listing.sellerId === user?.id}
-                          >
-                            {savingState ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <Heart className={`h-4 w-4 ${isSaved ? "fill-current" : ""}`} />
-                            )}
-                            <span className="sr-only">Save Listing</span>
-                          </Button>
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>{isSaved ? "Remove from saved" : "Save for later"}</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                  
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button 
-                          variant="outline" 
-                          size="icon"
-                          onClick={handleShare}
-                        >
-                          <Share2 className="h-4 w-4" />
-                          <span className="sr-only">Share Listing</span>
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Share this listing</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
+                )}
                 
-                {!isAuction && listing.allowBestOffer && listing.sellerId !== user?.id && user && (
+                {/* Contact and save options for non-sold items */}
+                {!isSold && (
+                  <div className="flex items-center gap-2">
+                    <Button 
+                      className="flex-1"
+                      onClick={handleContact}
+                      disabled={listing.sellerId === user?.id}
+                    >
+                      <MessageSquare className="mr-2 h-4 w-4" />
+                      Contact Seller
+                    </Button>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div>
+                            <Button 
+                              variant={isSaved ? "default" : "outline"} 
+                              size="icon"
+                              onClick={handleToggleSave}
+                              disabled={savingState || listing.sellerId === user?.id}
+                            >
+                              {savingState ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Heart className={`h-4 w-4 ${isSaved ? "fill-current" : ""}`} />
+                              )}
+                              <span className="sr-only">Save Listing</span>
+                            </Button>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{isSaved ? "Remove from saved" : "Save for later"}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button 
+                            variant="outline" 
+                            size="icon"
+                            onClick={handleShare}
+                          >
+                            <Share2 className="h-4 w-4" />
+                            <span className="sr-only">Share Listing</span>
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Share this listing</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                )}
+                
+                {/* "Make an offer" button for eligible listings */}
+                {!isAuction && listing.allowBestOffer && !isSold && listing.sellerId !== user?.id && user && (
                   <Button 
                     variant="outline" 
                     className="w-full"
@@ -500,7 +561,7 @@ const ListingDetails = () => {
                   </Button>
                 )}
                 
-                {!user && (
+                {!user && !isSold && (
                   <Button 
                     variant="outline" 
                     className="w-full"
@@ -688,6 +749,16 @@ const ListingDetails = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Relist form dialog */}
+      {isOwner && (
+        <RelistForm
+          open={relistFormOpen}
+          onOpenChange={setRelistFormOpen}
+          onRelist={handleRelistSubmit}
+          listingTitle={listing.title}
+        />
+      )}
     </MainLayout>
   );
 };
