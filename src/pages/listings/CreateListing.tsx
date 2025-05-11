@@ -4,38 +4,16 @@ import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { AlertCircle } from "lucide-react";
 import MainLayout from "@/components/layout/MainLayout";
 import { useAuth } from "@/hooks/auth";
 import { toast } from "@/hooks/use-toast";
-import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Form } from "@/components/ui/form";
 import { useCreateListing } from "@/hooks/listings";
 import { ListingFormData } from "@/types";
-import { ListingDetailsForm } from "@/components/listings/ListingDetailsForm";
-import { ListingImageUploader } from "@/components/listings/ListingImageUploader";
+import { CreateListingAlert } from "@/components/listings/CreateListingAlert";
+import { CreateListingDetailsSection } from "@/components/listings/CreateListingDetailsSection";
+import { CreateListingImagesSection } from "@/components/listings/CreateListingImagesSection";
+import { CreateListingSubmit } from "@/components/listings/CreateListingSubmit";
 
 // Define form schema
 const formSchema = z.object({
@@ -135,18 +113,7 @@ const CreateListingPage = () => {
   if (!user) {
     return (
       <MainLayout>
-        <div className="container py-12 text-center">
-          <Alert className="max-w-md mx-auto">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Authentication Required</AlertTitle>
-            <AlertDescription>
-              You need to be logged in to create a listing.
-            </AlertDescription>
-          </Alert>
-          <Button className="mt-6" onClick={() => navigate("/login")}>
-            Log In
-          </Button>
-        </div>
+        <CreateListingAlert />
       </MainLayout>
     );
   }
@@ -162,63 +129,19 @@ const CreateListingPage = () => {
 
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Listing Details</CardTitle>
-                  <CardDescription>
-                    Provide accurate information to help buyers find your listing
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <ListingDetailsForm form={form} />
-                </CardContent>
-              </Card>
+              <CreateListingDetailsSection form={form} />
+              
+              <CreateListingImagesSection 
+                images={images}
+                setImages={setImages}
+                imageUrls={imageUrls}
+                setImageUrls={setImageUrls}
+              />
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>Images</CardTitle>
-                  <CardDescription>
-                    Add up to 10 high-quality images of your item
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ListingImageUploader 
-                    images={images}
-                    setImages={setImages}
-                    imageUrls={imageUrls}
-                    setImageUrls={setImageUrls}
-                  />
-                </CardContent>
-              </Card>
-
-              <div className="flex justify-between items-center">
-                <Button 
-                  type="button" 
-                  variant="outline"
-                  onClick={() => navigate(-1)}
-                >
-                  Cancel
-                </Button>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div>
-                        <Button 
-                          type="submit" 
-                          disabled={isSubmitting || images.length === 0}
-                        >
-                          {isSubmitting ? "Creating..." : "Create Listing"}
-                        </Button>
-                      </div>
-                    </TooltipTrigger>
-                    {images.length === 0 && (
-                      <TooltipContent>
-                        <p>Please add at least one image to continue</p>
-                      </TooltipContent>
-                    )}
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
+              <CreateListingSubmit 
+                isSubmitting={isSubmitting} 
+                hasImages={images.length > 0} 
+              />
             </form>
           </Form>
         </div>
