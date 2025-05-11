@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/hooks/auth";
 import { supabase } from "@/integrations/supabase/client";
@@ -317,7 +316,7 @@ export const useCreateListing = () => {
   const [error, setError] = useState<string | null>(null);
 
   // Update the type definition here to properly handle File[] for images
-  const createListing = async (formData: Omit<Listing, "id" | "sellerId" | "createdAt" | "updatedAt" | "views" | "saves"> & { images: File[] }) => {
+  const createListing = async (formData: ListingFormData) => {
     if (!user) {
       toast({
         title: "Authentication Required",

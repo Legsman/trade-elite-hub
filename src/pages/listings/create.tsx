@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -43,6 +44,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useCreateListing } from "@/hooks/use-listing";
+import { ListingFormData } from "@/types"; // Import the new interface
 
 // Define form schema
 const formSchema = z.object({
@@ -105,11 +107,16 @@ const CreateListingPage = () => {
       return;
     }
 
-    // Use the createListing hook to save the listing to the database
-    const result = await createListing({
+    // Create a properly typed listing form data object
+    const listingFormData: ListingFormData = {
       ...values,
-      images: images, // Pass the File[] directly to the hook
-    });
+      images: images,
+      expiresAt: new Date(), // Will be calculated in the hook
+      status: "active",
+    };
+
+    // Use the createListing hook to save the listing to the database
+    const result = await createListing(listingFormData);
 
     if (result.success) {
       toast({
