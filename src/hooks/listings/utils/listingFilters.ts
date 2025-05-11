@@ -32,8 +32,8 @@ export const applyListingFilters = (query: any, filters: FilterOptions) => {
   if (showCompleted !== "true") {
     filteredQuery = filteredQuery.eq("status", "active");
   } else {
-    // If showing completed listings, include both active and completed/expired
-    filteredQuery = filteredQuery.in("status", ["active", "completed", "expired"]);
+    // If showing completed listings, include both active, completed/expired, and sold
+    filteredQuery = filteredQuery.in("status", ["active", "completed", "expired", "sold"]);
   }
 
   // Apply category filter
@@ -51,9 +51,23 @@ export const applyListingFilters = (query: any, filters: FilterOptions) => {
     filteredQuery = filteredQuery.eq("location", location);
   }
 
-  // Apply condition filter
+  // Apply condition filter - normalize condition for case insensitive comparison
   if (condition && condition !== "all_conditions") {
-    filteredQuery = filteredQuery.eq("condition", condition);
+    // Convert conditions like "like_new" to "Like New" format for database comparison
+    let formattedCondition = condition;
+    
+    // Format condition string from filter value (like_new) to database value (Like New)
+    if (condition === "like_new") {
+      formattedCondition = "Like New";
+    } else if (condition === "new") {
+      formattedCondition = "New";
+    } else if (condition === "used") {
+      formattedCondition = "Used";
+    } else if (condition === "fair") {
+      formattedCondition = "Fair";
+    }
+    
+    filteredQuery = filteredQuery.eq("condition", formattedCondition);
   }
 
   // Apply price range filters

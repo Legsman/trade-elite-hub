@@ -23,6 +23,7 @@ const Dashboard = () => {
   } = useSavedListings();
   
   const [activeTab, setActiveTab] = useState("saved");
+  const [viewMode, setViewMode] = useState<"buying" | "selling">("buying");
   
   useEffect(() => {
     if (user) {
@@ -121,94 +122,491 @@ const Dashboard = () => {
 
           {/* Main content */}
           <div className="md:col-span-2">
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+            {/* Buying/Selling Mode Toggle */}
+            <div className="mb-6">
               <TabsList className="w-full border-b rounded-none justify-start">
-                <TabsTrigger value="saved">Saved Listings</TabsTrigger>
-                <TabsTrigger value="listings">My Listings</TabsTrigger>
-                <TabsTrigger value="bids-offers">Bids & Offers</TabsTrigger>
-                <TabsTrigger value="feedback">Feedback</TabsTrigger>
+                <TabsTrigger 
+                  value="buying" 
+                  className={viewMode === "buying" ? "border-b-2 border-primary" : ""}
+                  onClick={() => setViewMode("buying")}
+                >
+                  Buying
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="selling"
+                  className={viewMode === "selling" ? "border-b-2 border-primary" : ""}
+                  onClick={() => setViewMode("selling")}
+                >
+                  Selling
+                </TabsTrigger>
               </TabsList>
-              
-              <TabsContent value="saved">
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <h2 className="text-2xl font-semibold tracking-tight">
-                      Your Saved Listings
-                    </h2>
-                    <Button variant="outline" size="sm" onClick={() => navigate("/listings")}>
-                      Browse Listings
-                    </Button>
-                  </div>
-                  
-                  {savedListings.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <h3 className="text-lg font-medium mb-2">No saved listings yet</h3>
-                      <p className="text-sm">Save listings to your dashboard to keep track of them.</p>
-                      <Button variant="link" className="mt-4" onClick={() => navigate("/listings")}>
+            </div>
+
+            {viewMode === "buying" ? (
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+                <TabsList className="w-full border-b rounded-none justify-start">
+                  <TabsTrigger value="saved">Saved Listings</TabsTrigger>
+                  <TabsTrigger value="bids">My Bids</TabsTrigger>
+                  <TabsTrigger value="offers">My Offers</TabsTrigger>
+                  <TabsTrigger value="purchases">Purchase History</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="saved">
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <h2 className="text-2xl font-semibold tracking-tight">
+                        Your Saved Listings
+                      </h2>
+                      <Button variant="outline" size="sm" onClick={() => navigate("/listings")}>
                         Browse Listings
                       </Button>
                     </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {savedListings.map((listing) => (
-                        <ListingCard 
-                          key={listing.id} 
-                          listing={listing} 
-                          highestBid={listing.type === "auction" ? highestBids[listing.id] || null : null}
-                        />
-                      ))}
+                    
+                    {savedListings.length === 0 ? (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <h3 className="text-lg font-medium mb-2">No saved listings yet</h3>
+                        <p className="text-sm">Save listings to your dashboard to keep track of them.</p>
+                        <Button variant="link" className="mt-4" onClick={() => navigate("/listings")}>
+                          Browse Listings
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {savedListings.map((listing) => (
+                          <ListingCard 
+                            key={listing.id} 
+                            listing={listing} 
+                            highestBid={listing.type === "auction" ? highestBids[listing.id] || null : null}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="bids">
+                  <UserBidsOffersTabs userId={user.id} initialTab="bids" />
+                </TabsContent>
+                
+                <TabsContent value="offers">
+                  <UserBidsOffersTabs userId={user.id} initialTab="offers" />
+                </TabsContent>
+                
+                <TabsContent value="purchases">
+                  <PurchaseHistoryTab userId={user.id} />
+                </TabsContent>
+              </Tabs>
+            ) : (
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+                <TabsList className="w-full border-b rounded-none justify-start">
+                  <TabsTrigger value="listings">My Listings</TabsTrigger>
+                  <TabsTrigger value="sold">Sold Items</TabsTrigger>
+                  <TabsTrigger value="feedback">Feedback</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="listings">
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <h2 className="text-2xl font-semibold tracking-tight">
+                        Your Listings
+                      </h2>
+                      <Button variant="outline" size="sm" onClick={() => navigate("/listings/create")}>
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Create Listing
+                      </Button>
                     </div>
-                  )}
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="listings">
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
+                    
+                    <UserListingsTab userId={user.id} />
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="sold">
+                  <SoldItemsTab userId={user.id} />
+                </TabsContent>
+                
+                <TabsContent value="feedback">
+                  <div className="space-y-4">
                     <h2 className="text-2xl font-semibold tracking-tight">
-                      Your Listings
+                      Your Feedback
                     </h2>
-                    <Button variant="outline" size="sm" onClick={() => navigate("/listings/create")}>
-                      <PlusCircle className="mr-2 h-4 w-4" />
-                      Create Listing
-                    </Button>
+                    <div className="flex items-center mb-4">
+                      <Star className="h-5 w-5 text-yellow-400 fill-yellow-400 mr-1" />
+                      <span className="font-medium">5.0</span>
+                      <span className="text-sm text-muted-foreground ml-1">(10 sales)</span>
+                    </div>
+                    
+                    <div className="text-center py-8 text-muted-foreground">
+                      <p>You haven't received any feedback yet.</p>
+                    </div>
                   </div>
-                  
-                  <div className="text-center py-8 text-muted-foreground">
-                    <h3 className="text-lg font-medium mb-2">No listings yet</h3>
-                    <p className="text-sm">Create a listing to sell your items.</p>
-                    <Button variant="link" className="mt-4" onClick={() => navigate("/listings/create")}>
-                      Create Listing
-                    </Button>
-                  </div>
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="bids-offers">
-                <UserBidsOffersTabs userId={user.id} />
-              </TabsContent>
-              
-              <TabsContent value="feedback">
-                <div className="space-y-4">
-                  <h2 className="text-2xl font-semibold tracking-tight">
-                    Your Feedback
-                  </h2>
-                  <div className="flex items-center mb-4">
-                    <Star className="h-5 w-5 text-yellow-400 fill-yellow-400 mr-1" />
-                    <span className="font-medium">5.0</span>
-                    <span className="text-sm text-muted-foreground ml-1">(10 sales)</span>
-                  </div>
-                  
-                  <div className="text-center py-8 text-muted-foreground">
-                    <p>You haven't received any feedback yet.</p>
-                  </div>
-                </div>
-              </TabsContent>
-            </Tabs>
+                </TabsContent>
+              </Tabs>
+            )}
           </div>
         </div>
       </div>
     </MainLayout>
+  );
+};
+
+// New component for purchase history
+const PurchaseHistoryTab = ({ userId }: { userId: string }) => {
+  const [purchases, setPurchases] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  useEffect(() => {
+    const fetchPurchases = async () => {
+      setIsLoading(true);
+      try {
+        // Fetch listings won through accepted offers
+        const { data: offerPurchases, error: offerError } = await supabase
+          .from("offers")
+          .select(`
+            amount,
+            updated_at,
+            listings (
+              id,
+              title,
+              price,
+              images,
+              category,
+              type,
+              location,
+              condition,
+              status,
+              expires_at,
+              created_at,
+              views,
+              saves,
+              seller_id,
+              description,
+              allow_best_offer
+            )
+          `)
+          .eq("user_id", userId)
+          .eq("status", "accepted");
+        
+        if (offerError) throw offerError;
+        
+        // Fetch listings won through auctions
+        const { data: auctionWins, error: auctionError } = await supabase
+          .from("bids")
+          .select(`
+            amount,
+            listings (
+              id,
+              title,
+              price,
+              images,
+              category,
+              type,
+              location,
+              condition,
+              status,
+              expires_at,
+              created_at,
+              views,
+              saves,
+              seller_id,
+              description,
+              allow_best_offer
+            )
+          `)
+          .eq("user_id", userId)
+          .eq("status", "won");
+          
+        if (auctionError) throw auctionError;
+        
+        // Transform the data into the Listing format with purchase details
+        const purchasedListings = [
+          ...offerPurchases.map(op => ({
+            ...op.listings,
+            purchaseType: 'offer',
+            purchaseAmount: op.amount,
+            purchaseDate: new Date(op.updated_at),
+            expiresAt: new Date(op.listings.expires_at)
+          })),
+          ...auctionWins.map(win => ({
+            ...win.listings,
+            purchaseType: 'auction',
+            purchaseAmount: win.amount,
+            purchaseDate: new Date(win.listings.expires_at),
+            expiresAt: new Date(win.listings.expires_at)
+          }))
+        ];
+        
+        // Sort by purchase date, newest first
+        purchasedListings.sort((a, b) => b.purchaseDate.getTime() - a.purchaseDate.getTime());
+        
+        setPurchases(purchasedListings);
+      } catch (error) {
+        console.error("Error fetching purchase history:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchPurchases();
+  }, [userId]);
+  
+  if (isLoading) {
+    return <Loading message="Loading purchase history..." />;
+  }
+  
+  if (purchases.length === 0) {
+    return (
+      <div className="text-center py-8 text-muted-foreground">
+        <h3 className="text-lg font-medium mb-2">No purchase history yet</h3>
+        <p className="text-sm">Items you buy will appear here.</p>
+        <Button variant="link" onClick={() => navigate("/listings")}>
+          Browse Listings
+        </Button>
+      </div>
+    );
+  }
+  
+  return (
+    <div className="space-y-4">
+      <h2 className="text-2xl font-semibold tracking-tight mb-4">
+        Your Purchase History
+      </h2>
+      <div className="grid grid-cols-1 gap-4">
+        {purchases.map(purchase => (
+          <Card key={purchase.id} className="overflow-hidden">
+            <div className="flex flex-col sm:flex-row">
+              <div className="w-full sm:w-1/4 md:w-1/5">
+                <img 
+                  src={purchase.images[0]} 
+                  alt={purchase.title} 
+                  className="w-full h-40 object-cover"
+                />
+              </div>
+              <div className="p-4 flex-1">
+                <h3 className="font-semibold text-lg mb-1">{purchase.title}</h3>
+                <div className="text-sm text-muted-foreground mb-2">
+                  {new Intl.DateTimeFormat('en-GB', {
+                    day: 'numeric',
+                    month: 'short',
+                    year: 'numeric'
+                  }).format(purchase.purchaseDate)}
+                </div>
+                <div className="mb-2">
+                  <span className="font-medium">Purchase price:</span>{' '}
+                  <span className="text-green-600 font-bold">
+                    £{purchase.purchaseAmount.toLocaleString()}
+                  </span>
+                </div>
+                <div className="text-sm mb-4">
+                  <span className="bg-gray-100 text-gray-800 rounded-full px-3 py-1 text-xs">
+                    {purchase.purchaseType === 'offer' ? 'Offer Accepted' : 'Auction Won'}
+                  </span>
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => navigate(`/listings/${purchase.id}`)}
+                >
+                  View Details
+                </Button>
+              </div>
+            </div>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// New component for user listings
+const UserListingsTab = ({ userId }: { userId: string }) => {
+  const [listings, setListings] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  useEffect(() => {
+    const fetchListings = async () => {
+      setIsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from("listings")
+          .select("*")
+          .eq("seller_id", userId)
+          .eq("status", "active")
+          .order("created_at", { ascending: false });
+        
+        if (error) throw error;
+        
+        // Transform dates
+        const transformedListings = data.map(listing => ({
+          ...listing,
+          expiresAt: new Date(listing.expires_at),
+          createdAt: new Date(listing.created_at),
+          updatedAt: new Date(listing.updated_at)
+        }));
+        
+        setListings(transformedListings);
+      } catch (error) {
+        console.error("Error fetching user listings:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchListings();
+  }, [userId]);
+  
+  if (isLoading) {
+    return <Loading message="Loading your listings..." />;
+  }
+  
+  if (listings.length === 0) {
+    return (
+      <div className="text-center py-8 text-muted-foreground">
+        <h3 className="text-lg font-medium mb-2">No active listings yet</h3>
+        <p className="text-sm">Create a listing to sell your items.</p>
+        <Button variant="link" className="mt-4" onClick={() => navigate("/listings/create")}>
+          Create Listing
+        </Button>
+      </div>
+    );
+  }
+  
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {listings.map((listing) => (
+        <ListingCard 
+          key={listing.id} 
+          listing={listing} 
+        />
+      ))}
+    </div>
+  );
+};
+
+// New component for sold items
+const SoldItemsTab = ({ userId }: { userId: string }) => {
+  const [soldItems, setSoldItems] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  useEffect(() => {
+    const fetchSoldItems = async () => {
+      setIsLoading(true);
+      try {
+        // Fetch listings with status "sold"
+        const { data, error } = await supabase
+          .from("listings")
+          .select(`
+            *,
+            offers (
+              amount, 
+              user_id,
+              status,
+              updated_at,
+              profiles (
+                full_name,
+                avatar_url
+              )
+            )
+          `)
+          .eq("seller_id", userId)
+          .eq("status", "sold")
+          .order("updated_at", { ascending: false });
+        
+        if (error) throw error;
+        
+        // Transform to include buyer info and sale price
+        const transformedItems = data.map(item => {
+          // Find accepted offer to get sale details
+          const acceptedOffer = item.offers.find(o => o.status === "accepted");
+          
+          return {
+            ...item,
+            expiresAt: new Date(item.expires_at),
+            createdAt: new Date(item.created_at),
+            updatedAt: new Date(item.updated_at),
+            saleAmount: acceptedOffer ? acceptedOffer.amount : item.price,
+            saleDate: acceptedOffer ? new Date(acceptedOffer.updated_at) : new Date(item.updated_at),
+            buyer: acceptedOffer ? {
+              id: acceptedOffer.user_id,
+              name: acceptedOffer.profiles?.full_name || "Unknown User",
+              avatar: acceptedOffer.profiles?.avatar_url
+            } : null
+          };
+        });
+        
+        setSoldItems(transformedItems);
+      } catch (error) {
+        console.error("Error fetching sold items:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchSoldItems();
+  }, [userId]);
+  
+  if (isLoading) {
+    return <Loading message="Loading sold items..." />;
+  }
+  
+  if (soldItems.length === 0) {
+    return (
+      <div className="text-center py-8 text-muted-foreground">
+        <h3 className="text-lg font-medium mb-2">No sold items yet</h3>
+        <p className="text-sm">Items you sell will appear here.</p>
+      </div>
+    );
+  }
+  
+  return (
+    <div className="space-y-4">
+      <h2 className="text-2xl font-semibold tracking-tight mb-4">
+        Your Sold Items
+      </h2>
+      <div className="grid grid-cols-1 gap-4">
+        {soldItems.map(item => (
+          <Card key={item.id} className="overflow-hidden">
+            <div className="flex flex-col sm:flex-row">
+              <div className="w-full sm:w-1/4 md:w-1/5">
+                <img 
+                  src={item.images[0]} 
+                  alt={item.title} 
+                  className="w-full h-40 object-cover"
+                />
+              </div>
+              <div className="p-4 flex-1">
+                <h3 className="font-semibold text-lg mb-1">{item.title}</h3>
+                <div className="text-sm text-muted-foreground mb-2">
+                  {new Intl.DateTimeFormat('en-GB', {
+                    day: 'numeric',
+                    month: 'short',
+                    year: 'numeric'
+                  }).format(item.saleDate)}
+                </div>
+                <div className="mb-2">
+                  <span className="font-medium">Sale price:</span>{' '}
+                  <span className="text-green-600 font-bold">
+                    £{item.saleAmount.toLocaleString()}
+                  </span>
+                </div>
+                {item.buyer && (
+                  <div className="mb-4 text-sm">
+                    <span className="font-medium">Buyer:</span>{' '}
+                    <span>{item.buyer.name}</span>
+                  </div>
+                )}
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => navigate(`/listings/${item.id}`)}
+                >
+                  View Details
+                </Button>
+              </div>
+            </div>
+          </Card>
+        ))}
+      </div>
+    </div>
   );
 };
 

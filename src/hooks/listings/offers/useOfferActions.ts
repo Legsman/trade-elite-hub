@@ -140,13 +140,66 @@ export const useOfferActions = (
           user_id,
           listing_id,
           listings (
-            title
+            title,
+            id
           )
         `)
         .eq("id", offerId)
         .single();
 
       if (offerData) {
+        // If the offer is accepted, mark the listing as sold
+        if (status === 'accepted') {
+          // Update the listing status to sold
+          const { error: listingUpdateError } = await supabase
+            .from("listings")
+            .update({ 
+              status: "sold",
+              updated_at: new Date().toISOString()
+            })
+            .eq("id", offerData.listing_id);
+          
+          if (listingUpdateError) throw listingUpdateError;
+          
+          // Decline all other pending offers for this listing
+          const { error: declineOtherOffersError } = await supabase
+            .from("offers")
+            .update({ 
+              status: "declined",
+              updated_at: new Date().toISOString()
+            })
+            .eq("listing_id", offerData.listing_id)
+            .eq("status", "pending")
+            .neq("id", offerId);
+          
+          if (declineOtherOffersError) throw declineOtherOffersError;
+          
+          // Notify other users that their offers were declined because another offer was accepted
+          const { data: otherOffers } = await supabase
+            .from("offers")
+            .select("user_id")
+            .eq("listing_id", offerData.listing_id)
+            .neq("id", offerId)
+            .neq("user_id", offerData.user_id);
+          
+          if (otherOffers && otherOffers.length > 0) {
+            const notifications = otherOffers.map(offer => ({
+              user_id: offer.user_id,
+              type: "offer_auto_declined",
+              message: `Your offer on "${offerData.listings.title}" was declined because another offer was accepted.`,
+              metadata: {
+                listing_id: offerData.listing_id,
+                status: "declined",
+                reason: "another_offer_accepted"
+              }
+            }));
+            
+            await supabase
+              .from("notifications")
+              .insert(notifications);
+          }
+        }
+
         // Create notification for the offerer
         await supabase
           .from("notifications")

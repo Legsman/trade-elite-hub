@@ -36,6 +36,34 @@ export const ListingCard = memo(({ listing, onClick, highestBid }: ListingCardPr
     return hoursRemaining <= 6;
   };
 
+  // Get listing status badge
+  const getStatusBadge = () => {
+    if (listing.status === "sold") {
+      return (
+        <div className="absolute top-2 right-2 bg-green-500 text-white text-xs font-medium rounded-full px-2 py-1">
+          Sold
+        </div>
+      );
+    } else if (listing.status === "expired" || listing.status === "completed") {
+      return (
+        <div className="absolute top-2 right-2 bg-gray-500 text-white text-xs font-medium rounded-full px-2 py-1">
+          {listing.status === "expired" ? "Expired" : "Completed"}
+        </div>
+      );
+    } else {
+      return (
+        <div className="absolute top-2 right-2 bg-background/90 text-xs font-medium rounded-full px-2 py-1">
+          {listing.type === "auction" ? "Auction" : "For Sale"}
+        </div>
+      );
+    }
+  };
+
+  // Determine if we should show the countdown or sold/expired status
+  const showCountdown = () => {
+    return listing.status === "active";
+  };
+
   return (
     <Card
       className="overflow-hidden cursor-pointer transition-all hover:shadow-md"
@@ -48,12 +76,10 @@ export const ListingCard = memo(({ listing, onClick, highestBid }: ListingCardPr
           className="object-cover h-full w-full"
           loading="lazy"
         />
-        <div className="absolute top-2 right-2 bg-background/90 text-xs font-medium rounded-full px-2 py-1">
-          {listing.type === "auction" ? "Auction" : "For Sale"}
-        </div>
+        {getStatusBadge()}
         
         {/* Add badge for auctions ending soon */}
-        {isEndingSoon() && (
+        {isEndingSoon() && listing.status === "active" && (
           <div className="absolute bottom-2 left-2 bg-red-500 text-white text-xs font-medium rounded-full px-2 py-1 animate-pulse">
             Ending Soon
           </div>
@@ -89,19 +115,29 @@ export const ListingCard = memo(({ listing, onClick, highestBid }: ListingCardPr
               </div>
             )}
           </div>
+        ) : listing.status === "sold" ? (
+          <div className="mt-1 text-lg font-bold text-green-600">
+            Sold for £{listing.price.toLocaleString()}
+          </div>
         ) : (
           <div className="mt-1 text-lg font-bold text-purple">
             £{listing.price.toLocaleString()}
           </div>
         )}
         
-        {/* Add compact countdown */}
+        {/* Add compact countdown or status */}
         <div className="mt-2">
-          <ListingCountdown 
-            expiryDate={listing.expiresAt} 
-            isAuction={listing.type === "auction"} 
-            className="text-xs"
-          />
+          {showCountdown() ? (
+            <ListingCountdown 
+              expiryDate={listing.expiresAt} 
+              isAuction={listing.type === "auction"} 
+              className="text-xs"
+            />
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              {listing.status === "sold" ? "No longer available" : "Ended"}
+            </p>
+          )}
         </div>
       </CardContent>
       <Separator />
@@ -109,10 +145,10 @@ export const ListingCard = memo(({ listing, onClick, highestBid }: ListingCardPr
         <span>{listing.views} views</span>
         {listing.type === "auction" ? (
           <span>
-            {highestBid ? `${listing.saves} bids` : "No bids yet"}
+            {highestBid ? `${listing.saves || 0} bids` : "No bids yet"}
           </span>
         ) : (
-          <span>{listing.saves} saves</span>
+          <span>{listing.saves || 0} saves</span>
         )}
         <span className="capitalize">{listing.category}</span>
       </CardFooter>
