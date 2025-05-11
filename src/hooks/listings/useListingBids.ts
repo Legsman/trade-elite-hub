@@ -1,13 +1,14 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useRetryLogic } from "./utils";
 
 export const useListingBids = (listingIds: string[]) => {
   const [highestBids, setHighestBids] = useState<Record<string, number>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [retryCount, setRetryCount] = useState(0);
   const [lastListingIds, setLastListingIds] = useState<string[]>([]);
+  const { retryCount, setRetryCount, scheduleRetry } = useRetryLogic();
   const MAX_RETRIES = 2;
 
   const fetchHighestBids = useCallback(async () => {
@@ -58,23 +59,17 @@ export const useListingBids = (listingIds: string[]) => {
       console.error("Error fetching highest bids:", err);
       
       // On error, we don't clear the existing data to prevent UI flashing
+      setError("Failed to fetch bid information");
+      
+      // Don't update loading state unless we're really out of options
+      if (retryCount >= MAX_RETRIES) {
+        setIsLoading(false);
+      }
       
       // Add retry logic with exponential backoff
-      if (retryCount < MAX_RETRIES) {
-        const retryDelay = Math.pow(2, retryCount) * 1000;
-        setTimeout(() => {
-          setRetryCount(prev => prev + 1);
-          fetchHighestBids();
-        }, retryDelay);
-      } else {
-        setError("Failed to fetch bid information");
-        setIsLoading(false);
-        
-        // We don't show a toast here as this is secondary data - 
-        // listings will still render without bids
-      }
+      scheduleRetry(fetchHighestBids, MAX_RETRIES);
     }
-  }, [listingIds, retryCount, isLoading, lastListingIds]);
+  }, [listingIds, retryCount, isLoading, lastListingIds, scheduleRetry, setRetryCount]);
   
   useEffect(() => {
     if (listingIds.length > 0) {
