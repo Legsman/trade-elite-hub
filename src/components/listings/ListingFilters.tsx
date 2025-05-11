@@ -13,63 +13,38 @@ import {
 } from "@/components/ui/select";
 
 interface ListingFiltersProps {
-  onFilterChange: (filters: {
+  filters: {
     searchTerm: string;
     category: string;
     listingType: string;
     priceRange: string;
     sortBy: string;
-  }) => void;
-  categories?: string[];
-  initialFilters?: {
-    searchTerm?: string;
-    category?: string;
-    listingType?: string;
-    priceRange?: string;
-    sortBy?: string;
   };
+  onFilterChange: (key: keyof typeof filters, value: string) => void;
+  onClearFilters: () => void;
+  categories?: string[];
 }
 
 export const ListingFilters = ({
+  filters,
   onFilterChange,
+  onClearFilters,
   categories = ["cars", "watches", "homes", "commercials", "collectables"],
-  initialFilters = {},
 }: ListingFiltersProps) => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [searchTerm, setSearchTerm] = useState(initialFilters.searchTerm || searchParams.get("search") || "");
-  const [category, setCategory] = useState(initialFilters.category || searchParams.get("category") || "");
-  const [listingType, setListingType] = useState(initialFilters.listingType || searchParams.get("type") || "all");
-  const [priceRange, setPriceRange] = useState(initialFilters.priceRange || searchParams.get("price") || "any");
-  const [sortBy, setSortBy] = useState(initialFilters.sortBy || searchParams.get("sort") || "newest");
 
   // Update URL when filters change
   useEffect(() => {
     const params = new URLSearchParams();
     
-    if (category) params.append("category", category);
-    if (searchTerm) params.append("search", searchTerm);
-    if (listingType && listingType !== "all") params.append("type", listingType);
-    if (sortBy && sortBy !== "newest") params.append("sort", sortBy);
-    if (priceRange && priceRange !== "any") params.append("price", priceRange);
+    if (filters.category) params.append("category", filters.category);
+    if (filters.searchTerm) params.append("search", filters.searchTerm);
+    if (filters.listingType && filters.listingType !== "all") params.append("type", filters.listingType);
+    if (filters.sortBy && filters.sortBy !== "newest") params.append("sort", filters.sortBy);
+    if (filters.priceRange && filters.priceRange !== "any") params.append("price", filters.priceRange);
     
     setSearchParams(params);
-
-    onFilterChange({
-      searchTerm,
-      category,
-      listingType,
-      priceRange,
-      sortBy,
-    });
-  }, [category, searchTerm, listingType, priceRange, sortBy, onFilterChange, setSearchParams]);
-
-  const resetFilters = () => {
-    setSearchTerm("");
-    setCategory("");
-    setListingType("all");
-    setPriceRange("any");
-    setSortBy("newest");
-  };
+  }, [filters, setSearchParams]);
 
   return (
     <div className="bg-muted/40 rounded-lg p-4 mb-8">
@@ -79,25 +54,25 @@ export const ListingFilters = ({
           <Input
             placeholder="Search listings..."
             className="pl-10"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            value={filters.searchTerm}
+            onChange={(e) => onFilterChange("searchTerm", e.target.value)}
           />
         </div>
         <div className="flex flex-wrap gap-2">
           <Button
-            variant={category ? "outline" : "default"}
+            variant={filters.category ? "outline" : "default"}
             size="sm"
             className="flex items-center gap-1"
-            onClick={() => setCategory("")}
+            onClick={() => onFilterChange("category", "")}
           >
             All Categories
           </Button>
           {categories.map((cat) => (
             <Button
               key={cat}
-              variant={category === cat ? "default" : "outline"}
+              variant={filters.category === cat ? "default" : "outline"}
               size="sm"
-              onClick={() => setCategory(cat)}
+              onClick={() => onFilterChange("category", cat)}
             >
               {cat.charAt(0).toUpperCase() + cat.slice(1)}
             </Button>
@@ -106,7 +81,10 @@ export const ListingFilters = ({
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4">
-        <Select value={listingType} onValueChange={setListingType}>
+        <Select 
+          value={filters.listingType} 
+          onValueChange={(value) => onFilterChange("listingType", value)}
+        >
           <SelectTrigger className="w-full sm:w-[180px]">
             <SelectValue placeholder="Listing Type" />
           </SelectTrigger>
@@ -117,7 +95,10 @@ export const ListingFilters = ({
           </SelectContent>
         </Select>
 
-        <Select value={priceRange} onValueChange={setPriceRange}>
+        <Select 
+          value={filters.priceRange} 
+          onValueChange={(value) => onFilterChange("priceRange", value)}
+        >
           <SelectTrigger className="w-full sm:w-[180px]">
             <SelectValue placeholder="Price Range" />
           </SelectTrigger>
@@ -132,7 +113,10 @@ export const ListingFilters = ({
           </SelectContent>
         </Select>
 
-        <Select value={sortBy} onValueChange={setSortBy}>
+        <Select 
+          value={filters.sortBy} 
+          onValueChange={(value) => onFilterChange("sortBy", value)}
+        >
           <SelectTrigger className="w-full sm:w-[180px]">
             <SelectValue placeholder="Sort By" />
           </SelectTrigger>
@@ -150,9 +134,9 @@ export const ListingFilters = ({
         </Button>
       </div>
 
-      {(category || searchTerm || listingType !== "all" || priceRange !== "any" || sortBy !== "newest") && (
+      {(filters.category || filters.searchTerm || filters.listingType !== "all" || filters.priceRange !== "any" || filters.sortBy !== "newest") && (
         <div className="mt-4 text-right">
-          <Button variant="ghost" size="sm" onClick={resetFilters}>
+          <Button variant="ghost" size="sm" onClick={onClearFilters}>
             Clear All Filters
           </Button>
         </div>

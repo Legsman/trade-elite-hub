@@ -33,7 +33,7 @@ export const useBids = ({ listingId, onBidSuccess }: UseBidsOptions = {}) => {
         .from("bids")
         .select(`
           *,
-          user:user_id (
+          user:profiles(
             full_name,
             avatar_url
           )

@@ -68,28 +68,28 @@ export interface UserProfile {
   strikeCount?: number;
 }
 
-// New interfaces for Bids
+// Updated Bid interface to accept string status to match database
 export interface Bid {
   id: string;
   userId: string;
   listingId: string;
   amount: number;
   createdAt: Date;
-  status: 'active' | 'cancelled' | 'winning';
+  status: string; // Changed from union type to string to match database
   user?: {
     fullName: string | null;
     avatarUrl: string | null;
   };
 }
 
-// New interfaces for Offers
+// Updated Offer interface to accept string status to match database
 export interface Offer {
   id: string;
   userId: string;
   listingId: string;
   amount: number;
   message?: string;
-  status: 'pending' | 'accepted' | 'declined' | 'expired';
+  status: string; // Changed from union type to string to match database
   createdAt: Date;
   updatedAt: Date;
   user?: {

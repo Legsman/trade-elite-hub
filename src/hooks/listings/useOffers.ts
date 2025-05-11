@@ -38,7 +38,7 @@ export const useOffers = ({ listingId, onOfferSuccess }: UseOffersOptions = {}) 
         .from("offers")
         .select(`
           *,
-          user:user_id (
+          user:profiles(
             full_name,
             avatar_url
           )
