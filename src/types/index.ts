@@ -1,4 +1,3 @@
-
 export interface Profile {
   id: string;
   email?: string | null;
@@ -99,7 +98,7 @@ export interface UserProfile {
   strikeCount?: number;
 }
 
-// Add ListingFormData type definition
+// Update ListingFormData type definition to remove expiresAt and status properties
 export interface ListingFormData {
   title: string;
   description: string;

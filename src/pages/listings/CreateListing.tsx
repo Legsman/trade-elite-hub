@@ -88,8 +88,6 @@ const CreateListingPage = () => {
       allowBestOffer: values.allowBestOffer,
       duration: values.duration,
       images: images,
-      expiresAt: new Date(), // Will be calculated in the hook
-      status: "active",
     };
 
     // Use the createListing hook to save the listing to the database
