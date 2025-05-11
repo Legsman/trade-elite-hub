@@ -75,7 +75,7 @@ const Dashboard = () => {
                 <div className="space-y-4">
                   <div>
                     <h3 className="text-sm font-medium">Name</h3>
-                    <p className="text-muted-foreground">{user.user_metadata?.fullName || "Not set"}</p>
+                    <p className="text-muted-foreground">{user.name || "Not set"}</p>
                   </div>
                   <div>
                     <h3 className="text-sm font-medium">Email</h3>
