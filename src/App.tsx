@@ -12,7 +12,7 @@ import Dashboard from "./pages/Dashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import ListingsPage from "./pages/listings/index";
 import ListingDetails from "./pages/listings/[id]";
-import CreateListingPage from "./pages/listings/create";
+import CreateListingPage from "./pages/listings/CreateListing";
 import MessagesPage from "./pages/messages/index";
 import UserSettingsPage from "./pages/settings/index";
 import { AuthProvider } from "./hooks/auth";
@@ -29,7 +29,6 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
-            {/* Remove the redirect from / to /admin */}
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />

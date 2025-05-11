@@ -36,7 +36,7 @@ export const useListings = (options: UseListingsOptions = {}) => {
         condition,
         minPrice,
         maxPrice,
-        sortBy = "createdAt-desc",
+        sortBy = "created_at-desc",
         page = "1",
         allowBestOffer,
         searchTerm,
@@ -81,10 +81,18 @@ export const useListings = (options: UseListingsOptions = {}) => {
         query = query.ilike("title", `%${searchTerm}%`);
       }
 
-      // Apply sorting
+      // Apply sorting - map JavaScript camelCase to database snake_case
+      const sortFieldMap: Record<string, string> = {
+        'createdAt': 'created_at',
+        'updatedAt': 'updated_at',
+        'price': 'price'
+      };
+
       const [sortField, sortOrder] = sortBy.split("-");
-      if (sortField && sortOrder) {
-        query = query.order(sortField, { ascending: sortOrder === "asc" });
+      const dbSortField = sortFieldMap[sortField] || sortField;
+      
+      if (dbSortField && sortOrder) {
+        query = query.order(dbSortField, { ascending: sortOrder === "asc" });
       }
 
       // Apply pagination

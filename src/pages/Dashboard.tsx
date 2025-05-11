@@ -107,7 +107,7 @@ const Dashboard = () => {
               <h2 className="text-2xl font-semibold tracking-tight">
                 Your Listings
               </h2>
-              <Button variant="outline" size="sm" onClick={() => navigate("/listings/new")}>
+              <Button variant="outline" size="sm" onClick={() => navigate("/listings/create")}>
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Create Listing
               </Button>
@@ -117,7 +117,7 @@ const Dashboard = () => {
               <div className="text-center py-8 text-muted-foreground">
                 <h3 className="text-lg font-medium mb-2">No listings yet</h3>
                 <p className="text-sm">Create a listing to sell your items.</p>
-                <Button variant="link" className="mt-4" onClick={() => navigate("/listings/new")}>
+                <Button variant="link" className="mt-4" onClick={() => navigate("/listings/create")}>
                   Create Listing
                 </Button>
               </div>
