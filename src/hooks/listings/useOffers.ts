@@ -34,43 +34,69 @@ export const useOffers = ({ listingId, onOfferSuccess }: UseOffersOptions = {}) 
         .eq("id", listingId)
         .single();
 
-      let query = supabase
+      // Fetch the offers
+      let offersQuery = supabase
         .from("offers")
-        .select(`
-          *,
-          profiles(
-            full_name,
-            avatar_url
-          )
-        `)
+        .select("*")
         .eq("listing_id", listingId);
 
       // If user is not the seller, only show their own offers
       if (!listing || listing.seller_id !== user.id) {
-        query = query.eq("user_id", user.id);
+        offersQuery = offersQuery.eq("user_id", user.id);
       }
 
-      const { data, error } = await query.order("created_at", { ascending: false });
+      const { data: offersData, error: offersError } = await offersQuery
+        .order("created_at", { ascending: false });
 
-      if (error) {
-        throw error;
+      if (offersError) {
+        throw offersError;
       }
 
-      // Convert database records to Offer type
-      const mappedOffers: Offer[] = data.map(item => ({
-        id: item.id,
-        userId: item.user_id,
-        listingId: item.listing_id,
-        amount: Number(item.amount),
-        message: item.message,
-        status: item.status,
-        createdAt: new Date(item.created_at),
-        updatedAt: new Date(item.updated_at),
-        user: item.profiles ? {
-          fullName: item.profiles.full_name,
-          avatarUrl: item.profiles.avatar_url,
-        } : undefined
-      }));
+      // Collect user IDs to fetch their profiles in a single query
+      const userIds = [...new Set(offersData.map(offer => offer.user_id))];
+      
+      // Get profiles for these users if there are any offers
+      let profilesMap: Record<string, { full_name: string | null, avatar_url: string | null }> = {};
+      
+      if (userIds.length > 0) {
+        const { data: profilesData, error: profilesError } = await supabase
+          .from("profiles")
+          .select("id, full_name, avatar_url")
+          .in("id", userIds);
+        
+        if (profilesError) {
+          throw profilesError;
+        }
+        
+        // Create a map of user_id to profile data for easy lookup
+        profilesMap = profilesData.reduce((map, profile) => {
+          map[profile.id] = { 
+            full_name: profile.full_name, 
+            avatar_url: profile.avatar_url 
+          };
+          return map;
+        }, {} as Record<string, { full_name: string | null, avatar_url: string | null }>);
+      }
+
+      // Map offers with profile data
+      const mappedOffers: Offer[] = offersData.map(item => {
+        const profile = profilesMap[item.user_id];
+        
+        return {
+          id: item.id,
+          userId: item.user_id,
+          listingId: item.listing_id,
+          amount: Number(item.amount),
+          message: item.message,
+          status: item.status,
+          createdAt: new Date(item.created_at),
+          updatedAt: new Date(item.updated_at),
+          user: profile ? {
+            fullName: profile.full_name,
+            avatarUrl: profile.avatar_url,
+          } : undefined
+        };
+      });
 
       setOffers(mappedOffers);
     } catch (err) {

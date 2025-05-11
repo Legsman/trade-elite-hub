@@ -29,35 +29,60 @@ export const useBids = ({ listingId, onBidSuccess }: UseBidsOptions = {}) => {
     setError(null);
 
     try {
-      const { data, error } = await supabase
+      // First, fetch the bids
+      const { data: bidsData, error: bidsError } = await supabase
         .from("bids")
-        .select(`
-          *,
-          profiles(
-            full_name,
-            avatar_url
-          )
-        `)
+        .select("*")
         .eq("listing_id", listingId)
         .order("amount", { ascending: false });
 
-      if (error) {
-        throw error;
+      if (bidsError) {
+        throw bidsError;
       }
 
-      // Convert database records to Bid type
-      const mappedBids: Bid[] = data.map(item => ({
-        id: item.id,
-        userId: item.user_id,
-        listingId: item.listing_id,
-        amount: Number(item.amount),
-        createdAt: new Date(item.created_at),
-        status: item.status,
-        user: item.profiles ? {
-          fullName: item.profiles.full_name,
-          avatarUrl: item.profiles.avatar_url,
-        } : undefined
-      }));
+      // Collect user IDs to fetch their profiles in a single query
+      const userIds = [...new Set(bidsData.map(bid => bid.user_id))];
+      
+      // Get profiles for these users if there are any bids
+      let profilesMap: Record<string, { full_name: string | null, avatar_url: string | null }> = {};
+      
+      if (userIds.length > 0) {
+        const { data: profilesData, error: profilesError } = await supabase
+          .from("profiles")
+          .select("id, full_name, avatar_url")
+          .in("id", userIds);
+        
+        if (profilesError) {
+          throw profilesError;
+        }
+        
+        // Create a map of user_id to profile data for easy lookup
+        profilesMap = profilesData.reduce((map, profile) => {
+          map[profile.id] = { 
+            full_name: profile.full_name, 
+            avatar_url: profile.avatar_url 
+          };
+          return map;
+        }, {} as Record<string, { full_name: string | null, avatar_url: string | null }>);
+      }
+
+      // Map bids with profile data
+      const mappedBids: Bid[] = bidsData.map(item => {
+        const profile = profilesMap[item.user_id];
+        
+        return {
+          id: item.id,
+          userId: item.user_id,
+          listingId: item.listing_id,
+          amount: Number(item.amount),
+          createdAt: new Date(item.created_at),
+          status: item.status,
+          user: profile ? {
+            fullName: profile.full_name,
+            avatarUrl: profile.avatar_url,
+          } : undefined
+        };
+      });
 
       setBids(mappedBids);
       
