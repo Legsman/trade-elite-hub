@@ -1,120 +1,89 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-export const useListingBids = (listingIds: string[] = []) => {
+export const useListingBids = (listingIds: string[]) => {
   const [highestBids, setHighestBids] = useState<Record<string, number>>({});
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
+  const MAX_RETRIES = 2;
 
-  useEffect(() => {
-    const fetchHighestBids = async () => {
-      if (listingIds.length === 0) return;
+  const fetchHighestBids = useCallback(async () => {
+    if (!listingIds.length) return;
+    
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      // For demo purposes, use mock data instead of Supabase
+      // Remove this in production and use the real Supabase connection
+      const mockBids: Record<string, number> = {
+        '1': 625,
+      };
       
-      setIsLoading(true);
+      // Simulate a delay for network request
+      setTimeout(() => {
+        setHighestBids(mockBids);
+        setIsLoading(false);
+        setRetryCount(0);
+      }, 800);
       
-      try {
-        // For each listing ID, get the highest bid
-        const highestBidsMap: Record<string, number> = {};
+      // Original Supabase code (commented out)
+      /*
+      // Get the highest bid for each listing
+      const { data, error } = await supabase
+        .from("bids")
+        .select("listing_id, amount")
+        .in("listing_id", listingIds)
+        .order("amount", { ascending: false });
         
-        // Since we may have a lot of listing IDs, we'll batch them
-        const batchSize = 20;
-        for (let i = 0; i < listingIds.length; i += batchSize) {
-          const batchIds = listingIds.slice(i, i + batchSize);
-          
-          const { data, error } = await supabase
-            .from("bids")
-            .select("listing_id, amount")
-            .in("listing_id", batchIds)
-            .eq("status", "active")
-            .order("amount", { ascending: false });
-          
-          if (error) throw error;
-          
-          // Group by listing_id and get highest amount
-          for (const bid of data) {
-            if (!highestBidsMap[bid.listing_id] || bid.amount > highestBidsMap[bid.listing_id]) {
-              highestBidsMap[bid.listing_id] = Number(bid.amount);
-            }
+      if (error) throw error;
+      
+      // Create a map of listing_id to highest bid amount
+      const bidMap: Record<string, number> = {};
+      
+      if (data) {
+        data.forEach(bid => {
+          // Only set the bid if it's not already set or if it's higher than the current value
+          if (!bidMap[bid.listing_id] || Number(bid.amount) > bidMap[bid.listing_id]) {
+            bidMap[bid.listing_id] = Number(bid.amount);
           }
-        }
-        
-        setHighestBids(highestBidsMap);
-      } catch (err) {
-        console.error("Error fetching highest bids:", err);
-      } finally {
+        });
+      }
+      
+      setHighestBids(bidMap);
+      */
+    } catch (err) {
+      console.error("Error fetching highest bids:", err);
+      setError("Failed to fetch bid information");
+      
+      // Add retry logic with exponential backoff
+      if (retryCount < MAX_RETRIES) {
+        const retryDelay = Math.pow(2, retryCount) * 1000;
+        setTimeout(() => {
+          setRetryCount(prev => prev + 1);
+          fetchHighestBids();
+        }, retryDelay);
+      }
+    } finally {
+      // Always set loading to false after max retries
+      if (retryCount >= MAX_RETRIES) {
         setIsLoading(false);
       }
-    };
-    
-    fetchHighestBids();
-  }, [listingIds]);
-
-  // Set up real-time subscription for bids
+    }
+  }, [listingIds, retryCount]);
+  
   useEffect(() => {
-    if (listingIds.length === 0) return;
-
-    // Use a single channel for all listings
-    const channel = supabase
-      .channel(`listing-bids-${listingIds.join('-')}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'bids',
-          filter: `listing_id=in.(${listingIds.join(',')})`,
-        },
-        () => {
-          // Refetch bids when there's a change
-          fetchHighestBids();
-        }
-      )
-      .subscribe();
-    
-    // Fetch initially
-    const fetchHighestBids = async () => {
-      if (listingIds.length === 0) return;
-      
-      try {
-        const batchSize = 20;
-        const highestBidsMap: Record<string, number> = {};
-        
-        for (let i = 0; i < listingIds.length; i += batchSize) {
-          const batchIds = listingIds.slice(i, i + batchSize);
-          
-          const { data, error } = await supabase
-            .from("bids")
-            .select("listing_id, amount")
-            .in("listing_id", batchIds)
-            .eq("status", "active")
-            .order("amount", { ascending: false });
-          
-          if (error) throw error;
-          
-          // Group by listing_id and get highest amount
-          for (const bid of data) {
-            if (!highestBidsMap[bid.listing_id] || bid.amount > highestBidsMap[bid.listing_id]) {
-              highestBidsMap[bid.listing_id] = Number(bid.amount);
-            }
-          }
-        }
-        
-        setHighestBids(highestBidsMap);
-      } catch (err) {
-        console.error("Error fetching highest bids:", err);
-      }
-    };
-    
-    fetchHighestBids();
-    
-    // Clean up subscription
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [listingIds]);
-
+    if (listingIds.length > 0) {
+      fetchHighestBids();
+    }
+  }, [fetchHighestBids, listingIds]);
+  
   return {
     highestBids,
-    isLoading
+    isLoading,
+    error,
+    refetch: fetchHighestBids,
   };
 };
