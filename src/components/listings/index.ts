@@ -17,5 +17,6 @@ export * from './BidForm';
 export * from './BidHistory';
 export * from './OfferForm';
 export * from './OfferManagement';
+export * from './CollapsibleBidForm';
 export * from './form/ImageEnlargeModal';
 export * from './form';

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { 
@@ -55,7 +54,9 @@ import {
   ListingDetailsTabs, 
   ListingCountdown,
   AuctionSection,
-  OfferSection 
+  OfferSection,
+  BidHistory,
+  CollapsibleBidForm
 } from "@/components/listings";
 
 const ListingDetails = () => {
@@ -66,7 +67,7 @@ const ListingDetails = () => {
   const { seller, isLoading: sellerLoading } = useSellerProfile(listing?.sellerId);
   const { startConversation } = useStartConversation();
   const { trackEvent } = useAnalytics();
-  const { highestBid } = useBids({ listingId: id });
+  const { highestBid, bids, fetchBids, getUserBidStatus } = useBids({ listingId: id });
   
   const [isSaved, setIsSaved] = useState(false);
   const [savingState, setSavingState] = useState(false);
@@ -207,6 +208,20 @@ const ListingDetails = () => {
     }).format(date);
   };
 
+  // Handle placing a bid
+  const handlePlaceBid = async (amount: number) => {
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please log in to place a bid",
+        variant: "destructive",
+      });
+      return { success: false };
+    }
+    
+    return await placeBid(amount);
+  };
+
   if (isLoading) {
     return (
       <MainLayout>
@@ -329,12 +344,14 @@ const ListingDetails = () => {
               
               <TabsContent value="bids">
                 {isAuction && (
-                  <AuctionSection 
-                    listingId={listing.id}
-                    sellerId={listing.sellerId}
-                    currentPrice={listing.price}
-                    userId={user?.id}
-                  />
+                  <div className="space-y-6">
+                    <BidHistory 
+                      bids={bids}
+                      isLoading={isLoading}
+                      onRefresh={fetchBids}
+                      currentUserId={user?.id}
+                    />
+                  </div>
                 )}
               </TabsContent>
               
@@ -371,26 +388,38 @@ const ListingDetails = () => {
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
+                {/* If auction, show CollapsibleBidForm */}
                 {isAuction ? (
-                  <div className="space-y-1">
-                    {highestBid ? (
-                      <div className="flex items-baseline">
-                        <div className="flex items-center">
-                          <Gavel className="h-4 w-4 mr-1 text-purple" />
-                          <span className="text-sm text-muted-foreground">Current bid:</span>
+                  listing.sellerId !== user?.id && user ? (
+                    <CollapsibleBidForm
+                      listingId={listing.id}
+                      currentPrice={listing.price}
+                      highestBid={highestBid}
+                      onPlaceBid={handlePlaceBid}
+                      userBidStatus={getUserBidStatus()}
+                      expiryDate={listing.expiresAt}
+                    />
+                  ) : (
+                    <div className="space-y-1">
+                      {highestBid ? (
+                        <div className="flex items-baseline">
+                          <div className="flex items-center">
+                            <Gavel className="h-4 w-4 mr-1 text-purple" />
+                            <span className="text-sm text-muted-foreground">Current bid:</span>
+                          </div>
+                          <span className="text-3xl font-bold text-purple ml-2">£{highestBid.toLocaleString()}</span>
                         </div>
-                        <span className="text-3xl font-bold text-purple ml-2">£{highestBid.toLocaleString()}</span>
-                      </div>
-                    ) : (
-                      <div className="flex items-baseline">
-                        <div className="flex items-center">
-                          <Gavel className="h-4 w-4 mr-1" />
-                          <span className="text-sm text-muted-foreground">Starting bid:</span>
+                      ) : (
+                        <div className="flex items-baseline">
+                          <div className="flex items-center">
+                            <Gavel className="h-4 w-4 mr-1" />
+                            <span className="text-sm text-muted-foreground">Starting bid:</span>
+                          </div>
+                          <span className="text-3xl font-bold text-purple ml-2">£{listing.price.toLocaleString()}</span>
                         </div>
-                        <span className="text-3xl font-bold text-purple ml-2">£{listing.price.toLocaleString()}</span>
-                      </div>
-                    )}
-                  </div>
+                      )}
+                    </div>
+                  )
                 ) : (
                   <div className="flex items-baseline">
                     <span className="text-3xl font-bold text-purple">£{listing.price.toLocaleString()}</span>
@@ -420,7 +449,7 @@ const ListingDetails = () => {
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <div> {/* Wrapper div to avoid button inside button warning */}
+                        <div>
                           <Button 
                             variant={isSaved ? "default" : "outline"} 
                             size="icon"
@@ -461,7 +490,7 @@ const ListingDetails = () => {
                   </TooltipProvider>
                 </div>
                 
-                {!isAuction && listing.allowBestOffer && listing.sellerId !== user?.id && (
+                {!isAuction && listing.allowBestOffer && listing.sellerId !== user?.id && user && (
                   <Button 
                     variant="outline" 
                     className="w-full"
@@ -471,20 +500,20 @@ const ListingDetails = () => {
                   </Button>
                 )}
                 
-                {isAuction && listing.sellerId !== user?.id && (
+                {!user && (
                   <Button 
                     variant="outline" 
                     className="w-full"
-                    onClick={() => setActiveTab("bids")}
+                    onClick={() => navigate("/login", { state: { redirect: window.location.pathname } })}
                   >
-                    Place a Bid
+                    Log in to {isAuction ? "Place a Bid" : "Make an Offer"}
                   </Button>
                 )}
                 
                 <div className="flex items-center justify-between text-sm text-muted-foreground">
                   <span>Views: {listing.views}</span>
                   <span>
-                    {isAuction ? `Bids: ${listing.saves}` : `Saves: ${listing.saves}`}
+                    {isAuction ? `Bids: ${bids.length}` : `Saves: ${listing.saves}`}
                   </span>
                 </div>
               </CardContent>

@@ -5,6 +5,7 @@ import { UseBidsOptions } from "./types";
 import { useBidDataFetcher } from "./useBidDataFetcher";
 import { useBidActions } from "./useBidActions";
 import { useBidStatus } from "./useBidStatus";
+import { supabase } from "@/integrations/supabase/client";
 
 export const useBids = (options: UseBidsOptions = {}) => {
   const { listingId, onBidSuccess } = options;
@@ -17,7 +18,32 @@ export const useBids = (options: UseBidsOptions = {}) => {
   // Fetch bids on mount or when listingId changes
   useEffect(() => {
     fetchBids();
-  }, [fetchBids]);
+    
+    // Set up real-time subscription for bids
+    if (listingId) {
+      const channel = supabase
+        .channel(`bids-${listingId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'bids',
+            filter: `listing_id=eq.${listingId}`
+          },
+          () => {
+            // Refetch bids when there's a change
+            fetchBids();
+          }
+        )
+        .subscribe();
+      
+      // Clean up the subscription
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
+  }, [listingId, fetchBids]);
 
   return {
     bids,

@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from "@/components/ui/badge";
 import { Bid } from "@/types";
 import { Separator } from "@/components/ui/separator";
+import { obfuscateText } from "@/utils/stringUtils";
 
 interface BidHistoryProps {
   bids: Bid[];
@@ -93,7 +94,10 @@ export const BidHistory = ({
                   </div>
                   <div>
                     <div className="font-medium flex items-center">
-                      {bid.user?.fullName || "Anonymous"}
+                      {bid.userId === currentUserId 
+                        ? "You" 
+                        : obfuscateText(bid.user?.fullName || "Anonymous")}
+                      
                       {bid.userId === currentUserId && (
                         <Badge variant="outline" className="ml-2 text-xs">You</Badge>
                       )}
