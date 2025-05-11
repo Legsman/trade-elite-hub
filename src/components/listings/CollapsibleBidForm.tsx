@@ -17,6 +17,8 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "@/hooks/use-toast";
+import { formatCurrency } from "@/lib/utils";
 
 interface CollapsibleBidFormProps {
   listingId: string;
@@ -63,17 +65,33 @@ export const CollapsibleBidForm = ({
 
   const handleSubmit = async (values: z.infer<typeof FormSchema>) => {
     setIsSubmitting(true);
-    const result = await onPlaceBid(values.maximumBid);
-    setIsSubmitting(false);
-    
-    if (result.success) {
-      // Reset form with updated minimum bid
-      form.reset({
-        maximumBid: values.maximumBid + 5
-      });
+    try {
+      console.log("Placing bid:", values.maximumBid);
+      const result = await onPlaceBid(values.maximumBid);
       
-      // Close the form after successful bid
-      setIsOpen(false);
+      if (result.success) {
+        // Reset form with updated minimum bid
+        form.reset({
+          maximumBid: values.maximumBid + 5
+        });
+        
+        toast({
+          title: "Bid Placed Successfully",
+          description: `Your maximum bid of ${formatCurrency(values.maximumBid)} has been placed.`,
+        });
+        
+        // Close the form after successful bid
+        setIsOpen(false);
+      }
+    } catch (error) {
+      console.error("Error placing bid:", error);
+      toast({
+        title: "Bid Failed",
+        description: "There was a problem placing your bid. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/auth";
@@ -33,8 +32,8 @@ const Dashboard = () => {
     }
   }, [user, fetchSavedListings]);
   
-  // Add this to get the highest bids for saved listings
-  const { highestBids } = useListingBids(
+  // Add this to get the highest bids and bid counts for saved listings
+  const { highestBids, bidCounts } = useListingBids(
     savedListings?.filter(listing => listing.type === "auction").map(listing => listing.id) || []
   );
   
@@ -169,6 +168,7 @@ const Dashboard = () => {
                             key={listing.id} 
                             listing={listing} 
                             highestBid={listing.type === "auction" ? highestBids[listing.id] || null : null}
+                            bidCount={listing.type === "auction" ? bidCounts[listing.id] || 0 : 0}
                           />
                         ))}
                       </div>

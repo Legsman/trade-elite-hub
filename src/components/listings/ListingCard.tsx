@@ -8,14 +8,16 @@ import { ListingCountdown } from "./ListingCountdown";
 import { Gavel, Check } from "lucide-react";
 import { memo } from "react";
 import { Badge } from "@/components/ui/badge";
+import { getBidCountText } from "@/lib/utils";
 
 interface ListingCardProps {
   listing: Listing;
   onClick?: (id: string) => void;
   highestBid?: number | null;
+  bidCount?: number; // New prop to track bid count
 }
 
-export const ListingCard = memo(({ listing, onClick, highestBid }: ListingCardProps) => {
+export const ListingCard = memo(({ listing, onClick, highestBid, bidCount = 0 }: ListingCardProps) => {
   const navigate = useNavigate();
   const { trackEvent } = useAnalytics();
 
@@ -159,9 +161,7 @@ export const ListingCard = memo(({ listing, onClick, highestBid }: ListingCardPr
       <CardFooter className="p-4 flex justify-between text-xs text-muted-foreground">
         <span>{listing.views} views</span>
         {listing.type === "auction" ? (
-          <span>
-            {highestBid ? `${listing.saves || 0} bids` : "No bids yet"}
-          </span>
+          <span>{getBidCountText(bidCount)}</span>
         ) : (
           <span>{listing.saves || 0} saves</span>
         )}
