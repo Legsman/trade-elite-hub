@@ -48,7 +48,7 @@ const ListingsPage = () => {
   const condition = searchParams.get("condition") || "";
   const minPrice = searchParams.get("minPrice") || "";
   const maxPrice = searchParams.get("maxPrice") || "";
-  const sortBy = searchParams.get("sortBy") || "created_at-desc";
+  const sortBy = searchParams.get("sortBy") || "newest"; // Changed from created_at-desc to newest to match ListingFilters
   const page = searchParams.get("page") || "1";
   const [priceRange, setPriceRange] = useState<number[]>([
     minPrice ? parseInt(minPrice) : 0,
@@ -146,12 +146,12 @@ const ListingsPage = () => {
                 <CardDescription>Filter by category</CardDescription>
               </CardHeader>
               <CardContent>
-                <Select value={category} onValueChange={handleCategoryChange}>
+                <Select value={category || "all_categories"} onValueChange={handleCategoryChange}>
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="All Categories" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Categories</SelectItem>
+                    <SelectItem value="all_categories">All Categories</SelectItem>
                     <SelectItem value="electronics">Electronics</SelectItem>
                     <SelectItem value="clothing">Clothing</SelectItem>
                     <SelectItem value="furniture">Furniture</SelectItem>
@@ -168,12 +168,12 @@ const ListingsPage = () => {
                 <CardDescription>Filter by listing type</CardDescription>
               </CardHeader>
               <CardContent>
-                <Select value={type} onValueChange={handleTypeChange}>
+                <Select value={type || "all_types"} onValueChange={handleTypeChange}>
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="All Types" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Types</SelectItem>
+                    <SelectItem value="all_types">All Types</SelectItem>
                     <SelectItem value="auction">Auction</SelectItem>
                     <SelectItem value="sale">For Sale</SelectItem>
                   </SelectContent>
@@ -187,12 +187,12 @@ const ListingsPage = () => {
                 <CardDescription>Filter by location</CardDescription>
               </CardHeader>
               <CardContent>
-                <Select value={location} onValueChange={handleLocationChange}>
+                <Select value={location || "all_locations"} onValueChange={handleLocationChange}>
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="All Locations" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Locations</SelectItem>
+                    <SelectItem value="all_locations">All Locations</SelectItem>
                     <SelectItem value="london">London</SelectItem>
                     <SelectItem value="manchester">Manchester</SelectItem>
                     <SelectItem value="birmingham">Birmingham</SelectItem>
@@ -209,15 +209,15 @@ const ListingsPage = () => {
                 <CardDescription>Filter by item condition</CardDescription>
               </CardHeader>
               <CardContent>
-                <Select value={condition} onValueChange={handleConditionChange}>
+                <Select value={condition || "all_conditions"} onValueChange={handleConditionChange}>
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="All Conditions" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Conditions</SelectItem>
+                    <SelectItem value="all_conditions">All Conditions</SelectItem>
                     <SelectItem value="new">New</SelectItem>
                     <SelectItem value="used">Used</SelectItem>
-                    <SelectItem value="like new">Like New</SelectItem>
+                    <SelectItem value="like_new">Like New</SelectItem>
                     <SelectItem value="fair">Fair</SelectItem>
                   </SelectContent>
                 </Select>
@@ -270,15 +270,16 @@ const ListingsPage = () => {
                 <CardDescription>Sort listings by</CardDescription>
               </CardHeader>
               <CardContent>
-                <Select value={sortBy} onValueChange={handleSortChange}>
+                <Select value={sortBy || "newest"} onValueChange={handleSortChange}>
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Newest" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="created_at-desc">Newest</SelectItem>
-                    <SelectItem value="created_at-asc">Oldest</SelectItem>
-                    <SelectItem value="price-asc">Price: Low to High</SelectItem>
-                    <SelectItem value="price-desc">Price: High to Low</SelectItem>
+                    <SelectItem value="newest">Newest</SelectItem>
+                    <SelectItem value="oldest">Oldest</SelectItem>
+                    <SelectItem value="price-low">Price: Low to High</SelectItem>
+                    <SelectItem value="price-high">Price: High to Low</SelectItem>
+                    <SelectItem value="popular">Most Popular</SelectItem>
                   </SelectContent>
                 </Select>
               </CardContent>

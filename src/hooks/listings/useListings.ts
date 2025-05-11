@@ -36,7 +36,7 @@ export const useListings = (options: UseListingsOptions = {}) => {
         condition,
         minPrice,
         maxPrice,
-        sortBy = "created_at-desc",
+        sortBy = "newest",
         page = "1",
         allowBestOffer,
         searchTerm,
@@ -81,19 +81,47 @@ export const useListings = (options: UseListingsOptions = {}) => {
         query = query.ilike("title", `%${searchTerm}%`);
       }
 
-      // Apply sorting - map JavaScript camelCase to database snake_case
-      const sortFieldMap: Record<string, string> = {
-        'createdAt': 'created_at',
-        'updatedAt': 'updated_at',
-        'price': 'price'
-      };
+      // Apply sorting - map UI sort values to database fields
+      let dbSortField = "created_at";
+      let isAscending = false;
 
-      const [sortField, sortOrder] = sortBy.split("-");
-      const dbSortField = sortFieldMap[sortField] || sortField;
-      
-      if (dbSortField && sortOrder) {
-        query = query.order(dbSortField, { ascending: sortOrder === "asc" });
+      switch (sortBy) {
+        case "newest":
+          dbSortField = "created_at";
+          isAscending = false;
+          break;
+        case "oldest":
+          dbSortField = "created_at";
+          isAscending = true;
+          break;
+        case "price-low":
+        case "price-asc":
+          dbSortField = "price";
+          isAscending = true;
+          break;
+        case "price-high": 
+        case "price-desc":
+          dbSortField = "price";
+          isAscending = false;
+          break;
+        case "popular":
+          dbSortField = "views";
+          isAscending = false;
+          break;
+        default:
+          // If sortBy contains a dash, parse it
+          if (sortBy && sortBy.includes("-")) {
+            const [field, order] = sortBy.split("-");
+            if (field === "created_at" || field === "price") {
+              dbSortField = field;
+              isAscending = order === "asc";
+            }
+          }
+          break;
       }
+      
+      // Apply sorting
+      query = query.order(dbSortField, { ascending: isAscending });
 
       // Apply pagination
       const pageSize = 9; // Number of items per page
