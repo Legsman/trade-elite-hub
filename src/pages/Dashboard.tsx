@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/auth";
@@ -496,7 +495,7 @@ const SoldItemsTab = ({ userId }: { userId: string }) => {
       setIsLoading(true);
       try {
         // Fetch listings with status "sold"
-        const { data, error } = await supabase
+        const { data: soldListings, error: listingsError } = await supabase
           .from("listings")
           .select(`
             *,
@@ -504,23 +503,50 @@ const SoldItemsTab = ({ userId }: { userId: string }) => {
               amount, 
               user_id,
               status,
-              updated_at,
-              profiles (
-                full_name,
-                avatar_url
-              )
+              updated_at
             )
           `)
           .eq("seller_id", userId)
           .eq("status", "sold")
           .order("updated_at", { ascending: false });
         
-        if (error) throw error;
+        if (listingsError) throw listingsError;
+        
+        // Fetch user profiles separately for the buyers
+        const buyerIds = soldListings
+          .map(item => {
+            const acceptedOffer = item.offers.find(o => o.status === "accepted");
+            return acceptedOffer ? acceptedOffer.user_id : null;
+          })
+          .filter(id => id !== null);
+        
+        // Only fetch profiles if there are buyer IDs
+        let buyerProfiles = {};
+        if (buyerIds.length > 0) {
+          const { data: profiles, error: profilesError } = await supabase
+            .from("profiles")
+            .select("id, full_name, avatar_url")
+            .in("id", buyerIds);
+            
+          if (profilesError) throw profilesError;
+          
+          // Create a map of user_id to profile data
+          buyerProfiles = profiles.reduce((acc, profile) => {
+            acc[profile.id] = {
+              name: profile.full_name || "Unknown User",
+              avatar: profile.avatar_url
+            };
+            return acc;
+          }, {});
+        }
         
         // Transform to include buyer info and sale price
-        const transformedItems = data.map(item => {
+        const transformedItems = soldListings.map(item => {
           // Find accepted offer to get sale details
           const acceptedOffer = item.offers.find(o => o.status === "accepted");
+          
+          // Get buyer profile from our map if available
+          const buyerProfile = acceptedOffer && buyerProfiles[acceptedOffer.user_id];
           
           return {
             ...item,
@@ -531,8 +557,8 @@ const SoldItemsTab = ({ userId }: { userId: string }) => {
             saleDate: acceptedOffer ? new Date(acceptedOffer.updated_at) : new Date(item.updated_at),
             buyer: acceptedOffer ? {
               id: acceptedOffer.user_id,
-              name: acceptedOffer.profiles?.full_name || "Unknown User",
-              avatar: acceptedOffer.profiles?.avatar_url
+              name: buyerProfile?.name || "Unknown User",
+              avatar: buyerProfile?.avatar
             } : null
           };
         });
