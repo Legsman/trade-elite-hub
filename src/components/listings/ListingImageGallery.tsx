@@ -1,7 +1,10 @@
 
 import { useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, ZoomIn } from "lucide-react";
 import { useAnalytics } from "@/hooks/use-analytics";
+import { Button } from "@/components/ui/button";
+import { ImageEnlargeModal } from "./form/ImageEnlargeModal";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface ListingImageGalleryProps {
   images: string[];
@@ -15,6 +18,7 @@ export const ListingImageGallery = ({
   title
 }: ListingImageGalleryProps) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [enlargeModalOpen, setEnlargeModalOpen] = useState(false);
   const { trackEvent } = useAnalytics();
 
   const handlePrevImage = () => {
@@ -31,13 +35,19 @@ export const ListingImageGallery = ({
     trackEvent("listing_image_next", { listingId });
   };
 
+  const handleEnlargeImage = () => {
+    setEnlargeModalOpen(true);
+    trackEvent("listing_image_enlarge", { listingId });
+  };
+
   return (
     <div className="relative rounded-lg overflow-hidden border">
       <div className="aspect-video relative">
         <img 
           src={images[currentImageIndex]} 
           alt={title}
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover cursor-zoom-in"
+          onClick={handleEnlargeImage}
         />
         
         {images.length > 1 && (
@@ -56,6 +66,25 @@ export const ListingImageGallery = ({
             </button>
           </>
         )}
+
+        {/* Enlarge button */}
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                className="absolute top-4 right-4 bg-background/80 hover:bg-background"
+                size="icon"
+                variant="ghost"
+                onClick={handleEnlargeImage}
+              >
+                <ZoomIn className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Enlarge image</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
 
         <div className="absolute bottom-4 right-4 bg-background/80 rounded-full px-3 py-1 text-sm">
           {currentImageIndex + 1} / {images.length}
@@ -83,6 +112,15 @@ export const ListingImageGallery = ({
           ))}
         </div>
       )}
+
+      {/* Enlarge Modal */}
+      <ImageEnlargeModal 
+        images={images}
+        initialIndex={currentImageIndex}
+        open={enlargeModalOpen}
+        onOpenChange={setEnlargeModalOpen}
+        title={title}
+      />
     </div>
   );
 };

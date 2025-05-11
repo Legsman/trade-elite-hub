@@ -1,11 +1,9 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { 
   Heart, 
   Share2,
   MessageSquare,
-  Clock,
   MapPin,
   AlertCircle,
   ChevronLeft,
@@ -44,6 +42,7 @@ import { useAnalytics } from "@/hooks/use-analytics";
 import { Loading } from "@/components/ui/loading";
 import { ListingImageGallery } from "@/components/listings/ListingImageGallery";
 import { ListingDetailsTabs } from "@/components/listings/ListingDetailsTabs";
+import { ListingCountdown } from "@/components/listings/ListingCountdown";
 
 const ListingDetails = () => {
   const { id } = useParams();
@@ -271,14 +270,11 @@ const ListingDetails = () => {
                   )}
                 </div>
                 
-                <div className="flex items-center text-sm text-muted-foreground">
-                  <Clock className="h-4 w-4 mr-1" />
-                  <span>
-                    {daysUntilExpiry > 0 
-                      ? `${daysUntilExpiry} days remaining` 
-                      : "Listing expired"}
-                  </span>
-                </div>
+                {/* Replace the old time remaining display with our new countdown component */}
+                <ListingCountdown 
+                  expiryDate={listing.expiresAt} 
+                  isAuction={listing.type === "auction"}
+                />
                 
                 <div className="flex items-center gap-2">
                   <Button 

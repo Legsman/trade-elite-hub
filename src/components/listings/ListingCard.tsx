@@ -4,6 +4,7 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Listing } from "@/types";
 import { useAnalytics } from "@/hooks/use-analytics";
+import { ListingCountdown } from "./ListingCountdown";
 
 interface ListingCardProps {
   listing: Listing;
@@ -23,6 +24,15 @@ export const ListingCard = ({ listing, onClick }: ListingCardProps) => {
     }
   };
 
+  // Check if auction is ending soon (within 6 hours)
+  const isEndingSoon = () => {
+    if (listing.type !== "auction") return false;
+    
+    const now = new Date();
+    const hoursRemaining = (listing.expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60);
+    return hoursRemaining <= 6;
+  };
+
   return (
     <Card
       className="overflow-hidden cursor-pointer transition-all hover:shadow-md"
@@ -38,6 +48,13 @@ export const ListingCard = ({ listing, onClick }: ListingCardProps) => {
         <div className="absolute top-2 right-2 bg-background/90 text-xs font-medium rounded-full px-2 py-1">
           {listing.type === "auction" ? "Auction" : "For Sale"}
         </div>
+        
+        {/* Add badge for auctions ending soon */}
+        {isEndingSoon() && (
+          <div className="absolute bottom-2 left-2 bg-red-500 text-white text-xs font-medium rounded-full px-2 py-1 animate-pulse">
+            Ending Soon
+          </div>
+        )}
       </div>
       <CardContent className="p-4">
         <div className="mb-2">
@@ -51,7 +68,15 @@ export const ListingCard = ({ listing, onClick }: ListingCardProps) => {
         <div className="mt-1 text-lg font-bold text-purple">
           £{listing.price.toLocaleString()}
         </div>
-        <p className="mt-2 text-sm line-clamp-2">{listing.description}</p>
+        
+        {/* Add compact countdown */}
+        <div className="mt-2">
+          <ListingCountdown 
+            expiryDate={listing.expiresAt} 
+            isAuction={listing.type === "auction"} 
+            className="text-xs"
+          />
+        </div>
       </CardContent>
       <Separator />
       <CardFooter className="p-4 flex justify-between text-xs text-muted-foreground">
