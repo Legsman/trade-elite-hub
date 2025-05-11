@@ -5,13 +5,15 @@ import { Separator } from "@/components/ui/separator";
 import { Listing } from "@/types";
 import { useAnalytics } from "@/hooks/use-analytics";
 import { ListingCountdown } from "./ListingCountdown";
+import { Gavel } from "lucide-react";
 
 interface ListingCardProps {
   listing: Listing;
   onClick?: (id: string) => void;
+  highestBid?: number | null;
 }
 
-export const ListingCard = ({ listing, onClick }: ListingCardProps) => {
+export const ListingCard = ({ listing, onClick, highestBid }: ListingCardProps) => {
   const navigate = useNavigate();
   const { trackEvent } = useAnalytics();
 
@@ -65,9 +67,31 @@ export const ListingCard = ({ listing, onClick }: ListingCardProps) => {
             {listing.location}
           </p>
         </div>
-        <div className="mt-1 text-lg font-bold text-purple">
-          £{listing.price.toLocaleString()}
-        </div>
+        
+        {listing.type === "auction" ? (
+          <div className="mt-1">
+            {highestBid ? (
+              <div className="flex items-center">
+                <Gavel className="h-4 w-4 mr-1 text-purple" />
+                <div className="text-lg font-bold text-purple">
+                  £{highestBid.toLocaleString()}
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center">
+                <Gavel className="h-4 w-4 mr-1" />
+                <div className="text-lg font-bold text-purple">
+                  £{listing.price.toLocaleString()}
+                </div>
+                <span className="text-xs text-muted-foreground ml-1">(starting bid)</span>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="mt-1 text-lg font-bold text-purple">
+            £{listing.price.toLocaleString()}
+          </div>
+        )}
         
         {/* Add compact countdown */}
         <div className="mt-2">
@@ -81,7 +105,13 @@ export const ListingCard = ({ listing, onClick }: ListingCardProps) => {
       <Separator />
       <CardFooter className="p-4 flex justify-between text-xs text-muted-foreground">
         <span>{listing.views} views</span>
-        <span>{listing.saves} saves</span>
+        {listing.type === "auction" ? (
+          <span>
+            {highestBid ? `${listing.saves} bids` : "No bids yet"}
+          </span>
+        ) : (
+          <span>{listing.saves} saves</span>
+        )}
         <span className="capitalize">{listing.category}</span>
       </CardFooter>
     </Card>

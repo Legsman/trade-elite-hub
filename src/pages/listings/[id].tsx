@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { 
@@ -11,7 +12,8 @@ import {
   User,
   Star,
   ThumbsUp,
-  Loader2
+  Loader2,
+  Gavel
 } from "lucide-react";
 import MainLayout from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
@@ -31,18 +33,30 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogFooter, 
+  DialogHeader, 
+  DialogTitle 
+} from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/auth";
-import { useListing } from "@/hooks/listings";
+import { useListing, useBids } from "@/hooks/listings";
 import { useSellerProfile } from "@/hooks/use-user-profile";
 import { useStartConversation } from "@/hooks/use-message";
 import { toast } from "@/hooks/use-toast";
 import { useAnalytics } from "@/hooks/use-analytics";
 import { Loading } from "@/components/ui/loading";
-import { ListingImageGallery } from "@/components/listings/ListingImageGallery";
-import { ListingDetailsTabs } from "@/components/listings/ListingDetailsTabs";
-import { ListingCountdown } from "@/components/listings/ListingCountdown";
+import { 
+  ListingImageGallery, 
+  ListingDetailsTabs, 
+  ListingCountdown,
+  AuctionSection,
+  OfferSection 
+} from "@/components/listings";
 
 const ListingDetails = () => {
   const { id } = useParams();
@@ -52,12 +66,14 @@ const ListingDetails = () => {
   const { seller, isLoading: sellerLoading } = useSellerProfile(listing?.sellerId);
   const { startConversation } = useStartConversation();
   const { trackEvent } = useAnalytics();
+  const { highestBid } = useBids({ listingId: id });
   
   const [isSaved, setIsSaved] = useState(false);
   const [savingState, setSavingState] = useState(false);
   const [messageOpen, setMessageOpen] = useState(false);
   const [messageContent, setMessageContent] = useState("");
   const [sendingMessage, setSendingMessage] = useState(false);
+  const [activeTab, setActiveTab] = useState("details");
   
   const isLoading = listingLoading || sellerLoading;
 
@@ -217,6 +233,9 @@ const ListingDetails = () => {
     (listing.expiresAt.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
   );
 
+  const isAuction = listing.type === "auction";
+  const displayPrice = isAuction && highestBid ? highestBid : listing.price;
+
   return (
     <MainLayout>
       <div className="container py-8">
@@ -240,6 +259,97 @@ const ListingDetails = () => {
 
             {/* Listing information */}
             <ListingDetailsTabs listing={listing} />
+            
+            {/* Auction Bids / Make Offer Tab */}
+            <Tabs 
+              value={activeTab} 
+              onValueChange={setActiveTab}
+              className="space-y-4"
+            >
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="details">Details</TabsTrigger>
+                <TabsTrigger value={isAuction ? "bids" : "offers"}>
+                  {isAuction ? "Bids" : "Make an Offer"}
+                </TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="details">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Item Details</CardTitle>
+                    <CardDescription>
+                      More information about this {isAuction ? "auction" : "listing"}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-8">
+                      <div className="space-y-4">
+                        <div>
+                          <h4 className="text-sm font-medium text-muted-foreground">Item Condition</h4>
+                          <p className="font-medium">{listing.condition}</p>
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-medium text-muted-foreground">Category</h4>
+                          <p className="font-medium capitalize">{listing.category}</p>
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-medium text-muted-foreground">Location</h4>
+                          <p className="font-medium">{listing.location}</p>
+                        </div>
+                      </div>
+                      <div className="space-y-4">
+                        <div>
+                          <h4 className="text-sm font-medium text-muted-foreground">Listing Type</h4>
+                          <p className="font-medium capitalize">{listing.type}</p>
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-medium text-muted-foreground">Listed On</h4>
+                          <p className="font-medium">{formatDate(listing.createdAt)}</p>
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-medium text-muted-foreground">Expires On</h4>
+                          <p className="font-medium">{formatDate(listing.expiresAt)}</p>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <Separator className="my-6" />
+                    
+                    <div>
+                      <h4 className="text-sm font-medium text-muted-foreground mb-2">Description</h4>
+                      <div className="space-y-2">
+                        {listing.description.split('\n\n').map((paragraph, idx) => (
+                          <p key={idx}>{paragraph}</p>
+                        ))}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+              
+              <TabsContent value="bids">
+                {isAuction && (
+                  <AuctionSection 
+                    listingId={listing.id}
+                    sellerId={listing.sellerId}
+                    currentPrice={listing.price}
+                    userId={user?.id}
+                  />
+                )}
+              </TabsContent>
+              
+              <TabsContent value="offers">
+                {!isAuction && listing.allowBestOffer && (
+                  <OfferSection 
+                    listingId={listing.id}
+                    listingTitle={listing.title}
+                    sellerId={listing.sellerId}
+                    currentPrice={listing.price}
+                    userId={user?.id}
+                  />
+                )}
+              </TabsContent>
+            </Tabs>
           </div>
 
           {/* Right column - Price and seller info */}
@@ -255,25 +365,47 @@ const ListingDetails = () => {
                       {listing.location}
                     </div>
                   </div>
-                  <Badge variant={listing.type === "auction" ? "secondary" : "outline"}>
-                    {listing.type === "auction" ? "Auction" : "For Sale"}
+                  <Badge variant={isAuction ? "secondary" : "outline"}>
+                    {isAuction ? "Auction" : "For Sale"}
                   </Badge>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex items-baseline">
-                  <span className="text-3xl font-bold text-purple">£{listing.price.toLocaleString()}</span>
-                  {listing.type === "classified" && (
-                    <Badge variant="outline" className="ml-2">
-                      Fixed Price
-                    </Badge>
-                  )}
-                </div>
+                {isAuction ? (
+                  <div className="space-y-1">
+                    {highestBid ? (
+                      <div className="flex items-baseline">
+                        <div className="flex items-center">
+                          <Gavel className="h-4 w-4 mr-1 text-purple" />
+                          <span className="text-sm text-muted-foreground">Current bid:</span>
+                        </div>
+                        <span className="text-3xl font-bold text-purple ml-2">£{highestBid.toLocaleString()}</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-baseline">
+                        <div className="flex items-center">
+                          <Gavel className="h-4 w-4 mr-1" />
+                          <span className="text-sm text-muted-foreground">Starting bid:</span>
+                        </div>
+                        <span className="text-3xl font-bold text-purple ml-2">£{listing.price.toLocaleString()}</span>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex items-baseline">
+                    <span className="text-3xl font-bold text-purple">£{listing.price.toLocaleString()}</span>
+                    {listing.allowBestOffer && (
+                      <Badge variant="outline" className="ml-2">
+                        Offers Accepted
+                      </Badge>
+                    )}
+                  </div>
+                )}
                 
-                {/* Replace the old time remaining display with our new countdown component */}
+                {/* Countdown */}
                 <ListingCountdown 
                   expiryDate={listing.expiresAt} 
-                  isAuction={listing.type === "auction"}
+                  isAuction={isAuction}
                 />
                 
                 <div className="flex items-center gap-2">
@@ -329,19 +461,31 @@ const ListingDetails = () => {
                   </TooltipProvider>
                 </div>
                 
-                {listing.allowBestOffer && listing.sellerId !== user?.id && (
+                {!isAuction && listing.allowBestOffer && listing.sellerId !== user?.id && (
                   <Button 
                     variant="outline" 
                     className="w-full"
-                    onClick={handleContact}
+                    onClick={() => setActiveTab("offers")}
                   >
                     Make an Offer
                   </Button>
                 )}
                 
+                {isAuction && listing.sellerId !== user?.id && (
+                  <Button 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={() => setActiveTab("bids")}
+                  >
+                    Place a Bid
+                  </Button>
+                )}
+                
                 <div className="flex items-center justify-between text-sm text-muted-foreground">
                   <span>Views: {listing.views}</span>
-                  <span>Saves: {listing.saves}</span>
+                  <span>
+                    {isAuction ? `Bids: ${listing.saves}` : `Saves: ${listing.saves}`}
+                  </span>
                 </div>
               </CardContent>
             </Card>
@@ -474,7 +618,7 @@ const ListingDetails = () => {
               </div>
               <div>
                 <h4 className="font-medium line-clamp-1">{listing.title}</h4>
-                <p className="text-sm text-muted-foreground">£{listing.price.toLocaleString()}</p>
+                <p className="text-sm text-muted-foreground">£{displayPrice.toLocaleString()}</p>
               </div>
             </div>
             <Textarea

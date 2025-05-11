@@ -67,3 +67,33 @@ export interface UserProfile {
   isTwoFactorEnabled?: boolean;
   strikeCount?: number;
 }
+
+// New interfaces for Bids
+export interface Bid {
+  id: string;
+  userId: string;
+  listingId: string;
+  amount: number;
+  createdAt: Date;
+  status: 'active' | 'cancelled' | 'winning';
+  user?: {
+    fullName: string | null;
+    avatarUrl: string | null;
+  };
+}
+
+// New interfaces for Offers
+export interface Offer {
+  id: string;
+  userId: string;
+  listingId: string;
+  amount: number;
+  message?: string;
+  status: 'pending' | 'accepted' | 'declined' | 'expired';
+  createdAt: Date;
+  updatedAt: Date;
+  user?: {
+    fullName: string | null;
+    avatarUrl: string | null;
+  };
+}
