@@ -96,7 +96,7 @@ export const ListingCard = ({ listing, onClick, highestBid }: ListingCardProps) 
         {/* Add compact countdown */}
         <div className="mt-2">
           <ListingCountdown 
-            expiryDate={listing.expiryDate} 
+            expiryDate={listing.expiresAt} 
             isAuction={listing.type === "auction"} 
             className="text-xs"
           />
