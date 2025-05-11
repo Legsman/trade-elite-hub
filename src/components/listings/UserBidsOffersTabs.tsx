@@ -10,11 +10,12 @@ import { Badge } from "@/components/ui/badge";
 
 interface UserBidsOffersTabsProps {
   userId: string;
+  initialTab?: string; // Make this optional with a string type
 }
 
-export const UserBidsOffersTabs: React.FC<UserBidsOffersTabsProps> = ({ userId }) => {
+export const UserBidsOffersTabs: React.FC<UserBidsOffersTabsProps> = ({ userId, initialTab = "my-bids" }) => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("my-bids");
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [bidListings, setBidListings] = useState<Listing[]>([]);
   const [offerListings, setOfferListings] = useState<Listing[]>([]);
   const [highestBids, setHighestBids] = useState<Record<string, number>>({});

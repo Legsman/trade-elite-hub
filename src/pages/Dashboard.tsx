@@ -11,6 +11,7 @@ import { Loading } from "@/components/ui/loading";
 import { PlusCircle, Star } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { UserBidsOffersTabs } from "@/components/listings/UserBidsOffersTabs";
+import { supabase } from "@/integrations/supabase/client";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -185,11 +186,11 @@ const Dashboard = () => {
                 </TabsContent>
                 
                 <TabsContent value="bids">
-                  <UserBidsOffersTabs userId={user.id} initialTab="bids" />
+                  <UserBidsOffersTabs userId={user.id} initialTab="my-bids" />
                 </TabsContent>
                 
                 <TabsContent value="offers">
-                  <UserBidsOffersTabs userId={user.id} initialTab="offers" />
+                  <UserBidsOffersTabs userId={user.id} initialTab="my-offers" />
                 </TabsContent>
                 
                 <TabsContent value="purchases">
@@ -251,6 +252,7 @@ const Dashboard = () => {
 
 // New component for purchase history
 const PurchaseHistoryTab = ({ userId }: { userId: string }) => {
+  const navigate = useNavigate();
   const [purchases, setPurchases] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   
@@ -419,6 +421,7 @@ const PurchaseHistoryTab = ({ userId }: { userId: string }) => {
 
 // New component for user listings
 const UserListingsTab = ({ userId }: { userId: string }) => {
+  const navigate = useNavigate();
   const [listings, setListings] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   
@@ -484,6 +487,7 @@ const UserListingsTab = ({ userId }: { userId: string }) => {
 
 // New component for sold items
 const SoldItemsTab = ({ userId }: { userId: string }) => {
+  const navigate = useNavigate();
   const [soldItems, setSoldItems] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   
