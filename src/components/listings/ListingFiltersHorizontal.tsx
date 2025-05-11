@@ -196,8 +196,8 @@ export const ListingFiltersHorizontal: React.FC<ListingFiltersHorizontalProps> =
           </div>
 
           {/* Sort by */}
-          <Select value={sortBy} onValueChange={onSortChange} className="ml-auto">
-            <SelectTrigger className="w-[160px]">
+          <Select value={sortBy} onValueChange={onSortChange}>
+            <SelectTrigger className="w-[160px] ml-auto">
               <SelectValue placeholder="Sort By" />
             </SelectTrigger>
             <SelectContent>
