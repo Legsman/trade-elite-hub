@@ -6,6 +6,7 @@ import { Listing } from "@/types";
 import { useAnalytics } from "@/hooks/use-analytics";
 import { ListingCountdown } from "./ListingCountdown";
 import { Gavel } from "lucide-react";
+import { memo } from "react";
 
 interface ListingCardProps {
   listing: Listing;
@@ -13,7 +14,7 @@ interface ListingCardProps {
   highestBid?: number | null;
 }
 
-export const ListingCard = ({ listing, onClick, highestBid }: ListingCardProps) => {
+export const ListingCard = memo(({ listing, onClick, highestBid }: ListingCardProps) => {
   const navigate = useNavigate();
   const { trackEvent } = useAnalytics();
 
@@ -116,4 +117,6 @@ export const ListingCard = ({ listing, onClick, highestBid }: ListingCardProps) 
       </CardFooter>
     </Card>
   );
-};
+});
+
+ListingCard.displayName = "ListingCard";

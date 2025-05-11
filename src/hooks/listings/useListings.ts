@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Listing } from "@/types";
@@ -9,9 +9,9 @@ import {
   getSortConfig,
   applySorting,
   transformListingData,
-  applyPagination,
-  useRetryLogic
+  applyPagination
 } from "./utils";
+import { useListingsCache } from "./useListingsCache";
 
 type UseListingsOptions = FilterOptions & {
   sortBy?: string;
@@ -23,26 +23,59 @@ export const useListings = (options: UseListingsOptions = {}) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [totalCount, setTotalCount] = useState(0);
-  const [lastOptions, setLastOptions] = useState<string>(""); // Track last used options
-  const { retryCount, setRetryCount, scheduleRetry } = useRetryLogic();
-  const MAX_RETRIES = 2;
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const optionsRef = useRef<string>("");
+  const { getCachedData, setCachedData, registerSubscription, unregisterSubscription } = useListingsCache();
   
-  const fetchListings = useCallback(async () => {
-    // Convert options to a string for comparison
+  // For error rate limiting
+  const errorRef = useRef({
+    count: 0,
+    lastShown: 0,
+    maxShown: 1
+  });
+  
+  // Generate a cache key based on options
+  const getCacheKey = useCallback((opts: UseListingsOptions) => {
+    return `listings:${JSON.stringify(opts)}`;
+  }, []);
+  
+  const fetchListings = useCallback(async (fromCache = true) => {
+    // Generate a string representation of options for comparison
     const optionsString = JSON.stringify(options);
     
-    // If we're already loading with the same options, don't restart the fetch
-    if (isLoading && optionsString === lastOptions) {
+    // If options haven't changed and we're already loading, don't restart the fetch
+    if (isLoading && optionsString === optionsRef.current) {
       return;
     }
     
+    // Abort any in-progress requests
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    
+    // Create new abort controller
+    abortControllerRef.current = new AbortController();
+    
+    optionsRef.current = optionsString;
+    const cacheKey = getCacheKey(options);
+    
+    // Try to get from cache first
+    if (fromCache) {
+      const cachedData = getCachedData<{listings: Listing[], totalCount: number}>(cacheKey);
+      if (cachedData) {
+        setListings(cachedData.listings);
+        setTotalCount(cachedData.totalCount);
+        setIsLoading(false);
+        return;
+      }
+    }
+    
     // Only show loading state if we don't have any listings yet or if options changed
-    if (listings.length === 0 || optionsString !== lastOptions) {
+    if (listings.length === 0 || optionsString !== optionsRef.current) {
       setIsLoading(true);
     }
     
     setError(null);
-    setLastOptions(optionsString);
 
     try {
       // Create base query
@@ -63,51 +96,114 @@ export const useListings = (options: UseListingsOptions = {}) => {
         pageSize: 9 
       });
 
-      // Execute query
+      // Execute query with abort signal
+      // Note: Supabase doesn't directly support AbortController yet, but we
+      // can still use it to track active requests on our side
       const { data, error, count } = await query;
+
+      // Check if request was canceled
+      if (abortControllerRef.current?.signal.aborted) {
+        return;
+      }
 
       if (error) throw error;
 
       // Transform the data
       const mappedListings = transformListingData(data);
+      
+      // Store in cache
+      setCachedData(cacheKey, {
+        listings: mappedListings,
+        totalCount: count || 0
+      });
 
       setListings(mappedListings);
       setTotalCount(count || 0);
       setIsLoading(false);
-      setRetryCount(0);
+      
+      // Reset error counter on success
+      errorRef.current.count = 0;
     } catch (err) {
       console.error("Error fetching listings:", err);
+      
+      // Check if request was canceled
+      if (abortControllerRef.current?.signal.aborted) {
+        return;
+      }
+      
       setError("Failed to load listings. Please try again later.");
       
-      // Don't clear previous listings data on error
+      // Don't clear previous listings data on error to preserve user experience
       // Only show loading spinner if we don't have any data yet
       if (listings.length === 0) {
         setIsLoading(false);
+      } else {
+        setIsLoading(false);
       }
       
-      // Add retry logic
-      scheduleRetry(fetchListings, MAX_RETRIES);
+      // Implement error rate limiting for toasts
+      const now = Date.now();
+      errorRef.current.count++;
       
-      // Only show toast after max retries to prevent spamming
-      if (retryCount === MAX_RETRIES) {
+      // Only show error toast if we haven't shown too many recently
+      if (errorRef.current.count <= errorRef.current.maxShown || 
+          now - errorRef.current.lastShown > 30000) { // 30 seconds
         toast({
-          title: "Error",
-          description: "We're having trouble connecting to our servers. Please try again later.",
+          title: "Connection Error",
+          description: "We're having trouble connecting to our servers. We'll keep trying.",
           variant: "destructive",
         });
+        errorRef.current.lastShown = now;
       }
     }
-  }, [options, retryCount, listings.length, isLoading, lastOptions, scheduleRetry, setRetryCount]);
+  }, [options, listings.length, isLoading, getCacheKey, getCachedData, setCachedData]);
 
+  // Set up realtime subscription
   useEffect(() => {
+    // Fetch on mount and when options change
     fetchListings();
-  }, [fetchListings]);
+    
+    // Set up realtime subscription
+    const channelKey = 'listings-changes';
+    const shouldSubscribe = registerSubscription(channelKey);
+    
+    let channel: any = null;
+    
+    if (shouldSubscribe) {
+      channel = supabase
+        .channel(channelKey)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'listings',
+          },
+          () => {
+            // When database changes, refetch data but skip cache
+            fetchListings(false);
+          }
+        )
+        .subscribe();
+    }
+    
+    return () => {
+      // Cleanup function
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+      
+      if (channel && unregisterSubscription(channelKey)) {
+        supabase.removeChannel(channel);
+      }
+    };
+  }, [fetchListings, registerSubscription, unregisterSubscription]);
 
   return {
     listings,
     isLoading,
     error,
     totalCount,
-    refetch: fetchListings,
+    refetch: () => fetchListings(false), // Force refresh from server
   };
 };

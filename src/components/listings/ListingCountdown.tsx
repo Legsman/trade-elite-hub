@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, memo } from "react";
 import { Clock } from "lucide-react";
 
 interface ListingCountdownProps {
@@ -8,12 +8,44 @@ interface ListingCountdownProps {
   isAuction?: boolean;
 }
 
-export const ListingCountdown = ({ 
+interface TimeLeft {
+  days: number;
+  hours: number;
+  minutes: number;
+  seconds: number;
+  expired: boolean;
+}
+
+// Shared timer manager to reduce timer instances
+const useCountdownManager = () => {
+  const [time, setTime] = useState(Date.now());
+  const frameRef = useRef<number | null>(null);
+  
+  useEffect(() => {
+    const updateTime = () => {
+      setTime(Date.now());
+      frameRef.current = requestAnimationFrame(updateTime);
+    };
+    
+    frameRef.current = requestAnimationFrame(updateTime);
+    
+    return () => {
+      if (frameRef.current) {
+        cancelAnimationFrame(frameRef.current);
+      }
+    };
+  }, []);
+  
+  return time;
+};
+
+export const ListingCountdown = memo(({ 
   expiryDate, 
   className = "", 
   isAuction = false 
 }: ListingCountdownProps) => {
-  const [timeLeft, setTimeLeft] = useState({
+  const currentTime = useCountdownManager();
+  const [timeLeft, setTimeLeft] = useState<TimeLeft>({
     days: 0,
     hours: 0,
     minutes: 0,
@@ -21,10 +53,18 @@ export const ListingCountdown = ({
     expired: false
   });
 
+  const lastCalculationRef = useRef<number>(0);
+  const expiryTimeMs = useRef<number>(expiryDate.getTime());
+  
+  // Recalculate time every second instead of on every render
   useEffect(() => {
-    const calculateTimeLeft = () => {
-      const now = new Date();
-      const difference = expiryDate.getTime() - now.getTime();
+    // Only update if at least 1000ms have passed
+    if (currentTime - lastCalculationRef.current < 950) {
+      return;
+    }
+    
+    const calculateTimeLeft = (): TimeLeft => {
+      const difference = expiryTimeMs.current - currentTime;
       
       if (difference <= 0) {
         return {
@@ -51,17 +91,9 @@ export const ListingCountdown = ({
       };
     };
 
-    // Initial calculation
+    lastCalculationRef.current = currentTime;
     setTimeLeft(calculateTimeLeft());
-
-    // Set up interval
-    const timer = setInterval(() => {
-      setTimeLeft(calculateTimeLeft());
-    }, 1000);
-
-    // Clean up
-    return () => clearInterval(timer);
-  }, [expiryDate]);
+  }, [currentTime]);
 
   // Format function for 2-digit display
   const formatNumber = (num: number) => num.toString().padStart(2, '0');
@@ -74,7 +106,7 @@ export const ListingCountdown = ({
     
     // Less than 1 hour remaining
     if (timeLeft.days === 0 && timeLeft.hours === 0) {
-      return "text-destructive font-bold animate-pulse";
+      return "text-destructive font-bold";
     }
     
     // Less than 6 hours remaining
@@ -104,7 +136,7 @@ export const ListingCountdown = ({
       return "Less than 1 hour left";
     }
     
-    return isAuction ? "Time remaining" : "Time remaining";
+    return "Time remaining";
   };
 
   return (
@@ -129,4 +161,6 @@ export const ListingCountdown = ({
       </div>
     </div>
   );
-};
+});
+
+ListingCountdown.displayName = "ListingCountdown";

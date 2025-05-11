@@ -1,16 +1,19 @@
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useListings, useListingBids } from "@/hooks/listings";
+import { useListingsCache } from "./useListingsCache";
 
 export const useListingsPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { toast } = useToast();
+  const { clearCache } = useListingsCache();
   const pageSize = 9; // Number of items per page
   
   // Set up error display limits to prevent toast spam
   const [errorDisplayed, setErrorDisplayed] = useState(false);
+  const errorTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   // Get query parameters
   const category = searchParams.get("category") || "all_categories";
@@ -45,37 +48,77 @@ export const useListingsPage = () => {
   useEffect(() => {
     if (error && !errorDisplayed) {
       toast({
-        title: "Error loading listings",
-        description: "We're having trouble connecting to the server. Please try again later.",
+        title: "Connection Issue",
+        description: "We're having trouble fetching listings. We'll keep trying automatically.",
         variant: "destructive",
       });
+      
       setErrorDisplayed(true);
       
       // Reset error display flag after a delay to prevent continuous toasts
-      const timer = setTimeout(() => {
-        setErrorDisplayed(false);
-      }, 10000);
+      if (errorTimeoutRef.current) {
+        clearTimeout(errorTimeoutRef.current);
+      }
       
-      return () => clearTimeout(timer);
+      errorTimeoutRef.current = setTimeout(() => {
+        setErrorDisplayed(false);
+      }, 30000); // 30 seconds minimum between error toasts
     }
+    
+    return () => {
+      if (errorTimeoutRef.current) {
+        clearTimeout(errorTimeoutRef.current);
+      }
+    };
   }, [error, toast, errorDisplayed]);
   
   // Handle page changes
-  const handlePageChange = (newPage: number) => {
+  const handlePageChange = useCallback((newPage: number) => {
     const updatedParams = new URLSearchParams(searchParams);
     updatedParams.set("page", newPage.toString());
     setSearchParams(updatedParams);
-  };
+  }, [searchParams, setSearchParams]);
   
   // Clear all filters
   const handleClearFilters = useCallback(() => {
     setSearchParams(new URLSearchParams());
-  }, [setSearchParams]);
+    clearCache(); // Clear the entire cache when filters are reset
+  }, [setSearchParams, clearCache]);
   
-  // Add this to get the highest bids for all listings
-  const { highestBids } = useListingBids(
-    listings?.filter(listing => listing.type === "auction").map(listing => listing.id) || []
-  );
+  // Add this to get the highest bids for all auction listings
+  const auctionListingIds = listings
+    ?.filter(listing => listing.type === "auction")
+    .map(listing => listing.id) || [];
+    
+  const { highestBids } = useListingBids(auctionListingIds);
+  
+  // Optimize refresh logic
+  const refreshWithBackoff = useCallback(() => {
+    const backoffs = [2000, 5000, 10000]; // 2s, 5s, 10s
+    let attempt = 0;
+    
+    const attemptRefresh = () => {
+      refetch();
+      attempt++;
+      
+      if (attempt < backoffs.length) {
+        setTimeout(attemptRefresh, backoffs[attempt]);
+      }
+    };
+    
+    attemptRefresh();
+  }, [refetch]);
+  
+  // Auto-refresh on errors
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => {
+        refreshWithBackoff();
+      }, 3000); // Initial delay before first retry
+      
+      return () => clearTimeout(timer);
+    }
+  }, [error, refreshWithBackoff]);
   
   return {
     listings,
