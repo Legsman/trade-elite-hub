@@ -122,24 +122,14 @@ const Dashboard = () => {
 
           {/* Main content */}
           <div className="md:col-span-2">
-            {/* Buying/Selling Mode Toggle */}
+            {/* Buying/Selling Mode Toggle - FIX: Wrap this in a Tabs component */}
             <div className="mb-6">
-              <TabsList className="w-full border-b rounded-none justify-start">
-                <TabsTrigger 
-                  value="buying" 
-                  className={viewMode === "buying" ? "border-b-2 border-primary" : ""}
-                  onClick={() => setViewMode("buying")}
-                >
-                  Buying
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="selling"
-                  className={viewMode === "selling" ? "border-b-2 border-primary" : ""}
-                  onClick={() => setViewMode("selling")}
-                >
-                  Selling
-                </TabsTrigger>
-              </TabsList>
+              <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as "buying" | "selling")}>
+                <TabsList className="w-full border-b rounded-none justify-start">
+                  <TabsTrigger value="buying">Buying</TabsTrigger>
+                  <TabsTrigger value="selling">Selling</TabsTrigger>
+                </TabsList>
+              </Tabs>
             </div>
 
             {viewMode === "buying" ? (
