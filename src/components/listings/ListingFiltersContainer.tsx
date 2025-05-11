@@ -19,6 +19,7 @@ export const ListingFiltersContainer = ({ onClearFilters }: ListingFiltersContai
   const maxPrice = searchParams.get("maxPrice") || "10000";
   const sortBy = searchParams.get("sortBy") || "newest";
   const searchTerm = searchParams.get("search") || "";
+  const showCompleted = searchParams.get("showCompleted") === "true";
   
   const [priceRange, setPriceRange] = useState<number[]>([
     parseInt(minPrice) || 0,
@@ -83,6 +84,10 @@ export const ListingFiltersContainer = ({ onClearFilters }: ListingFiltersContai
     updateParams({ allowBestOffer: checked ? "true" : null });
   };
   
+  const handleShowCompletedChange = (checked: boolean) => {
+    updateParams({ showCompleted: checked ? "true" : null });
+  };
+  
   const handleSearchChange = (value: string) => {
     setLocalSearchTerm(value);
   };
@@ -101,6 +106,7 @@ export const ListingFiltersContainer = ({ onClearFilters }: ListingFiltersContai
       sortBy={sortBy}
       allowBestOffer={allowBestOffer}
       searchTerm={localSearchTerm}
+      showCompleted={showCompleted}
       onCategoryChange={handleCategoryChange}
       onTypeChange={handleTypeChange}
       onLocationChange={handleLocationChange}
@@ -111,6 +117,7 @@ export const ListingFiltersContainer = ({ onClearFilters }: ListingFiltersContai
       onAllowBestOfferChange={handleAllowBestOfferChange}
       onSearchChange={handleSearchChange}
       onSearchSubmit={handleSearchSubmit}
+      onShowCompletedChange={handleShowCompletedChange}
       onClearFilters={onClearFilters}
     />
   );

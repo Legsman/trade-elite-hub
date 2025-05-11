@@ -7,3 +7,4 @@ export * from './ConditionFilter';
 export * from './PriceRangeFilter';
 export * from './BestOfferFilter';
 export * from './SortByFilter';
+export * from './CompletedListingsFilter';

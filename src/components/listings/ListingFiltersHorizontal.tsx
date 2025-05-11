@@ -10,7 +10,8 @@ import {
   ConditionFilter,
   PriceRangeFilter,
   BestOfferFilter,
-  SortByFilter
+  SortByFilter,
+  CompletedListingsFilter
 } from "./filters";
 
 interface ListingFiltersHorizontalProps {
@@ -22,6 +23,7 @@ interface ListingFiltersHorizontalProps {
   sortBy: string;
   allowBestOffer: boolean;
   searchTerm: string;
+  showCompleted: boolean;
   onCategoryChange: (value: string) => void;
   onTypeChange: (value: string) => void;
   onLocationChange: (value: string) => void;
@@ -32,6 +34,7 @@ interface ListingFiltersHorizontalProps {
   onAllowBestOfferChange: (checked: boolean) => void;
   onSearchChange: (value: string) => void;
   onSearchSubmit: () => void;
+  onShowCompletedChange: (checked: boolean) => void;
   onClearFilters: () => void;
 }
 
@@ -44,6 +47,7 @@ export const ListingFiltersHorizontal: React.FC<ListingFiltersHorizontalProps> =
   sortBy,
   allowBestOffer,
   searchTerm,
+  showCompleted,
   onCategoryChange,
   onTypeChange,
   onLocationChange,
@@ -54,6 +58,7 @@ export const ListingFiltersHorizontal: React.FC<ListingFiltersHorizontalProps> =
   onAllowBestOfferChange,
   onSearchChange,
   onSearchSubmit,
+  onShowCompletedChange,
   onClearFilters,
 }) => {
   const hasActiveFilters = 
@@ -65,7 +70,8 @@ export const ListingFiltersHorizontal: React.FC<ListingFiltersHorizontalProps> =
     priceRange[1] < 10000 ||
     searchTerm !== "" ||
     sortBy !== "newest" ||
-    allowBestOffer;
+    allowBestOffer ||
+    showCompleted;
 
   return (
     <Card className="p-4 mb-6 bg-background">
@@ -115,6 +121,14 @@ export const ListingFiltersHorizontal: React.FC<ListingFiltersHorizontalProps> =
           <SortByFilter
             sortBy={sortBy}
             onSortChange={onSortChange}
+          />
+        </div>
+
+        {/* Completed listings filter */}
+        <div className="flex items-center">
+          <CompletedListingsFilter
+            showCompleted={showCompleted}
+            onShowCompletedChange={onShowCompletedChange}
           />
         </div>
 

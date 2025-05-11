@@ -10,6 +10,7 @@ export type FilterOptions = {
   maxPrice?: string;
   allowBestOffer?: string;
   searchTerm?: string;
+  showCompleted?: string;
 };
 
 export const applyListingFilters = (query: any, filters: FilterOptions) => {
@@ -22,10 +23,18 @@ export const applyListingFilters = (query: any, filters: FilterOptions) => {
     maxPrice,
     allowBestOffer,
     searchTerm,
+    showCompleted,
   } = filters;
 
-  // Start with active listings
-  let filteredQuery = query.eq("status", "active");
+  // Filter by status (active or include completed)
+  let filteredQuery = query;
+  
+  if (showCompleted !== "true") {
+    filteredQuery = filteredQuery.eq("status", "active");
+  } else {
+    // If showing completed listings, include both active and completed/expired
+    filteredQuery = filteredQuery.in("status", ["active", "completed", "expired"]);
+  }
 
   // Apply category filter
   if (category && category !== "all_categories") {

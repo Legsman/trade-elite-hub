@@ -26,6 +26,7 @@ export const useListingsPage = () => {
   const page = searchParams.get("page") || "1";
   const searchTerm = searchParams.get("search") || "";
   const allowBestOffer = searchParams.get("allowBestOffer") === "true";
+  const showCompleted = searchParams.get("showCompleted") === "true";
   
   // Get listings
   const { listings, isLoading, error, totalCount, refetch } = useListings({
@@ -39,6 +40,7 @@ export const useListingsPage = () => {
     page,
     allowBestOffer: allowBestOffer ? "true" : "false",
     searchTerm,
+    showCompleted: showCompleted ? "true" : "false",
   });
   
   // Calculate pagination

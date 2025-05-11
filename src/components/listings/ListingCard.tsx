@@ -77,6 +77,7 @@ export const ListingCard = memo(({ listing, onClick, highestBid }: ListingCardPr
                 <div className="text-lg font-bold text-purple">
                   £{highestBid.toLocaleString()}
                 </div>
+                <span className="text-xs text-muted-foreground ml-1">(Current bid)</span>
               </div>
             ) : (
               <div className="flex items-center">
@@ -84,7 +85,7 @@ export const ListingCard = memo(({ listing, onClick, highestBid }: ListingCardPr
                 <div className="text-lg font-bold text-purple">
                   £{listing.price.toLocaleString()}
                 </div>
-                <span className="text-xs text-muted-foreground ml-1">(starting bid)</span>
+                <span className="text-xs text-muted-foreground ml-1">(Starting bid)</span>
               </div>
             )}
           </div>
