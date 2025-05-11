@@ -7,10 +7,8 @@ import {
   MessageSquare,
   Clock,
   MapPin,
-  Tag,
   AlertCircle,
   ChevronLeft,
-  ChevronRight,
   Shield,
   User,
   Star,
@@ -29,22 +27,23 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/auth";
-import { useListing } from "@/hooks/use-listing";
+import { useListing } from "@/hooks/listings";
 import { useSellerProfile } from "@/hooks/use-user-profile";
 import { useStartConversation } from "@/hooks/use-message";
 import { toast } from "@/hooks/use-toast";
 import { useAnalytics } from "@/hooks/use-analytics";
 import { Loading } from "@/components/ui/loading";
+import { ListingImageGallery } from "@/components/listings/ListingImageGallery";
+import { ListingDetailsTabs } from "@/components/listings/ListingDetailsTabs";
 
 const ListingDetails = () => {
   const { id } = useParams();
@@ -55,7 +54,6 @@ const ListingDetails = () => {
   const { startConversation } = useStartConversation();
   const { trackEvent } = useAnalytics();
   
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isSaved, setIsSaved] = useState(false);
   const [savingState, setSavingState] = useState(false);
   const [messageOpen, setMessageOpen] = useState(false);
@@ -165,22 +163,6 @@ const ListingDetails = () => {
     }
   };
 
-  const handlePrevImage = () => {
-    if (!listing) return;
-    setCurrentImageIndex((prev) => 
-      prev === 0 ? listing.images.length - 1 : prev - 1
-    );
-    trackEvent("listing_image_previous", { listingId: listing?.id });
-  };
-
-  const handleNextImage = () => {
-    if (!listing) return;
-    setCurrentImageIndex((prev) => 
-      prev === listing.images.length - 1 ? 0 : prev + 1
-    );
-    trackEvent("listing_image_next", { listingId: listing?.id });
-  };
-
   const handleShare = () => {
     if (navigator.share) {
       navigator.share({
@@ -200,6 +182,14 @@ const ListingDetails = () => {
         trackEvent("listing_link_copied", { listingId: listing?.id });
       }).catch(console.error);
     }
+  };
+
+  const formatDate = (date: Date) => {
+    return new Intl.DateTimeFormat('en-GB', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
+    }).format(date);
   };
 
   if (isLoading) {
@@ -224,14 +214,6 @@ const ListingDetails = () => {
     );
   }
 
-  const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat('en-GB', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric'
-    }).format(date);
-  };
-
   const daysUntilExpiry = Math.ceil(
     (listing.expiresAt.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
   );
@@ -251,127 +233,14 @@ const ListingDetails = () => {
           {/* Left column - Images and details */}
           <div className="lg:col-span-2 space-y-6">
             {/* Image gallery */}
-            <div className="relative rounded-lg overflow-hidden border">
-              <div className="aspect-video relative">
-                <img 
-                  src={listing.images[currentImageIndex]} 
-                  alt={listing.title}
-                  className="w-full h-full object-cover"
-                />
-                
-                {listing.images.length > 1 && (
-                  <>
-                    <button 
-                      className="absolute left-4 top-1/2 -translate-y-1/2 bg-background/80 hover:bg-background p-2 rounded-full"
-                      onClick={handlePrevImage}
-                    >
-                      <ChevronLeft className="h-5 w-5" />
-                    </button>
-                    <button 
-                      className="absolute right-4 top-1/2 -translate-y-1/2 bg-background/80 hover:bg-background p-2 rounded-full"
-                      onClick={handleNextImage}
-                    >
-                      <ChevronRight className="h-5 w-5" />
-                    </button>
-                  </>
-                )}
-
-                <div className="absolute bottom-4 right-4 bg-background/80 rounded-full px-3 py-1 text-sm">
-                  {currentImageIndex + 1} / {listing.images.length}
-                </div>
-              </div>
-              
-              {listing.images.length > 1 && (
-                <div className="p-2 flex gap-2 overflow-x-auto">
-                  {listing.images.map((img, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => setCurrentImageIndex(idx)}
-                      className={`flex-shrink-0 w-20 h-16 rounded overflow-hidden border-2 ${
-                        idx === currentImageIndex 
-                          ? "border-purple" 
-                          : "border-transparent"
-                      }`}
-                    >
-                      <img 
-                        src={img} 
-                        alt={`Thumbnail ${idx + 1}`}
-                        className="w-full h-full object-cover"
-                      />
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+            <ListingImageGallery 
+              images={listing.images}
+              listingId={listing.id}
+              title={listing.title}
+            />
 
             {/* Listing information */}
-            <Tabs defaultValue="description" className="space-y-4">
-              <TabsList>
-                <TabsTrigger value="description">Description</TabsTrigger>
-                <TabsTrigger value="details">Details</TabsTrigger>
-                <TabsTrigger value="shipping">Shipping</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="description" className="space-y-4">
-                <div className="text-lg">
-                  {listing.description.split('\n\n').map((paragraph, idx) => (
-                    <p key={idx} className="mb-4">{paragraph}</p>
-                  ))}
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="details" className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-y-3 gap-x-6">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Condition</span>
-                    <span className="font-medium">{listing.condition}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Category</span>
-                    <span className="font-medium capitalize">{listing.category}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Listing Type</span>
-                    <span className="font-medium capitalize">{listing.type}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Location</span>
-                    <span className="font-medium">{listing.location}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Listed On</span>
-                    <span className="font-medium">{formatDate(listing.createdAt)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Expires</span>
-                    <span className="font-medium">{formatDate(listing.expiresAt)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Best Offer</span>
-                    <span className="font-medium">{listing.allowBestOffer ? "Accepted" : "Not Accepted"}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Item ID</span>
-                    <span className="font-medium">{listing.id}</span>
-                  </div>
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="shipping" className="space-y-4">
-                <p>
-                  The seller is responsible for arranging shipping. Contact the seller for shipping options and costs.
-                </p>
-                <div className="p-4 bg-muted/40 rounded-lg">
-                  <h4 className="font-medium mb-2">Shipping Terms</h4>
-                  <ul className="list-disc pl-5 space-y-1 text-sm">
-                    <li>Buyer is responsible for all shipping and handling costs</li>
-                    <li>Items will be shipped within 7 business days of cleared payment</li>
-                    <li>International buyers are responsible for any customs fees</li>
-                    <li>Insurance is recommended for high-value items</li>
-                  </ul>
-                </div>
-              </TabsContent>
-            </Tabs>
+            <ListingDetailsTabs listing={listing} />
           </div>
 
           {/* Right column - Price and seller info */}
