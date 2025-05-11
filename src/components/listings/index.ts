@@ -24,4 +24,5 @@ export * from './ListingFilterSidebar';
 export * from './ListingPagination';
 export * from './ListingContent';
 export * from './ListingFiltersHorizontal';
+export * from './ListingFiltersContainer';
 export * from './filters';
