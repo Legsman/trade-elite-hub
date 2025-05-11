@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/hooks/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { Listing } from "@/types";
+import { Listing, ListingFormData } from "@/types";
 
 export const useListings = (options?: {
   category?: string;
@@ -315,7 +315,6 @@ export const useCreateListing = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Update the type definition here to properly handle File[] for images
   const createListing = async (formData: ListingFormData) => {
     if (!user) {
       toast({

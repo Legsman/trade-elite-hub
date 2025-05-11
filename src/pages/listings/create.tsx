@@ -109,7 +109,15 @@ const CreateListingPage = () => {
 
     // Create a properly typed listing form data object
     const listingFormData: ListingFormData = {
-      ...values,
+      title: values.title,
+      description: values.description,
+      category: values.category,
+      type: values.type,
+      price: values.price,
+      condition: values.condition,
+      location: values.location,
+      allowBestOffer: values.allowBestOffer,
+      duration: values.duration,
       images: images,
       expiresAt: new Date(), // Will be calculated in the hook
       status: "active",
