@@ -29,3 +29,4 @@ export * from './filters';
 export * from './ListingDetailSoldAlert';
 export * from './RelistForm';
 export * from './SoldItemsTab';
+export * from './sold-items';
