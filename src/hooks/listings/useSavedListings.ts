@@ -81,5 +81,6 @@ export const useSavedListings = () => {
     isLoading,
     error,
     refetch: fetchSavedListings,
+    fetchSavedListings // Explicitly expose this function
   };
 };

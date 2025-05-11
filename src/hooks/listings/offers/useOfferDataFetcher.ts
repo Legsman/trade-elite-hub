@@ -1,6 +1,5 @@
 
 import { useState, useCallback } from "react";
-import { useAuth } from "@/hooks/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Offer } from "@/types";
@@ -9,13 +8,12 @@ import { OfferState } from "./types";
 export const useOfferDataFetcher = (listingId?: string) => {
   const [state, setState] = useState<OfferState>({
     offers: [],
-    isLoading: true,
+    isLoading: false,
     error: null
   });
-  const { user } = useAuth();
 
   const fetchOffers = useCallback(async () => {
-    if (!listingId || !user) {
+    if (!listingId) {
       setState({
         offers: [],
         isLoading: false,
@@ -27,26 +25,12 @@ export const useOfferDataFetcher = (listingId?: string) => {
     setState(prev => ({ ...prev, isLoading: true, error: null }));
 
     try {
-      // Get listing to determine if user is seller
-      const { data: listing } = await supabase
-        .from("listings")
-        .select("seller_id")
-        .eq("id", listingId)
-        .single();
-
-      // Fetch the offers
-      let offersQuery = supabase
+      // First, fetch the offers
+      const { data: offersData, error: offersError } = await supabase
         .from("offers")
         .select("*")
-        .eq("listing_id", listingId);
-
-      // If user is not the seller, only show their own offers
-      if (!listing || listing.seller_id !== user.id) {
-        offersQuery = offersQuery.eq("user_id", user.id);
-      }
-
-      const { data: offersData, error: offersError } = await offersQuery
-        .order("created_at", { ascending: false });
+        .eq("listing_id", listingId)
+        .order("amount", { ascending: false });
 
       if (offersError) {
         throw offersError;
@@ -97,7 +81,7 @@ export const useOfferDataFetcher = (listingId?: string) => {
           } : undefined
         };
       });
-
+      
       setState({
         offers: mappedOffers,
         isLoading: false,
@@ -117,7 +101,7 @@ export const useOfferDataFetcher = (listingId?: string) => {
         variant: "destructive",
       });
     }
-  }, [listingId, user]);
+  }, [listingId]);
 
   return {
     ...state,

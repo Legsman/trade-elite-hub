@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/auth";
@@ -12,7 +13,7 @@ import { useListingBids } from "@/hooks/listings";
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { 
     savedListings, 
     isLoading: savedLoading, 

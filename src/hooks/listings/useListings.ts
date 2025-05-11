@@ -4,100 +4,124 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Listing } from "@/types";
 
-export const useListings = (options?: {
+type UseListingsOptions = {
   category?: string;
-  searchTerm?: string;
-  listingType?: string;
-  priceRange?: string;
+  type?: string;
+  location?: string;
+  condition?: string;
+  minPrice?: string;
+  maxPrice?: string;
   sortBy?: string;
-}) => {
+  page?: string;
+  allowBestOffer?: string;
+  searchTerm?: string;
+};
+
+export const useListings = (options: UseListingsOptions = {}) => {
   const [listings, setListings] = useState<Listing[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [totalCount, setTotalCount] = useState(0);
 
   const fetchListings = useCallback(async () => {
     setIsLoading(true);
     setError(null);
 
     try {
+      // Extract options into variables
+      const {
+        category,
+        type,
+        location,
+        condition,
+        minPrice,
+        maxPrice,
+        sortBy = "createdAt-desc",
+        page = "1",
+        allowBestOffer,
+        searchTerm,
+      } = options;
+
+      // Create query
       let query = supabase
         .from("listings")
-        .select("*")
+        .select("*", { count: "exact" }) // Get total count for pagination
         .eq("status", "active");
 
-      // Apply category filter
-      if (options?.category) {
-        query = query.eq("category", options.category);
+      // Apply filters
+      if (category) {
+        query = query.eq("category", category);
       }
 
-      // Apply search filter
-      if (options?.searchTerm) {
-        query = query.or(`title.ilike.%${options.searchTerm}%,description.ilike.%${options.searchTerm}%`);
+      if (type) {
+        query = query.eq("type", type);
       }
 
-      // Apply listing type filter
-      if (options?.listingType && options.listingType !== "all") {
-        query = query.eq("type", options.listingType);
+      if (location) {
+        query = query.eq("location", location);
       }
 
-      // Apply price range filter
-      if (options?.priceRange && options.priceRange !== "any") {
-        const [min, max] = options.priceRange.split("-").map(Number);
-        if (max) {
-          query = query.gte("price", min).lte("price", max);
-        } else {
-          query = query.gte("price", min);
-        }
+      if (condition) {
+        query = query.eq("condition", condition);
+      }
+
+      if (minPrice) {
+        query = query.gte("price", minPrice);
+      }
+
+      if (maxPrice) {
+        query = query.lte("price", maxPrice);
+      }
+
+      if (allowBestOffer === "true") {
+        query = query.eq("allow_best_offer", true);
+      }
+
+      if (searchTerm) {
+        query = query.ilike("title", `%${searchTerm}%`);
       }
 
       // Apply sorting
-      if (options?.sortBy) {
-        switch (options.sortBy) {
-          case "newest":
-            query = query.order("created_at", { ascending: false });
-            break;
-          case "price-low":
-            query = query.order("price", { ascending: true });
-            break;
-          case "price-high":
-            query = query.order("price", { ascending: false });
-            break;
-          case "popular":
-            query = query.order("views", { ascending: false });
-            break;
-        }
-      } else {
-        query = query.order("created_at", { ascending: false });
+      const [sortField, sortOrder] = sortBy.split("-");
+      if (sortField && sortOrder) {
+        query = query.order(sortField, { ascending: sortOrder === "asc" });
       }
 
-      const { data, error } = await query;
+      // Apply pagination
+      const pageSize = 9; // Number of items per page
+      const pageNumber = parseInt(page, 10) || 1;
+      const start = (pageNumber - 1) * pageSize;
+      const end = start + pageSize - 1;
+      query = query.range(start, end);
 
-      if (error) {
-        throw error;
-      }
+      // Execute query
+      const { data, error, count } = await query;
 
-      // Convert database records to Listing type
-      const mappedListings: Listing[] = data.map(item => ({
-        id: item.id,
-        sellerId: item.seller_id,
-        title: item.title,
-        description: item.description,
-        category: item.category,
-        type: item.type,
-        price: Number(item.price),
-        location: item.location,
-        condition: item.condition,
-        images: item.images,
-        allowBestOffer: item.allow_best_offer,
-        expiresAt: new Date(item.expires_at),
-        createdAt: new Date(item.created_at),
-        updatedAt: new Date(item.updated_at),
-        status: item.status,
-        views: item.views,
-        saves: item.saves,
+      if (error) throw error;
+
+      // Map the data to Listing type
+      const mappedListings: Listing[] = data.map(listing => ({
+        id: listing.id,
+        sellerId: listing.seller_id,
+        title: listing.title,
+        description: listing.description,
+        category: listing.category,
+        type: listing.type,
+        price: Number(listing.price),
+        location: listing.location,
+        condition: listing.condition,
+        images: listing.images,
+        allowBestOffer: listing.allow_best_offer,
+        expiresAt: new Date(listing.expires_at),
+        createdAt: new Date(listing.created_at),
+        updatedAt: new Date(listing.updated_at),
+        status: listing.status,
+        views: listing.views,
+        saves: listing.saves,
       }));
 
       setListings(mappedListings);
+      setTotalCount(count || 0);
     } catch (err) {
       console.error("Error fetching listings:", err);
       setError("Failed to fetch listings. Please try again.");
@@ -109,7 +133,7 @@ export const useListings = (options?: {
     } finally {
       setIsLoading(false);
     }
-  }, [options?.category, options?.searchTerm, options?.listingType, options?.priceRange, options?.sortBy]);
+  }, [options]);
 
   useEffect(() => {
     fetchListings();
@@ -119,6 +143,7 @@ export const useListings = (options?: {
     listings,
     isLoading,
     error,
+    totalCount,
     refetch: fetchListings,
   };
 };
