@@ -9,7 +9,8 @@ export const useBidStatus = (bids: Bid[], userId?: string) => {
       return {
         hasBid: false,
         isHighestBidder: false,
-        userHighestBid: null
+        userHighestBid: null,
+        userMaximumBid: null
       };
     }
 
@@ -17,12 +18,14 @@ export const useBidStatus = (bids: Bid[], userId?: string) => {
     const hasBid = userBids.length > 0;
     const highestBidAmount = bids[0].amount;
     const userHighestBid = hasBid ? Math.max(...userBids.map(bid => bid.amount)) : null;
+    const userMaximumBid = hasBid ? Math.max(...userBids.map(bid => bid.maximumBid)) : null;
     const isHighestBidder = hasBid && highestBidAmount === userHighestBid;
 
     return {
       hasBid,
       isHighestBidder,
-      userHighestBid
+      userHighestBid,
+      userMaximumBid
     };
   }, [userId, bids]);
 

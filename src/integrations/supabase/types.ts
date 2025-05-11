@@ -12,25 +12,31 @@ export type Database = {
       bids: {
         Row: {
           amount: number
+          bid_increment: number
           created_at: string
           id: string
           listing_id: string
+          maximum_bid: number
           status: string
           user_id: string
         }
         Insert: {
           amount: number
+          bid_increment?: number
           created_at?: string
           id?: string
           listing_id: string
+          maximum_bid?: number
           status?: string
           user_id: string
         }
         Update: {
           amount?: number
+          bid_increment?: number
           created_at?: string
           id?: string
           listing_id?: string
+          maximum_bid?: number
           status?: string
           user_id?: string
         }

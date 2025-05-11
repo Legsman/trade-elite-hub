@@ -17,4 +17,5 @@ export interface UserBidStatus {
   hasBid: boolean;
   isHighestBidder: boolean;
   userHighestBid: number | null;
+  userMaximumBid: number | null;
 }

@@ -96,7 +96,7 @@ export const BidHistory = ({
                     <div className="font-medium flex items-center">
                       {bid.userId === currentUserId 
                         ? "You" 
-                        : obfuscateText(bid.user?.fullName || "Anonymous")}
+                        : obfuscateText(bid.user?.fullName || "Anonymous", 2)}
                       
                       {bid.userId === currentUserId && (
                         <Badge variant="outline" className="ml-2 text-xs">You</Badge>

@@ -27,6 +27,7 @@ interface CollapsibleBidFormProps {
     hasBid: boolean;
     isHighestBidder: boolean;
     userHighestBid: number | null;
+    userMaximumBid: number | null;
   };
   expiryDate: Date;
 }
@@ -42,12 +43,12 @@ export const CollapsibleBidForm = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   
-  // Calculate minimum bid
-  const minimumBid = highestBid ? highestBid + Math.max(1, Math.floor(highestBid * 0.05)) : currentPrice;
+  // Calculate minimum bid - either highest bid + £5 or starting price
+  const minimumBid = highestBid ? highestBid + 5 : currentPrice;
 
   // Create form schema
   const FormSchema = z.object({
-    amount: z.coerce
+    maximumBid: z.coerce
       .number()
       .positive("Bid must be a positive number")
       .min(minimumBid, `Bid must be at least £${minimumBid.toLocaleString()}`)
@@ -56,19 +57,19 @@ export const CollapsibleBidForm = ({
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
-      amount: minimumBid
+      maximumBid: minimumBid
     },
   });
 
   const handleSubmit = async (values: z.infer<typeof FormSchema>) => {
     setIsSubmitting(true);
-    const result = await onPlaceBid(values.amount);
+    const result = await onPlaceBid(values.maximumBid);
     setIsSubmitting(false);
     
     if (result.success) {
       // Reset form with updated minimum bid
       form.reset({
-        amount: values.amount + Math.max(1, Math.floor(values.amount * 0.05))
+        maximumBid: values.maximumBid + 5
       });
       
       // Close the form after successful bid
@@ -107,13 +108,23 @@ export const CollapsibleBidForm = ({
         {userBidStatus.hasBid && (
           <div className="p-3 bg-muted/50 rounded-md">
             {userBidStatus.isHighestBidder ? (
-              <p className="text-green-600 font-medium">
-                You are currently the highest bidder at £{userBidStatus.userHighestBid?.toLocaleString()}
-              </p>
+              <div className="space-y-1">
+                <p className="text-green-600 font-medium">
+                  You are currently the highest bidder at £{userBidStatus.userHighestBid?.toLocaleString()}
+                </p>
+                <p className="text-xs">
+                  Your maximum bid: £{userBidStatus.userMaximumBid?.toLocaleString()}
+                </p>
+              </div>
             ) : (
-              <p className="text-amber-600">
-                You have been outbid. Your highest bid was £{userBidStatus.userHighestBid?.toLocaleString()}
-              </p>
+              <div className="space-y-1">
+                <p className="text-amber-600">
+                  You have been outbid. Your highest bid was £{userBidStatus.userHighestBid?.toLocaleString()}
+                </p>
+                <p className="text-xs">
+                  Your maximum bid: £{userBidStatus.userMaximumBid?.toLocaleString()}
+                </p>
+              </div>
             )}
           </div>
         )}
@@ -123,10 +134,10 @@ export const CollapsibleBidForm = ({
             <form onSubmit={form.handleSubmit(handleSubmit)}>
               <FormField
                 control={form.control}
-                name="amount"
+                name="maximumBid"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Your Bid (£)</FormLabel>
+                    <FormLabel>Your Maximum Bid (£)</FormLabel>
                     <FormControl>
                       <Input
                         {...field}
@@ -137,7 +148,7 @@ export const CollapsibleBidForm = ({
                       />
                     </FormControl>
                     <FormDescription>
-                      Minimum bid: £{minimumBid.toLocaleString()}
+                      Minimum bid: £{minimumBid.toLocaleString()} (in £5 increments)
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -173,7 +184,8 @@ export const CollapsibleBidForm = ({
           
           <div className="text-xs text-muted-foreground space-y-1">
             <p>• All bids are binding and can't be withdrawn</p>
-            <p>• You'll be notified by email if you're outbid</p>
+            <p>• Bids increase in £5 increments</p>
+            <p>• Your bid will be automatically increased up to your maximum</p>
             <p>• The highest bid at auction end will win</p>
           </div>
         </CollapsibleContent>

@@ -73,6 +73,8 @@ export const useBidDataFetcher = (listingId?: string) => {
           userId: item.user_id,
           listingId: item.listing_id,
           amount: Number(item.amount),
+          maximumBid: Number(item.maximum_bid),
+          bidIncrement: Number(item.bid_increment),
           createdAt: new Date(item.created_at),
           status: item.status,
           user: profile ? {
