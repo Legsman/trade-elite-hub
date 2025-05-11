@@ -212,7 +212,7 @@ const Dashboard = () => {
                 </TabsContent>
                 
                 <TabsContent value="sold">
-                  <ListingSoldItemsTab userId={user.id} />
+                  <SoldItemsTab userId={user.id} />
                 </TabsContent>
                 
                 <TabsContent value="feedback">

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { 
   Dialog, 
@@ -106,7 +105,7 @@ export const RelistForm = ({
         
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 pt-4">
-            <Alert variant="destructive" className="mb-4">
+            <Alert variant="warning" className="mb-4">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
                 Relisting items affects marketplace integrity. Only relist items when a legitimate issue prevented the completion of the sale.
