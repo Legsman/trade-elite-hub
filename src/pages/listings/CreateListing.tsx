@@ -35,7 +35,7 @@ import {
 import { useCreateListing } from "@/hooks/listings";
 import { ListingFormData } from "@/types";
 import { ListingDetailsForm } from "@/components/listings/ListingDetailsForm";
-import { ImageUploader } from "@/components/listings/ImageUploader";
+import { ListingImageUploader } from "@/components/listings/ListingImageUploader";
 
 // Define form schema
 const formSchema = z.object({
@@ -182,7 +182,7 @@ const CreateListingPage = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <ImageUploader 
+                  <ListingImageUploader 
                     images={images}
                     setImages={setImages}
                     imageUrls={imageUrls}
