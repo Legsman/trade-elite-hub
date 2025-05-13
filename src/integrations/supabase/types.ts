@@ -18,6 +18,7 @@ export type Database = {
           listing_id: string
           maximum_bid: number
           status: string
+          updated_at: string | null
           user_id: string
         }
         Insert: {
@@ -28,6 +29,7 @@ export type Database = {
           listing_id: string
           maximum_bid?: number
           status?: string
+          updated_at?: string | null
           user_id: string
         }
         Update: {
@@ -38,6 +40,7 @@ export type Database = {
           listing_id?: string
           maximum_bid?: number
           status?: string
+          updated_at?: string | null
           user_id?: string
         }
         Relationships: [
@@ -105,11 +108,14 @@ export type Database = {
       listings: {
         Row: {
           allow_best_offer: boolean
+          bid_increment: number | null
           category: string
           condition: string
           created_at: string
+          current_bid: number | null
           description: string
           expires_at: string
+          highest_bidder_id: string | null
           id: string
           images: string[]
           location: string
@@ -124,11 +130,14 @@ export type Database = {
         }
         Insert: {
           allow_best_offer?: boolean
+          bid_increment?: number | null
           category: string
           condition: string
           created_at?: string
+          current_bid?: number | null
           description: string
           expires_at: string
+          highest_bidder_id?: string | null
           id?: string
           images?: string[]
           location: string
@@ -143,11 +152,14 @@ export type Database = {
         }
         Update: {
           allow_best_offer?: boolean
+          bid_increment?: number | null
           category?: string
           condition?: string
           created_at?: string
+          current_bid?: number | null
           description?: string
           expires_at?: string
+          highest_bidder_id?: string | null
           id?: string
           images?: string[]
           location?: string
@@ -581,6 +593,20 @@ export type Database = {
       is_admin: {
         Args: { _user_id: string }
         Returns: boolean
+      }
+      proxy_place_or_update_bid: {
+        Args: {
+          p_listing_id: string
+          p_bid_id: string
+          p_user_id: string
+          p_new_maximum: number
+        }
+        Returns: {
+          listing_id: string
+          new_current_bid: number
+          highest_bidder_id: string
+          is_highest_bidder: boolean
+        }[]
       }
       rpc_is_admin: {
         Args: Record<PropertyKey, never>

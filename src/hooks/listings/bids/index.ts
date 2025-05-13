@@ -1,6 +1,6 @@
 
-export * from './useBids';
-export * from './useBidActions';
-export * from './useBidDataFetcher';
-export * from './useBidStatus';
+export { useBidActions } from './useBidActions';
+export { useBidDataFetcher } from './useBidDataFetcher';
+export { useBidStatus } from './useBidStatus';
 export * from './types';
+export * from './bidTypeAdapter';
