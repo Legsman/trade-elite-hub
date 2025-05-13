@@ -24,7 +24,7 @@ export const ListingDetailsMainContent = ({
 }: ListingDetailsMainContentProps) => {
   const isAuction = listing.type === "auction";
   const isSold = listing.status === "sold";
-  const { bids, isLoading, fetchBids, getUserBidStatus } = useBids({ listingId: listing.id });
+  const { globalBids, isLoading, fetchBids } = useBids({ listingId: listing.id });
 
   const formatDate = (date: Date) => {
     return new Intl.DateTimeFormat('en-GB', {
@@ -117,7 +117,7 @@ export const ListingDetailsMainContent = ({
           {isAuction && (
             <div className="space-y-6">
               <BidHistory 
-                bids={bids}
+                bids={globalBids}
                 isLoading={isLoading}
                 onRefresh={fetchBids}
                 currentUserId={userId}

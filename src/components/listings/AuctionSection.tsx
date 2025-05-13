@@ -22,6 +22,7 @@ export const AuctionSection = ({
 }: AuctionSectionProps) => {
   const { 
     bids, 
+    globalBids, // Use globalBids which is compatible with the component
     isLoading, 
     error, 
     placeBid, 
@@ -78,7 +79,7 @@ export const AuctionSection = ({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <BidHistory 
-            bids={bids}
+            bids={globalBids} // Use globalBids instead of bids
             isLoading={isLoading}
             onRefresh={fetchBids}
             currentUserId={userId}

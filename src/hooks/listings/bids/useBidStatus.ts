@@ -1,28 +1,24 @@
 
 import { useCallback } from "react";
 import { useAuth } from "@/hooks/auth";
-import { Bid } from "./types";
+import { Bid, UserBidStatus } from "./types";
 
 interface UseBidStatusProps {
   listingId: string;
   bids: Bid[];
 }
 
-interface BidStatus {
-  hasBid: boolean;
-  isHighestBidder: boolean;
-  userBid: Bid | null;
-}
-
 export const useBidStatus = ({ listingId, bids }: UseBidStatusProps) => {
   const { user } = useAuth();
   
-  const getUserBidStatus = useCallback((): BidStatus => {
+  const getUserBidStatus = useCallback((): UserBidStatus => {
     if (!user || !bids || bids.length === 0) {
       return {
         hasBid: false,
         isHighestBidder: false,
-        userBid: null
+        userBid: null,
+        userHighestBid: 0, // Add default value for userHighestBid
+        userMaximumBid: 0   // Add default value for userMaximumBid
       };
     }
     
@@ -36,7 +32,9 @@ export const useBidStatus = ({ listingId, bids }: UseBidStatusProps) => {
     return {
       hasBid: !!userBid,
       isHighestBidder: !!userBid && userBid.id === highestBid.id,
-      userBid
+      userBid,
+      userHighestBid: userBid ? Number(userBid.amount) : 0, // Set userHighestBid based on user's bid
+      userMaximumBid: userBid && userBid.maximum_bid ? Number(userBid.maximum_bid) : 0 // Set userMaximumBid
     };
   }, [user, bids]);
   

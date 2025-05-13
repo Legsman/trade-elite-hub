@@ -1,4 +1,3 @@
-
 import { useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Bid } from "./types";
@@ -35,20 +34,32 @@ export const useBidDataFetcher = () => {
       }
       
       // Transform the data to match the Bid interface
-      const formattedBids: Bid[] = data.map(bid => ({
-        id: bid.id,
-        listing_id: bid.listing_id,
-        user_id: bid.user_id,
-        amount: bid.amount,
-        status: bid.status,
-        created_at: bid.created_at,
-        maximum_bid: bid.maximum_bid,
-        bid_increment: bid.bid_increment,
-        user_profile: {
-          full_name: bid.profiles?.full_name,
-          avatar_url: bid.profiles?.avatar_url
-        }
-      }));
+      const formattedBids: Bid[] = data.map(bid => {
+        // Handle the profiles data safely
+        const profileData = bid.profiles as any; // Using any to bypass TypeScript error
+        
+        return {
+          id: bid.id,
+          listing_id: bid.listing_id,
+          user_id: bid.user_id,
+          amount: bid.amount,
+          status: bid.status,
+          created_at: bid.created_at,
+          maximum_bid: bid.maximum_bid,
+          bid_increment: bid.bid_increment,
+          // Safely access profile properties
+          user_profile: profileData ? {
+            full_name: profileData?.full_name,
+            avatar_url: profileData?.avatar_url
+          } : undefined,
+          // Add mapped properties for types/index.ts compatibility
+          userId: bid.user_id,
+          listingId: bid.listing_id,
+          maximumBid: bid.maximum_bid,
+          bidIncrement: bid.bid_increment,
+          createdAt: bid.created_at ? new Date(bid.created_at) : undefined
+        };
+      });
       
       console.log(`[useBidDataFetcher] Fetched ${formattedBids.length} bids`);
       return formattedBids;

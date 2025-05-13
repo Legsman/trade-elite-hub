@@ -1,10 +1,10 @@
-
 import { useState, useCallback, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useBidActions } from "./useBidActions";
 import { useBidDataFetcher } from "./useBidDataFetcher";
 import { useBidStatus } from "./useBidStatus";
 import { Bid } from "./types";
+import { adaptBidTypes } from "./bidTypeAdapter";
 import { toast } from "@/components/ui/use-toast";
 
 interface UseBidsProps {
@@ -129,8 +129,14 @@ export const useBids = ({ listingId }: UseBidsProps) => {
     }
   }, [listingId, createBid, updateBid, getUserBidStatus, fetchBids]);
 
+  // Get global type compatible bids for components that expect the global Bid type
+  const getGlobalBids = useCallback(() => {
+    return adaptBidTypes.toGlobalBids(bids);
+  }, [bids]);
+
   return {
     bids,
+    globalBids: getGlobalBids(), // Add this to provide globally compatible bids
     isLoading,
     error,
     placeBid,

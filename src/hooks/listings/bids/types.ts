@@ -12,6 +12,12 @@ export interface Bid {
     full_name?: string;
     avatar_url?: string;
   };
+  // Add these properties to match the type in types/index.ts
+  userId?: string;
+  listingId?: string;
+  maximumBid?: number;
+  bidIncrement?: number;
+  createdAt?: Date;
 }
 
 export interface BidResult {
@@ -24,4 +30,7 @@ export interface UserBidStatus {
   hasBid: boolean;
   isHighestBidder: boolean;
   userBid: Bid | null;
+  // Add these properties to match what CollapsibleBidForm expects
+  userHighestBid: number;
+  userMaximumBid: number;
 }

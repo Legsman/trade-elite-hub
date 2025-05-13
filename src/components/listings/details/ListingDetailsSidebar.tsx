@@ -1,4 +1,3 @@
-
 import { Loader2, Heart, Share2, MessageSquare, MapPin, Shield, User, Star, ThumbsUp, Gavel } from "lucide-react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -69,6 +68,16 @@ export const ListingDetailsSidebar = ({
     return await placeBid(amount);
   };
 
+  // Get user bid status and convert to the format expected by CollapsibleBidForm
+  const userBidStatus = getUserBidStatus();
+  
+  const adaptedUserBidStatus = {
+    ...userBidStatus,
+    userHighestBid: userBidStatus.userBid ? Number(userBidStatus.userBid.amount) : 0,
+    userMaximumBid: userBidStatus.userBid && userBidStatus.userBid.maximum_bid ? 
+      Number(userBidStatus.userBid.maximum_bid) : 0
+  };
+
   return (
     <>
       {/* Price card */}
@@ -101,7 +110,7 @@ export const ListingDetailsSidebar = ({
                 currentPrice={listing.price}
                 highestBid={highestBid}
                 onPlaceBid={handlePlaceBid}
-                userBidStatus={getUserBidStatus()}
+                userBidStatus={adaptedUserBidStatus}
                 expiryDate={listing.expiresAt}
               />
             ) : (
