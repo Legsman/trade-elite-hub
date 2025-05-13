@@ -20,7 +20,7 @@ export const useBidDataFetcher = () => {
           created_at,
           maximum_bid,
           bid_increment,
-          profiles:user_id (
+          profiles (
             full_name,
             avatar_url
           )
@@ -39,7 +39,7 @@ export const useBidDataFetcher = () => {
       // Transform the data to match the Bid interface
       const formattedBids: Bid[] = data.map(bid => {
         // Handle the profiles data safely
-        const profileData = bid.profiles;
+        const profileData = bid.profiles || null;
         
         return {
           id: bid.id,
@@ -50,17 +50,17 @@ export const useBidDataFetcher = () => {
           created_at: bid.created_at,
           maximum_bid: bid.maximum_bid,
           bid_increment: bid.bid_increment,
-          // Safely access profile properties
-          user_profile: profileData ? {
-            full_name: profileData?.full_name,
-            avatar_url: profileData?.avatar_url
-          } : undefined,
+          // Safely access profile properties - use optional chaining and nullish coalescing
+          user_profile: {
+            full_name: profileData ? profileData.full_name : null,
+            avatar_url: profileData ? profileData.avatar_url : null
+          },
           // Add mapped properties for types/index.ts compatibility
           userId: bid.user_id,
           listingId: bid.listing_id,
           maximumBid: bid.maximum_bid,
           bidIncrement: bid.bid_increment,
-          createdAt: bid.created_at ? new Date(bid.created_at) : undefined
+          createdAt: bid.created_at ? new Date(bid.created_at) : new Date()
         };
       });
       

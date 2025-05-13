@@ -7,6 +7,7 @@ import { useBidStatus } from "./useBidStatus";
 import { Bid } from "./types";
 import { adaptBidTypes } from "./bidTypeAdapter";
 import { toast } from "@/components/ui/use-toast";
+import { RealtimeChannel } from "@supabase/supabase-js";
 
 interface UseBidsProps {
   listingId: string;
@@ -52,9 +53,10 @@ export const useBids = ({ listingId }: UseBidsProps) => {
     
     // Create a specific channel name for this listing
     const channelName = `auction-bids-${listingId}`;
+    let channel: RealtimeChannel;
     
     try {
-      const channel = supabase
+      channel = supabase
         .channel(channelName)
         .on(
           'postgres_changes',
@@ -86,7 +88,9 @@ export const useBids = ({ listingId }: UseBidsProps) => {
       
       return () => {
         console.log(`[useBids] Cleaning up realtime subscription for ${channelName}`);
-        supabase.removeChannel(channelName);
+        if (channel) {
+          supabase.removeChannel(channel);
+        }
       };
     } catch (err) {
       console.error('[useBids] Error setting up realtime subscription:', err);
