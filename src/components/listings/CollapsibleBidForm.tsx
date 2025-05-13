@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,6 +44,7 @@ export const CollapsibleBidForm = ({
 }: CollapsibleBidFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [lastBidAmount, setLastBidAmount] = useState<number | null>(null);
   
   // Calculate minimum bid - either highest bid + £5 or starting price
   const minimumBid = highestBid ? highestBid + 5 : currentPrice;
@@ -63,21 +64,23 @@ export const CollapsibleBidForm = ({
     },
   });
 
+  // Reset form when minimum bid changes
+  useEffect(() => {
+    form.setValue('maximumBid', minimumBid);
+  }, [minimumBid, form]);
+
   const handleSubmit = async (values: z.infer<typeof FormSchema>) => {
     setIsSubmitting(true);
+    setLastBidAmount(values.maximumBid);
+    
     try {
-      console.log("Placing bid:", values.maximumBid);
+      console.log("Placing bid from form:", values.maximumBid);
       const result = await onPlaceBid(values.maximumBid);
       
       if (result.success) {
         // Reset form with updated minimum bid
         form.reset({
           maximumBid: values.maximumBid + 5
-        });
-        
-        toast({
-          title: "Bid Placed Successfully",
-          description: `Your maximum bid of ${formatCurrency(values.maximumBid)} has been placed.`,
         });
         
         // Close the form after successful bid
@@ -144,6 +147,14 @@ export const CollapsibleBidForm = ({
                 </p>
               </div>
             )}
+          </div>
+        )}
+
+        {lastBidAmount && !userBidStatus.hasBid && !isOpen && (
+          <div className="p-3 bg-blue-50 rounded-md">
+            <p className="text-blue-600">
+              Your bid of £{lastBidAmount.toLocaleString()} is being processed...
+            </p>
           </div>
         )}
 

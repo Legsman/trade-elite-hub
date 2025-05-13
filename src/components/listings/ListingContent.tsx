@@ -1,4 +1,3 @@
-
 import React, { memo } from "react";
 import { ListingGrid } from "@/components/listings";
 import { Loading } from "@/components/ui/loading";
@@ -15,6 +14,7 @@ interface ListingContentProps {
   pageSize: number;
   currentPage: number;
   highestBids?: Record<string, number>;
+  bidCounts?: Record<string, number>;
   onPageChange: (page: number) => void;
   onRetry?: () => void;
 }
@@ -27,6 +27,7 @@ export const ListingContent: React.FC<ListingContentProps> = memo(({
   pageSize,
   currentPage,
   highestBids = {},
+  bidCounts = {},
   onPageChange,
   onRetry,
 }) => {
@@ -68,7 +69,11 @@ export const ListingContent: React.FC<ListingContentProps> = memo(({
 
   return (
     <div className="space-y-8">
-      <ListingGrid listings={listings} highestBids={highestBids} />
+      <ListingGrid 
+        listings={listings} 
+        highestBids={highestBids} 
+        bidCounts={bidCounts} 
+      />
       
       {/* Show loading indicator when refreshing data with existing listings */}
       {isLoading && listings.length > 0 && (

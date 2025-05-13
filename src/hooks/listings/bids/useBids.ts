@@ -6,6 +6,7 @@ import { useBidDataFetcher } from "./useBidDataFetcher";
 import { useBidActions } from "./useBidActions";
 import { useBidStatus } from "./useBidStatus";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 export const useBids = (options: UseBidsOptions = {}) => {
   const { listingId, onBidSuccess } = options;
@@ -17,10 +18,19 @@ export const useBids = (options: UseBidsOptions = {}) => {
 
   // Memoized function to place a bid and fetch updated data
   const handlePlaceBid = useCallback(async (amount: number) => {
+    console.log(`Starting bid placement process for amount: ${amount}`);
     const result = await placeBid(amount);
+    
     if (result.success) {
+      console.log("Bid placed successfully, fetching updated bids");
       // Immediately fetch the updated bids after successful bid placement
       await fetchBids();
+      
+      // Show a toast notification
+      toast({
+        title: "Bid Placed Successfully",
+        description: `Your bid of £${amount.toLocaleString()} has been placed.`,
+      });
     }
     return result;
   }, [placeBid, fetchBids]);
@@ -28,12 +38,17 @@ export const useBids = (options: UseBidsOptions = {}) => {
   // Fetch bids on mount or when listingId changes
   useEffect(() => {
     console.log("Setting up bids subscription for listing:", listingId);
+    
+    // Initial fetch
     fetchBids();
     
     // Set up real-time subscription for bids
     if (listingId) {
+      const channelId = `bids-${listingId}-${Date.now()}`;
+      console.log(`Creating Supabase channel: ${channelId}`);
+      
       const channel = supabase
-        .channel(`bids-${listingId}`)
+        .channel(channelId)
         .on(
           'postgres_changes',
           {
@@ -49,12 +64,12 @@ export const useBids = (options: UseBidsOptions = {}) => {
           }
         )
         .subscribe((status) => {
-          console.log("Supabase realtime subscription status:", status);
+          console.log(`Supabase realtime subscription status (${channelId}):`, status);
         });
       
       // Clean up the subscription
       return () => {
-        console.log("Cleaning up bids subscription");
+        console.log(`Cleaning up bids subscription for channel: ${channelId}`);
         supabase.removeChannel(channel);
       };
     }

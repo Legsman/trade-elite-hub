@@ -13,6 +13,7 @@ const ListingsPage = () => {
     currentPage,
     pageSize,
     highestBids,
+    bidCounts,
     handlePageChange,
     handleClearFilters,
     refetch
@@ -35,6 +36,7 @@ const ListingsPage = () => {
           pageSize={pageSize}
           currentPage={currentPage}
           highestBids={highestBids}
+          bidCounts={bidCounts}
           onPageChange={handlePageChange}
           onRetry={refetch}
         />

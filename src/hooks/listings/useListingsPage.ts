@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -92,7 +91,7 @@ export const useListingsPage = () => {
     ?.filter(listing => listing.type === "auction")
     .map(listing => listing.id) || [];
     
-  const { highestBids } = useListingBids(auctionListingIds);
+  const { highestBids, bidCounts } = useListingBids(auctionListingIds);
   
   // Optimize refresh logic
   const refreshWithBackoff = useCallback(() => {
@@ -130,6 +129,7 @@ export const useListingsPage = () => {
     currentPage,
     pageSize,
     highestBids,
+    bidCounts,
     handlePageChange,
     handleClearFilters,
     refetch

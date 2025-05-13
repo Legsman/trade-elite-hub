@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -52,6 +53,9 @@ export const useListingBids = (listingIds: string[]) => {
           countsMap[listingId] = bidCount;
         });
         
+        console.log("Highest bids fetched:", bidsMap);
+        console.log("Bid counts fetched:", countsMap);
+        
         setHighestBids(bidsMap);
         setBidCounts(countsMap);
       } catch (error) {
@@ -59,7 +63,34 @@ export const useListingBids = (listingIds: string[]) => {
       }
     };
     
+    // Initial fetch
     fetchBidsForListings();
+    
+    // Set up realtime subscription for all auction listings
+    const channel = supabase
+      .channel('auction-bids-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'bids',
+          filter: `listing_id=in.(${listingIds.join(',')})`
+        },
+        (payload) => {
+          console.log("Realtime bid update received for listing:", payload);
+          // Refetch bids when there's a change
+          fetchBidsForListings();
+        }
+      )
+      .subscribe((status) => {
+        console.log("Supabase realtime subscription status for auction bids:", status);
+      });
+    
+    return () => {
+      console.log("Cleaning up bids subscription for multiple listings");
+      supabase.removeChannel(channel);
+    };
   }, [listingIds]);
   
   return { highestBids, bidCounts };

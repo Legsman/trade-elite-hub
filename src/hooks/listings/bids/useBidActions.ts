@@ -31,6 +31,8 @@ export const useBidActions = (
     }
 
     try {
+      console.log(`Starting bid process for listing ${listingId}, amount: ${amount}`);
+      
       // First, fetch the listing to get the current price
       const { data: listingData, error: listingError } = await supabase
         .from("listings")
@@ -38,7 +40,10 @@ export const useBidActions = (
         .eq("id", listingId)
         .single();
 
-      if (listingError) throw listingError;
+      if (listingError) {
+        console.error("Error fetching listing:", listingError);
+        throw listingError;
+      }
       
       // Check if user is trying to bid on their own listing
       if (listingData.seller_id === user.id) {
@@ -58,8 +63,13 @@ export const useBidActions = (
         .eq("status", "active")
         .order("maximum_bid", { ascending: false });
 
-      if (bidsError) throw bidsError;
+      if (bidsError) {
+        console.error("Error fetching current bids:", bidsError);
+        throw bidsError;
+      }
 
+      console.log("Current bids:", currentBids);
+      
       // Default minimum bid is the listing price if no bids exist
       let minBidAmount = Number(listingData.price);
       
@@ -78,18 +88,20 @@ export const useBidActions = (
         // Current visible bid will be the highest amount (not maximum_bid)
         currentHighBid = Math.max(...currentBids.map(bid => Number(bid.amount)));
         
-        // Minimum bid is current visible bid + increment (usually £5)
-        minBidAmount = currentHighBid;
+        // Minimum bid is current visible bid + increment (£5)
+        minBidAmount = currentHighBid + 5;
       }
+
+      console.log(`Current high bid: £${currentHighBid}, Highest max bid: £${highestMaxBid}, Minimum bid needed: £${minBidAmount}`);
 
       // Check if user already has an active bid on this listing
       const existingUserBid = currentBids.find(bid => bid.user_id === user.id);
       
-      // Validation: New max bid must be higher than existing visible bid (or starting price)
-      if (amount <= currentHighBid) {
+      // Validation: New max bid must be higher than existing visible bid + increment
+      if (amount < minBidAmount) {
         toast({
           title: "Invalid Bid",
-          description: `Your bid must be higher than the current bid of £${currentHighBid.toLocaleString()}.`,
+          description: `Your bid must be at least £${minBidAmount.toLocaleString()}.`,
           variant: "destructive",
         });
         return { success: false };
@@ -112,39 +124,36 @@ export const useBidActions = (
       if (highestBidUserId === user.id) {
         // User is already the highest bidder, just updating their maximum
         newVisibleBid = currentHighBid; // Visible bid doesn't change
+        console.log("User is raising their max bid but remains highest bidder");
       } else if (!existingUserBid && currentBids.length === 0) {
         // First bid on the listing - start at the listing price
         newVisibleBid = minBidAmount;
+        console.log("First bid on listing, visible bid set to minimum");
       } else if (amount > highestMaxBid) {
         // User's max bid is higher than the current highest max bid
-        // Set visible bid to the second highest max + increment (or minimum if no second bid)
-        if (currentBids.length > 1) {
-          // Find the second highest maximum bid
-          const secondHighestMax = currentBids.length > 1 
-            ? Number(currentBids.filter(bid => bid.user_id !== highestBidUserId)
-                .sort((a, b) => Number(b.maximum_bid) - Number(a.maximum_bid))[0]?.maximum_bid || 0)
-            : 0;
-            
-          // If user is already second highest, use their current max as the reference
-          const referenceMax = existingUserBid 
-            ? Math.max(secondHighestMax, Number(existingUserBid.maximum_bid)) 
-            : secondHighestMax;
-            
-          // New visible bid is the reference max + increment, but capped at user's max bid
-          newVisibleBid = Math.min(referenceMax + bidIncrement, amount);
+        // Set visible bid to the previous highest max + increment (or minimum if no second bid)
+        console.log("User's max bid is higher than current highest max");
+        
+        if (currentBids.length > 0) {
+          newVisibleBid = Math.min(highestMaxBid + bidIncrement, amount);
+          console.log(`Setting visible bid to previous highest max + increment: £${newVisibleBid}`);
         } else {
-          // Only one bidder (not the current user) - bid increment over current bid
-          newVisibleBid = Math.min(currentHighBid + bidIncrement, amount);
+          newVisibleBid = minBidAmount;
+          console.log(`No previous bids, setting visible bid to minimum: £${newVisibleBid}`);
         }
       } else {
         // User's max is lower than current highest max
-        // Set visible bid to user's max, and the system will auto-increment the highest bidder's
-        newVisibleBid = Math.min(amount + bidIncrement, highestMaxBid);
+        // Their bid becomes the new visible bid, and then the system will auto-increment the highest bidder
+        newVisibleBid = Math.min(amount, highestMaxBid - bidIncrement) + bidIncrement;
+        console.log(`User's max is lower than highest max, visible bid: £${newVisibleBid}`);
       }
+
+      console.log(`New visible bid amount: £${newVisibleBid}, User's maximum: £${amount}`);
 
       // Handle insert or update of user's bid
       if (existingUserBid) {
         // Update existing bid
+        console.log("Updating existing bid");
         const { error: updateError } = await supabase
           .from("bids")
           .update({
@@ -156,9 +165,13 @@ export const useBidActions = (
           .eq("listing_id", listingId)
           .eq("status", "active");
 
-        if (updateError) throw updateError;
+        if (updateError) {
+          console.error("Error updating bid:", updateError);
+          throw updateError;
+        }
       } else {
         // Insert new bid
+        console.log("Inserting new bid");
         const { error: insertError } = await supabase
           .from("bids")
           .insert({
@@ -170,12 +183,16 @@ export const useBidActions = (
             status: "active"
           });
 
-        if (insertError) throw insertError;
+        if (insertError) {
+          console.error("Error inserting bid:", insertError);
+          throw insertError;
+        }
       }
 
       // If there's a previous highest bidder who isn't the current user
       // and the new bid outbids them, create a notification
       if (highestBidUserId && highestBidUserId !== user.id && amount > highestMaxBid) {
+        console.log(`Creating outbid notification for user ${highestBidUserId}`);
         await supabase
           .from("notifications")
           .insert({
@@ -191,6 +208,7 @@ export const useBidActions = (
 
       // Always create notification for the seller (unless they're the bidder)
       if (listingData.seller_id !== user.id) {
+        console.log(`Creating new bid notification for seller ${listingData.seller_id}`);
         await supabase
           .from("notifications")
           .insert({
@@ -205,15 +223,7 @@ export const useBidActions = (
           });
       }
 
-      toast({
-        title: "Bid Placed",
-        description: `Your maximum bid of £${amount.toLocaleString()} has been placed successfully.`,
-      });
-
-      // Refresh bids
-      if (fetchBids) {
-        fetchBids();
-      }
+      console.log("Bid process completed successfully");
       
       // Call success callback if provided
       if (onBidSuccess) {
@@ -230,7 +240,7 @@ export const useBidActions = (
       });
       return { success: false };
     }
-  }, [user, listingId, fetchBids, onBidSuccess]);
+  }, [user, listingId, onBidSuccess]);
 
   return { placeBid };
 };
