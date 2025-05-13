@@ -30,3 +30,5 @@ export * from './ListingDetailSoldAlert';
 export * from './RelistForm';
 export * from './SoldItemsTab';
 export * from './sold-items';
+export * from './details';
+
