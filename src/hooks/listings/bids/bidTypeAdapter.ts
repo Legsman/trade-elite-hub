@@ -27,8 +27,8 @@ export const adaptBidTypes = {
         status: bid.status,
         createdAt: bid.createdAt || new Date(bid.created_at),
         maximumBid: bid.maximum_bid ? Number(bid.maximum_bid) : (bid.maximumBid || 0),
-        bidIncrement: bid.bid_increment ? Number(bid.bid_increment) : (bid.bidIncrement || 5),
-        userProfile: {
+        bidIncrement: bid.bid_increment ? Number(bid.bid_increment) : (bid.bidIncrement || 0),
+        user: {
           fullName: bid.user_profile?.full_name || null,
           avatarUrl: bid.user_profile?.avatar_url || null
         }
@@ -49,17 +49,17 @@ export const adaptBidTypes = {
       listing_id: bid.listingId,
       amount: bid.amount,
       maximum_bid: bid.maximumBid || 0,
-      bid_increment: bid.bidIncrement || 5,
+      bid_increment: bid.bidIncrement || 0,
       status: bid.status,
       created_at: bid.createdAt?.toISOString() || new Date().toISOString(),
       user_profile: {
-        full_name: bid.userProfile?.fullName || null,
-        avatar_url: bid.userProfile?.avatarUrl || null
+        full_name: bid.user?.fullName || null,
+        avatar_url: bid.user?.avatarUrl || null
       },
       userId: bid.userId,
       listingId: bid.listingId,
       maximumBid: bid.maximumBid || 0,
-      bidIncrement: bid.bidIncrement || 5,
+      bidIncrement: bid.bidIncrement || 0,
       createdAt: bid.createdAt
     };
   }
