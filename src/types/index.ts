@@ -46,13 +46,14 @@ export interface Bid {
   userId: string;
   listingId: string;
   amount: number;
-  maximumBid: number;
-  bidIncrement: number;
-  createdAt: Date;
   status: string;
+  createdAt: Date;
+  maximumBid?: number;
+  bidIncrement?: number;
   user?: {
     fullName: string | null;
     avatarUrl: string | null;
+    username: string | null;
   };
 }
 

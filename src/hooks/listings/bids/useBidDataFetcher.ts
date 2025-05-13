@@ -42,7 +42,7 @@ export const useBidDataFetcher = () => {
         // Fetch profiles for these users
         const { data: profilesData, error: profilesError } = await supabase
           .from('profiles')
-          .select('id, full_name, avatar_url')
+          .select('id, full_name, avatar_url, username')
           .in('id', userIds);
         
         if (profilesError) {
@@ -79,7 +79,8 @@ export const useBidDataFetcher = () => {
               // Use the profile data from our map
               user_profile: {
                 full_name: userProfile ? userProfile.full_name : null,
-                avatar_url: userProfile ? userProfile.avatar_url : null
+                avatar_url: userProfile ? userProfile.avatar_url : null,
+                username: userProfile ? userProfile.username : null
               },
               // Add mapped properties for types/index.ts compatibility
               userId: bid.user_id,
@@ -107,7 +108,8 @@ export const useBidDataFetcher = () => {
         bid_increment: bid.bid_increment || 0,
         user_profile: {
           full_name: null,
-          avatar_url: null
+          avatar_url: null,
+          username: null
         },
         userId: bid.user_id,
         listingId: bid.listing_id,
@@ -126,6 +128,19 @@ export const useBidDataFetcher = () => {
     console.log(`[useBidDataFetcher] Fetching highest bid for listing: ${listingId}`);
     
     try {
+      // Try to get the current_bid first from the listings table
+      const { data: listingData, error: listingError } = await supabase
+        .from('listings')
+        .select('current_bid')
+        .eq('id', listingId)
+        .single();
+      
+      if (!listingError && listingData && listingData.current_bid) {
+        console.log(`[useBidDataFetcher] Found current_bid in listing: ${listingData.current_bid}`);
+        return Number(listingData.current_bid);
+      }
+      
+      // Fall back to the old method if current_bid is not available
       const { data, error } = await supabase
         .from('bids')
         .select('amount')

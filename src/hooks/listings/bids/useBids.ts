@@ -1,12 +1,12 @@
+
 import { useState, useCallback, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useBidActions } from "./useBidActions";
+import { useAuth } from "@/hooks/auth";
 import { useBidDataFetcher } from "./useBidDataFetcher";
+import { useBidActions } from "./useBidActions";
 import { useBidStatus } from "./useBidStatus";
-import { Bid } from "./types";
 import { adaptBidTypes } from "./bidTypeAdapter";
-import { toast } from "@/components/ui/use-toast";
-import { RealtimeChannel } from "@supabase/supabase-js";
+import { Bid, BidStatus } from "./types";
 import { Bid as GlobalBid } from "@/types";
 
 interface UseBidsProps {
@@ -14,220 +14,183 @@ interface UseBidsProps {
 }
 
 export const useBids = ({ listingId }: UseBidsProps) => {
+  const { user } = useAuth();
+  const { fetchBidsForListing, fetchHighestBid } = useBidDataFetcher();
+  const { createBid, updateBid } = useBidActions();
+  const { checkBidStatus } = useBidStatus();
+  
   const [bids, setBids] = useState<Bid[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [globalBids, setGlobalBids] = useState<GlobalBid[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [highestBid, setHighestBid] = useState<number | null>(null);
   
-  // Debug state to track mapping issues
-  const [dataFlowStats, setDataFlowStats] = useState({
-    rawBidsCount: 0,
-    mappedBidsCount: 0,
-    hasProfileData: false
-  });
-
-  const { fetchBidsForListing, fetchHighestBid } = useBidDataFetcher();
-  const { createBid, updateBid } = useBidActions();
-  const { getUserBidStatus } = useBidStatus({ listingId, bids });
-
-  // Fetch bids function with improved logging
+  // Fetch bids and highest bid
   const fetchBids = useCallback(async () => {
-    console.log(`[useBids] Fetching bids for listing ${listingId}`);
-    setIsLoading(true);
-    setError(null);
+    console.log("[useBids] Fetching bids for listing:", listingId);
     
     try {
+      setIsLoading(true);
+      setError(null);
+      
+      // First, try to get the highest bid - this is faster than fetching all bids
+      const highestBidAmount = await fetchHighestBid(listingId);
+      setHighestBid(highestBidAmount);
+      
+      // Then fetch all bids for the listing
       const fetchedBids = await fetchBidsForListing(listingId);
-      console.log(`[useBids] Fetched ${fetchedBids.length} bids`, fetchedBids);
+      console.log("[useBids] Fetched bids:", fetchedBids);
       
-      // Update debug stats
-      const hasAnyProfileData = fetchedBids.some(bid => 
-        bid.user_profile && (bid.user_profile.full_name || bid.user_profile.avatar_url)
-      );
-      
-      setDataFlowStats({
-        rawBidsCount: fetchedBids.length,
-        mappedBidsCount: fetchedBids.length, // Will be updated after mapping
-        hasProfileData: hasAnyProfileData
+      // Sort bids by amount in descending order
+      const sortedBids = fetchedBids.sort((a, b) => {
+        // Primary sort by amount descending
+        if (b.amount !== a.amount) return b.amount - a.amount;
+        
+        // Secondary sort by creation date ascending (earlier wins ties)
+        const dateA = new Date(a.created_at);
+        const dateB = new Date(b.created_at);
+        return dateA.getTime() - dateB.getTime();
       });
       
-      setBids(fetchedBids);
+      setBids(sortedBids);
       
-      // Update highest bid amount
-      const highest = await fetchHighestBid(listingId);
-      console.log(`[useBids] Highest bid amount: ${highest}`);
-      setHighestBid(highest);
+      // Convert bids to the global Bid type
+      const adaptedBids = adaptBidTypes.toGlobalBids(sortedBids);
+      setGlobalBids(adaptedBids);
+      
+      setIsLoading(false);
     } catch (err) {
-      console.error('[useBids] Error fetching bids:', err);
-      setError('Failed to load bids. Please try again.');
-    } finally {
+      console.error("[useBids] Error fetching bids:", err);
+      setError(err instanceof Error ? err.message : "Failed to fetch bids");
       setIsLoading(false);
     }
   }, [listingId, fetchBidsForListing, fetchHighestBid]);
-
-  // Update diagnostic stats whenever bids change
+  
+  // Set up realtime subscription for bid updates
   useEffect(() => {
-    if (bids.length > 0) {
-      const globalMappedBids = adaptBidTypes.toGlobalBids(bids);
-      const hasAnyProfileData = bids.some(bid => 
-        bid.user_profile && (bid.user_profile.full_name || bid.user_profile.avatar_url)
-      );
-      
-      setDataFlowStats(prev => ({
-        ...prev,
-        mappedBidsCount: globalMappedBids.length,
-        hasProfileData: hasAnyProfileData
-      }));
-      
-      // Log diagnostic information
-      console.log('[useBids] Data flow stats:', {
-        rawBidsCount: bids.length,
-        mappedBidsCount: globalMappedBids.length,
-        hasProfileData: hasAnyProfileData
-      });
-      
-      // Warning if we have bids but no profile data
-      if (bids.length > 0 && !hasAnyProfileData) {
-        console.warn('[useBids] ⚠️ Bids retrieved but NO PROFILE DATA found! Check foreign key constraints and data consistency');
-      }
-    }
-  }, [bids]);
-
-  // Set up realtime subscription with improved error handling
-  useEffect(() => {
-    console.log(`[useBids] Setting up realtime subscription for listing ${listingId}`);
+    if (!listingId) return;
     
-    // Create a specific channel name for this listing
-    const channelName = `auction-bids-${listingId}`;
-    let channel: RealtimeChannel;
+    console.log("[useBids] Setting up realtime subscription for bids on listing:", listingId);
     
-    try {
-      channel = supabase
-        .channel(channelName)
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'bids',
-            filter: `listing_id=eq.${listingId}`
-          },
-          (payload) => {
-            console.log('[useBids] Realtime update received:', payload);
-            // Immediately fetch the latest bids when a change is detected
-            fetchBids().catch(err => {
-              console.error('[useBids] Failed to fetch bids after realtime update:', err);
-            });
-          }
-        )
-        .subscribe((status) => {
-          console.log(`[useBids] Supabase realtime subscription status: ${status}`);
-          if (status !== 'SUBSCRIBED') {
-            console.warn(`[useBids] Subscription status is not 'SUBSCRIBED': ${status}`);
-          }
-        });
-    
-      // Initial fetch of bids after setting up subscription
-      fetchBids().catch(err => {
-        console.error('[useBids] Initial fetch failed:', err);
-      });
-      
-      return () => {
-        console.log(`[useBids] Cleaning up realtime subscription for ${channelName}`);
-        if (channel) {
-          supabase.removeChannel(channel);
+    const channel = supabase
+      .channel(`listing-bids-${listingId}`)
+      .on(
+        'postgres_changes',
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'bids',
+          filter: `listing_id=eq.${listingId}`
+        },
+        (payload) => {
+          console.log("[useBids] Realtime update received:", payload);
+          // Refresh bids when there's a change
+          fetchBids();
         }
-      };
-    } catch (err) {
-      console.error('[useBids] Error setting up realtime subscription:', err);
-      setError('Failed to set up real-time updates. Please refresh the page.');
-      
-      // Still attempt to fetch bids even if subscription fails
-      fetchBids().catch(error => {
-        console.error('[useBids] Fallback fetch failed:', error);
+      )
+      .subscribe((status) => {
+        console.log("[useBids] Supabase realtime subscription status:", status);
       });
-      
-      return () => {};
-    }
+    
+    // Also subscribe to the listing table for current_bid updates
+    const listingChannel = supabase
+      .channel(`listing-current-bid-${listingId}`)
+      .on(
+        'postgres_changes',
+        { 
+          event: 'UPDATE', 
+          schema: 'public', 
+          table: 'listings',
+          filter: `id=eq.${listingId}`
+        },
+        (payload) => {
+          console.log("[useBids] Listing update received:", payload);
+          // Check if current_bid has changed
+          const newData = payload.new as any;
+          
+          if (newData && newData.current_bid) {
+            console.log("[useBids] Updating highest bid to:", newData.current_bid);
+            setHighestBid(Number(newData.current_bid));
+          }
+        }
+      )
+      .subscribe();
+    
+    // Initial fetch
+    fetchBids();
+    
+    // Cleanup function
+    return () => {
+      console.log("[useBids] Cleaning up realtime subscription");
+      supabase.removeChannel(channel);
+      supabase.removeChannel(listingChannel);
+    };
   }, [listingId, fetchBids]);
-
-  // Place bid function - with improved error handling and proxy bidding support
-  const placeBid = useCallback(async (amount: number) => {
-    console.log(`[useBids] Attempting to place bid: ${amount}`);
+  
+  // Place a new bid or update an existing one
+  const placeBid = useCallback(async (amount: number): Promise<{ success: boolean; error?: string }> => {
+    console.log(`[useBids] Placing bid on listing ${listingId} for amount ${amount}`);
+    
+    if (!user) {
+      return { success: false, error: "You must be logged in to place a bid" };
+    }
+    
     try {
-      // Get the user's current bid status
-      const { hasBid, userBid } = getUserBidStatus();
+      // Check if user already has a bid on this listing
+      const userBidStatus = await checkBidStatus({ listingId, userId: user.id });
       
       let result;
-      
-      // If user already has a bid, update it instead of creating a new one
-      if (hasBid && userBid) {
-        console.log(`[useBids] User already has a bid (${userBid.id}), updating maximum bid to: ${amount}`);
-        result = await updateBid(userBid.id, amount);
+      if (userBidStatus.hasBid && userBidStatus.userBid) {
+        console.log("[useBids] User already has a bid, updating maximum bid", userBidStatus.userBid);
+        result = await updateBid(userBidStatus.userBid.id, amount);
       } else {
-        console.log('[useBids] Creating new bid with maximum bid:', amount);
+        console.log("[useBids] Creating new bid");
         result = await createBid(listingId, amount);
       }
       
       if (result.success) {
-        console.log('[useBids] Bid placed successfully:', result);
-        toast({
-          title: "Bid placed",
-          description: `Your bid has been placed successfully. The current bid will be increased in £5 increments as needed.`,
-        });
-        
-        // Immediately fetch updated bids
-        await fetchBids();
-        return result;
+        console.log("[useBids] Bid placed successfully");
+        return { success: true };
       } else {
-        console.error('[useBids] Error placing bid:', result.error);
-        toast({
-          variant: "destructive",
-          title: "Bid failed",
-          description: result.error || "Failed to place bid. Please try again.",
-        });
-        return result;
+        console.error("[useBids] Error placing bid:", result.error);
+        return { success: false, error: result.error };
       }
     } catch (err) {
-      console.error('[useBids] Exception when placing bid:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-      
-      toast({
-        variant: "destructive",
-        title: "Bid failed",
-        description: errorMessage,
-      });
-      
-      return {
-        success: false,
-        error: errorMessage
-      };
+      console.error("[useBids] Exception placing bid:", err);
+      return { success: false, error: err instanceof Error ? err.message : "Failed to place bid" };
     }
-  }, [listingId, createBid, updateBid, getUserBidStatus, fetchBids]);
-
-  // Get global type compatible bids for components that expect the global Bid type
-  const getGlobalBids = useCallback((): GlobalBid[] => {
-    console.log(`[useBids] Converting ${bids.length} bids to global format`);
-    const globalBids = adaptBidTypes.toGlobalBids(bids);
-    
-    // Debug log for mapping issues
-    if (bids.length > 0 && globalBids.length === 0) {
-      console.error('[useBids] ⚠️ Critical mapping error: Raw bids available but no global bids produced!');
+  }, [user, listingId, createBid, updateBid, checkBidStatus]);
+  
+  // Get user's bid status (has bid, is highest bidder, user's bid)
+  const getUserBidStatus = useCallback((): BidStatus => {
+    if (!user) {
+      return { hasBid: false, isHighestBidder: false, userBid: null };
     }
     
-    return globalBids;
-  }, [bids]);
-
+    const userBid = bids.find(bid => bid.user_id === user.id);
+    
+    if (!userBid) {
+      return { hasBid: false, isHighestBidder: false, userBid: null };
+    }
+    
+    // If there are bids, check if this user has the highest one
+    const isHighestBidder = bids.length > 0 && bids[0].user_id === user.id;
+    
+    return {
+      hasBid: true,
+      isHighestBidder,
+      userBid
+    };
+  }, [bids, user]);
+  
   return {
     bids,
-    globalBids: getGlobalBids(),
+    globalBids,
     isLoading,
     error,
+    highestBid,
     placeBid,
     fetchBids,
-    highestBid,
-    getUserBidStatus,
-    // Expose diagnostics for troubleshooting
-    diagnostics: dataFlowStats
+    getUserBidStatus
   };
 };

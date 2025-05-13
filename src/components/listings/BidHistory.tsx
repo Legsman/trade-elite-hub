@@ -92,7 +92,7 @@ export const BidHistory = ({
               <Alert className="mb-4 bg-amber-50 border-amber-200">
                 <AlertTriangle className="h-4 w-4 text-amber-500" />
                 <AlertDescription className="text-xs text-amber-700">
-                  Debug: Found {bids.length} bids. User profiles available: {bids.some(b => b.user?.fullName) ? 'Yes' : 'No'}
+                  Debug: Found {bids.length} bids. User profiles available: {bids.some(b => b.user?.username) ? 'Yes' : 'No'}
                 </AlertDescription>
               </Alert>
             )}
@@ -115,7 +115,7 @@ export const BidHistory = ({
                       <div className="font-medium flex items-center">
                         {bid.userId === currentUserId 
                           ? "You" 
-                          : obfuscateText(bid.user?.fullName || "Anonymous", 2)}
+                          : obfuscateText(bid.user?.username || "User", 2)}
                         
                         {bid.userId === currentUserId && (
                           <Badge variant="outline" className="ml-2 text-xs">You</Badge>

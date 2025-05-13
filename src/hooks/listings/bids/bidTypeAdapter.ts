@@ -30,7 +30,8 @@ export const adaptBidTypes = {
         bidIncrement: bid.bid_increment ? Number(bid.bid_increment) : (bid.bidIncrement || 0),
         user: {
           fullName: bid.user_profile?.full_name || null,
-          avatarUrl: bid.user_profile?.avatar_url || null
+          avatarUrl: bid.user_profile?.avatar_url || null,
+          username: bid.user_profile?.username || null
         }
       }));
     } catch (error) {
@@ -54,7 +55,8 @@ export const adaptBidTypes = {
       created_at: bid.createdAt?.toISOString() || new Date().toISOString(),
       user_profile: {
         full_name: bid.user?.fullName || null,
-        avatar_url: bid.user?.avatarUrl || null
+        avatar_url: bid.user?.avatarUrl || null,
+        username: bid.user?.username || null
       },
       userId: bid.userId,
       listingId: bid.listingId,
