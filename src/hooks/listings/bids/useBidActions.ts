@@ -28,7 +28,7 @@ export const useBidActions = () => {
       console.log(`[useBidActions] ${existingBidId ? 'Updating' : 'Creating'} bid with proxy function: listing=${listingId}, maxBid=${maxBid}`);
       
       // Call the RPC function with the correct parameters
-      // @ts-ignore - Ignore TypeScript error for custom RPC function
+      // Removed @ts-ignore as we now have proper type definitions for this function
       const { data, error } = await supabase.rpc('proxy_place_or_update_bid', {
         p_listing_id: listingId,
         p_bid_id: existingBidId || null,
