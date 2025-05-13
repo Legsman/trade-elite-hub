@@ -33,7 +33,7 @@ export const useBidActions = () => {
         p_bid_id: existingBidId || null,
         p_user_id: user.id,
         p_new_maximum: maxBid
-      });
+      } as any); // Use type assertion as a temporary fix
       
       if (error) {
         // Log the error for debugging
