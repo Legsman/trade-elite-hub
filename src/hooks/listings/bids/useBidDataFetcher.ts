@@ -9,6 +9,8 @@ export const useBidDataFetcher = () => {
     console.log(`[useBidDataFetcher] Fetching bids for listing: ${listingId}`);
     
     try {
+      // Use an explicit join query instead of relying on the nested selection
+      // This provides better control and visibility when debugging
       const { data, error } = await supabase
         .from('bids')
         .select(`
@@ -19,11 +21,7 @@ export const useBidDataFetcher = () => {
           status,
           created_at,
           maximum_bid,
-          bid_increment,
-          profiles (
-            full_name,
-            avatar_url
-          )
+          bid_increment
         `)
         .eq('listing_id', listingId)
         .eq('status', 'active')
@@ -36,47 +34,87 @@ export const useBidDataFetcher = () => {
       
       console.log('[useBidDataFetcher] Raw bid data returned:', data);
       
-      // Transform the data to match the Bid interface
-      const formattedBids: Bid[] = data.map(bid => {
-        // Handle the profiles data safely with extra type checking
-        let userName = null;
-        let userAvatar = null;
+      // If we have bids, fetch the corresponding profile data
+      if (data && data.length > 0) {
+        // Extract all user IDs from the bids
+        const userIds = data.map(bid => bid.user_id);
         
-        // Check if profiles exists and has the expected properties
-        try {
-          if (bid.profiles && typeof bid.profiles === 'object') {
-            userName = (bid.profiles as any).full_name || null;
-            userAvatar = (bid.profiles as any).avatar_url || null;
-          }
-        } catch (err) {
-          console.error('[useBidDataFetcher] Error processing profile data:', err);
+        // Fetch profiles for these users
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('profiles')
+          .select('id, full_name, avatar_url')
+          .in('id', userIds);
+        
+        if (profilesError) {
+          console.error('[useBidDataFetcher] Error fetching profiles:', profilesError);
+        } else {
+          console.log('[useBidDataFetcher] Profiles data:', profilesData);
+          
+          // Create a map of profiles by user ID for quick lookup
+          const profilesMap = (profilesData || []).reduce((map, profile) => {
+            if (profile && profile.id) {
+              map[profile.id] = profile;
+            }
+            return map;
+          }, {} as Record<string, any>);
+          
+          // Transform the data to match the Bid interface
+          const formattedBids: Bid[] = data.map(bid => {
+            // Look up the profile for this bid's user_id
+            const userProfile = profilesMap[bid.user_id];
+            
+            if (!userProfile) {
+              console.warn(`[useBidDataFetcher] No profile found for user_id: ${bid.user_id}`);
+            }
+            
+            return {
+              id: bid.id,
+              listing_id: bid.listing_id,
+              user_id: bid.user_id,
+              amount: bid.amount,
+              status: bid.status,
+              created_at: bid.created_at,
+              maximum_bid: bid.maximum_bid || 0,
+              bid_increment: bid.bid_increment || 0,
+              // Use the profile data from our map
+              user_profile: {
+                full_name: userProfile ? userProfile.full_name : null,
+                avatar_url: userProfile ? userProfile.avatar_url : null
+              },
+              // Add mapped properties for types/index.ts compatibility
+              userId: bid.user_id,
+              listingId: bid.listing_id,
+              maximumBid: bid.maximum_bid || 0,
+              bidIncrement: bid.bid_increment || 0,
+              createdAt: bid.created_at ? new Date(bid.created_at) : new Date()
+            };
+          });
+          
+          console.log(`[useBidDataFetcher] Fetched and formatted ${formattedBids.length} bids:`, formattedBids);
+          return formattedBids;
         }
-        
-        return {
-          id: bid.id,
-          listing_id: bid.listing_id,
-          user_id: bid.user_id,
-          amount: bid.amount,
-          status: bid.status,
-          created_at: bid.created_at,
-          maximum_bid: bid.maximum_bid,
-          bid_increment: bid.bid_increment,
-          // Use the safely extracted profile data
-          user_profile: {
-            full_name: userName,
-            avatar_url: userAvatar
-          },
-          // Add mapped properties for types/index.ts compatibility
-          userId: bid.user_id,
-          listingId: bid.listing_id,
-          maximumBid: bid.maximum_bid,
-          bidIncrement: bid.bid_increment,
-          createdAt: bid.created_at ? new Date(bid.created_at) : new Date()
-        };
-      });
+      }
       
-      console.log(`[useBidDataFetcher] Fetched and formatted ${formattedBids.length} bids:`, formattedBids);
-      return formattedBids;
+      // If no profiles were fetched or there was an error, fall back to returning bids without profile info
+      return data.map(bid => ({
+        id: bid.id,
+        listing_id: bid.listing_id,
+        user_id: bid.user_id,
+        amount: bid.amount,
+        status: bid.status,
+        created_at: bid.created_at,
+        maximum_bid: bid.maximum_bid || 0,
+        bid_increment: bid.bid_increment || 0,
+        user_profile: {
+          full_name: null,
+          avatar_url: null
+        },
+        userId: bid.user_id,
+        listingId: bid.listing_id,
+        maximumBid: bid.maximum_bid || 0,
+        bidIncrement: bid.bid_increment || 0,
+        createdAt: bid.created_at ? new Date(bid.created_at) : new Date()
+      }));
     } catch (err) {
       console.error('[useBidDataFetcher] Exception fetching bids:', err);
       throw err;

@@ -8,6 +8,7 @@ import { Bid } from "./types";
 import { adaptBidTypes } from "./bidTypeAdapter";
 import { toast } from "@/components/ui/use-toast";
 import { RealtimeChannel } from "@supabase/supabase-js";
+import { Bid as GlobalBid } from "@/types";
 
 interface UseBidsProps {
   listingId: string;
@@ -18,6 +19,13 @@ export const useBids = ({ listingId }: UseBidsProps) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [highestBid, setHighestBid] = useState<number | null>(null);
+  
+  // Debug state to track mapping issues
+  const [dataFlowStats, setDataFlowStats] = useState({
+    rawBidsCount: 0,
+    mappedBidsCount: 0,
+    hasProfileData: false
+  });
 
   const { fetchBidsForListing, fetchHighestBid } = useBidDataFetcher();
   const { createBid, updateBid } = useBidActions();
@@ -33,6 +41,17 @@ export const useBids = ({ listingId }: UseBidsProps) => {
       const fetchedBids = await fetchBidsForListing(listingId);
       console.log(`[useBids] Fetched ${fetchedBids.length} bids`, fetchedBids);
       
+      // Update debug stats
+      const hasAnyProfileData = fetchedBids.some(bid => 
+        bid.user_profile && (bid.user_profile.full_name || bid.user_profile.avatar_url)
+      );
+      
+      setDataFlowStats({
+        rawBidsCount: fetchedBids.length,
+        mappedBidsCount: fetchedBids.length, // Will be updated after mapping
+        hasProfileData: hasAnyProfileData
+      });
+      
       setBids(fetchedBids);
       
       // Update highest bid amount
@@ -46,6 +65,34 @@ export const useBids = ({ listingId }: UseBidsProps) => {
       setIsLoading(false);
     }
   }, [listingId, fetchBidsForListing, fetchHighestBid]);
+
+  // Update diagnostic stats whenever bids change
+  useEffect(() => {
+    if (bids.length > 0) {
+      const globalMappedBids = adaptBidTypes.toGlobalBids(bids);
+      const hasAnyProfileData = bids.some(bid => 
+        bid.user_profile && (bid.user_profile.full_name || bid.user_profile.avatar_url)
+      );
+      
+      setDataFlowStats(prev => ({
+        ...prev,
+        mappedBidsCount: globalMappedBids.length,
+        hasProfileData: hasAnyProfileData
+      }));
+      
+      // Log diagnostic information
+      console.log('[useBids] Data flow stats:', {
+        rawBidsCount: bids.length,
+        mappedBidsCount: globalMappedBids.length,
+        hasProfileData: hasAnyProfileData
+      });
+      
+      // Warning if we have bids but no profile data
+      if (bids.length > 0 && !hasAnyProfileData) {
+        console.warn('[useBids] ⚠️ Bids retrieved but NO PROFILE DATA found! Check foreign key constraints and data consistency');
+      }
+    }
+  }, [bids]);
 
   // Set up realtime subscription with improved error handling
   useEffect(() => {
@@ -160,19 +207,28 @@ export const useBids = ({ listingId }: UseBidsProps) => {
   }, [listingId, createBid, updateBid, getUserBidStatus, fetchBids]);
 
   // Get global type compatible bids for components that expect the global Bid type
-  const getGlobalBids = useCallback(() => {
+  const getGlobalBids = useCallback((): GlobalBid[] => {
     console.log(`[useBids] Converting ${bids.length} bids to global format`);
-    return adaptBidTypes.toGlobalBids(bids);
+    const globalBids = adaptBidTypes.toGlobalBids(bids);
+    
+    // Debug log for mapping issues
+    if (bids.length > 0 && globalBids.length === 0) {
+      console.error('[useBids] ⚠️ Critical mapping error: Raw bids available but no global bids produced!');
+    }
+    
+    return globalBids;
   }, [bids]);
 
   return {
     bids,
-    globalBids: getGlobalBids(), // Add this to provide globally compatible bids
+    globalBids: getGlobalBids(),
     isLoading,
     error,
     placeBid,
     fetchBids,
     highestBid,
-    getUserBidStatus
+    getUserBidStatus,
+    // Expose diagnostics for troubleshooting
+    diagnostics: dataFlowStats
   };
 };
