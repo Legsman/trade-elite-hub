@@ -38,8 +38,19 @@ export const useBidDataFetcher = () => {
       
       // Transform the data to match the Bid interface
       const formattedBids: Bid[] = data.map(bid => {
-        // Handle the profiles data safely
-        const profileData = bid.profiles || null;
+        // Handle the profiles data safely with extra type checking
+        let userName = null;
+        let userAvatar = null;
+        
+        // Check if profiles exists and has the expected properties
+        try {
+          if (bid.profiles && typeof bid.profiles === 'object') {
+            userName = (bid.profiles as any).full_name || null;
+            userAvatar = (bid.profiles as any).avatar_url || null;
+          }
+        } catch (err) {
+          console.error('[useBidDataFetcher] Error processing profile data:', err);
+        }
         
         return {
           id: bid.id,
@@ -50,10 +61,10 @@ export const useBidDataFetcher = () => {
           created_at: bid.created_at,
           maximum_bid: bid.maximum_bid,
           bid_increment: bid.bid_increment,
-          // Safely access profile properties - use optional chaining and nullish coalescing
+          // Use the safely extracted profile data
           user_profile: {
-            full_name: profileData ? profileData.full_name : null,
-            avatar_url: profileData ? profileData.avatar_url : null
+            full_name: userName,
+            avatar_url: userAvatar
           },
           // Add mapped properties for types/index.ts compatibility
           userId: bid.user_id,
