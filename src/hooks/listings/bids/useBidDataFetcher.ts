@@ -1,115 +1,96 @@
 
-import { useState, useCallback } from "react";
+import { useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
-import { Bid } from "@/types";
-import { BidState } from "./types";
+import type { Bid } from "./types";
 
-export const useBidDataFetcher = (listingId?: string) => {
-  const [state, setState] = useState<BidState>({
-    bids: [],
-    isLoading: true,
-    error: null,
-    highestBid: null
-  });
-
-  const fetchBids = useCallback(async () => {
-    if (!listingId) {
-      setState({
-        bids: [],
-        highestBid: null,
-        isLoading: false,
-        error: null
-      });
-      return;
-    }
-
-    setState(prev => ({ ...prev, isLoading: true, error: null }));
-
+export const useBidDataFetcher = () => {
+  // Fetch all bids for a listing
+  const fetchBidsForListing = useCallback(async (listingId: string): Promise<Bid[]> => {
+    console.log(`[useBidDataFetcher] Fetching bids for listing: ${listingId}`);
+    
     try {
-      // First, fetch the bids
-      const { data: bidsData, error: bidsError } = await supabase
-        .from("bids")
-        .select("*")
-        .eq("listing_id", listingId)
-        .order("amount", { ascending: false });
-
-      if (bidsError) {
-        throw bidsError;
+      const { data, error } = await supabase
+        .from('bids')
+        .select(`
+          id,
+          user_id,
+          listing_id,
+          amount,
+          status,
+          created_at,
+          maximum_bid,
+          bid_increment,
+          profiles:user_id (
+            full_name,
+            avatar_url
+          )
+        `)
+        .eq('listing_id', listingId)
+        .eq('status', 'active')
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error('[useBidDataFetcher] Error fetching bids:', error);
+        throw new Error(`Failed to fetch bids: ${error.message}`);
       }
-
-      // Collect user IDs to fetch their profiles in a single query
-      const userIds = [...new Set(bidsData.map(bid => bid.user_id))];
       
-      // Get profiles for these users if there are any bids
-      let profilesMap: Record<string, { full_name: string | null, avatar_url: string | null }> = {};
-      
-      if (userIds.length > 0) {
-        const { data: profilesData, error: profilesError } = await supabase
-          .from("profiles")
-          .select("id, full_name, avatar_url")
-          .in("id", userIds);
-        
-        if (profilesError) {
-          throw profilesError;
+      // Transform the data to match the Bid interface
+      const formattedBids: Bid[] = data.map(bid => ({
+        id: bid.id,
+        listing_id: bid.listing_id,
+        user_id: bid.user_id,
+        amount: bid.amount,
+        status: bid.status,
+        created_at: bid.created_at,
+        maximum_bid: bid.maximum_bid,
+        bid_increment: bid.bid_increment,
+        user_profile: {
+          full_name: bid.profiles?.full_name,
+          avatar_url: bid.profiles?.avatar_url
         }
-        
-        // Create a map of user_id to profile data for easy lookup
-        profilesMap = profilesData.reduce((map, profile) => {
-          map[profile.id] = { 
-            full_name: profile.full_name, 
-            avatar_url: profile.avatar_url 
-          };
-          return map;
-        }, {} as Record<string, { full_name: string | null, avatar_url: string | null }>);
-      }
-
-      // Map bids with profile data
-      const mappedBids: Bid[] = bidsData.map(item => {
-        const profile = profilesMap[item.user_id];
-        
-        return {
-          id: item.id,
-          userId: item.user_id,
-          listingId: item.listing_id,
-          amount: Number(item.amount),
-          maximumBid: Number(item.maximum_bid),
-          bidIncrement: Number(item.bid_increment),
-          createdAt: new Date(item.created_at),
-          status: item.status,
-          user: profile ? {
-            fullName: profile.full_name,
-            avatarUrl: profile.avatar_url,
-          } : undefined
-        };
-      });
-
-      const newHighestBid = mappedBids.length > 0 ? mappedBids[0].amount : null;
-      
-      setState({
-        bids: mappedBids,
-        highestBid: newHighestBid,
-        isLoading: false,
-        error: null
-      });
-    } catch (err) {
-      console.error("Error fetching bids:", err);
-      const errorMessage = "Failed to fetch bids. Please try again.";
-      setState(prev => ({ 
-        ...prev, 
-        isLoading: false, 
-        error: errorMessage 
       }));
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
+      
+      console.log(`[useBidDataFetcher] Fetched ${formattedBids.length} bids`);
+      return formattedBids;
+    } catch (err) {
+      console.error('[useBidDataFetcher] Exception fetching bids:', err);
+      throw err;
     }
-  }, [listingId]);
-
+  }, []);
+  
+  // Fetch just the highest bid amount for a listing
+  const fetchHighestBid = useCallback(async (listingId: string): Promise<number | null> => {
+    console.log(`[useBidDataFetcher] Fetching highest bid for listing: ${listingId}`);
+    
+    try {
+      const { data, error } = await supabase
+        .from('bids')
+        .select('amount')
+        .eq('listing_id', listingId)
+        .eq('status', 'active')
+        .order('amount', { ascending: false })
+        .limit(1);
+      
+      if (error) {
+        console.error('[useBidDataFetcher] Error fetching highest bid:', error);
+        throw new Error(`Failed to fetch highest bid: ${error.message}`);
+      }
+      
+      if (data.length === 0) {
+        console.log('[useBidDataFetcher] No bids found for this listing');
+        return null;
+      }
+      
+      console.log(`[useBidDataFetcher] Highest bid amount: ${data[0].amount}`);
+      return Number(data[0].amount);
+    } catch (err) {
+      console.error('[useBidDataFetcher] Exception fetching highest bid:', err);
+      throw err;
+    }
+  }, []);
+  
   return {
-    ...state,
-    fetchBids
+    fetchBidsForListing,
+    fetchHighestBid
   };
 };

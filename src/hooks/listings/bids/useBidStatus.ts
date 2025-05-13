@@ -1,33 +1,46 @@
 
 import { useCallback } from "react";
-import { Bid } from "@/types";
-import { UserBidStatus } from "./types";
+import { useAuth } from "@/hooks/auth";
+import { Bid } from "./types";
 
-export const useBidStatus = (bids: Bid[], userId?: string) => {
-  const getUserBidStatus = useCallback((): UserBidStatus => {
-    if (!userId || bids.length === 0) {
+interface UseBidStatusProps {
+  listingId: string;
+  bids: Bid[];
+}
+
+interface BidStatus {
+  hasBid: boolean;
+  isHighestBidder: boolean;
+  userBid: Bid | null;
+}
+
+export const useBidStatus = ({ listingId, bids }: UseBidStatusProps) => {
+  const { user } = useAuth();
+  
+  const getUserBidStatus = useCallback((): BidStatus => {
+    if (!user || !bids || bids.length === 0) {
       return {
         hasBid: false,
         isHighestBidder: false,
-        userHighestBid: null,
-        userMaximumBid: null
+        userBid: null
       };
     }
-
-    const userBids = bids.filter(bid => bid.userId === userId);
-    const hasBid = userBids.length > 0;
-    const highestBidAmount = bids[0].amount;
-    const userHighestBid = hasBid ? Math.max(...userBids.map(bid => bid.amount)) : null;
-    const userMaximumBid = hasBid ? Math.max(...userBids.map(bid => bid.maximumBid)) : null;
-    const isHighestBidder = hasBid && highestBidAmount === userHighestBid;
-
+    
+    // Sort bids by amount in descending order to find highest bid
+    const sortedBids = [...bids].sort((a, b) => Number(b.amount) - Number(a.amount));
+    const highestBid = sortedBids[0];
+    
+    // Find user's active bid, if any
+    const userBid = bids.find(bid => bid.user_id === user.id && bid.status === 'active') || null;
+    
     return {
-      hasBid,
-      isHighestBidder,
-      userHighestBid,
-      userMaximumBid
+      hasBid: !!userBid,
+      isHighestBidder: !!userBid && userBid.id === highestBid.id,
+      userBid
     };
-  }, [userId, bids]);
-
-  return { getUserBidStatus };
+  }, [user, bids]);
+  
+  return {
+    getUserBidStatus
+  };
 };
