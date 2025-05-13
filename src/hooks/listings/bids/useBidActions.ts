@@ -84,15 +84,16 @@ export const useBidActions = () => {
         };
       }
       
-      // Now perform the update
-      const { error } = await supabase
+      // Now perform the update with the critical fix: adding .select('*')
+      const { data, error } = await supabase
         .from('bids')
         .update({
           amount: amount,
           // Update timestamp by setting created_at to now() to ensure it's considered the newest bid
           created_at: new Date().toISOString()
         })
-        .eq('id', bidId);
+        .eq('id', bidId)
+        .select('*'); // Critical fix: Added .select('*') to ensure we get updated rows back
       
       if (error) {
         console.error('[useBidActions] Error updating bid:', error);
@@ -102,7 +103,28 @@ export const useBidActions = () => {
         };
       }
       
-      console.log('[useBidActions] Bid updated successfully');
+      // Enhanced verification to confirm update was successful
+      if (!data || data.length === 0) {
+        console.error('[useBidActions] Bid update failed: No rows returned');
+        return {
+          success: false,
+          error: 'Bid update failed. Please try again.'
+        };
+      }
+      
+      // Verify the returned data has the updated amount
+      if (data[0].amount !== amount) {
+        console.error('[useBidActions] Bid amount mismatch after update:', { 
+          expected: amount, 
+          received: data[0].amount 
+        });
+        return {
+          success: false,
+          error: 'Bid amount was not updated correctly'
+        };
+      }
+      
+      console.log('[useBidActions] Bid updated successfully:', data[0]);
       return { 
         success: true,
         bidId: bidId
