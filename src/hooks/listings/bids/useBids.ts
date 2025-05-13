@@ -17,13 +17,15 @@ export const useBids = ({ listingId }: UseBidsProps) => {
   const { user } = useAuth();
   const { fetchBidsForListing, fetchHighestBid } = useBidDataFetcher();
   const { createBid, updateBid } = useBidActions();
-  const { checkBidStatus } = useBidStatus();
   
   const [bids, setBids] = useState<Bid[]>([]);
   const [globalBids, setGlobalBids] = useState<GlobalBid[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [highestBid, setHighestBid] = useState<number | null>(null);
+  
+  // Initialize bid status hook with current bids
+  const { getUserBidStatus } = useBidStatus({ listingId, bids });
   
   // Fetch bids and highest bid
   const fetchBids = useCallback(async () => {
@@ -108,9 +110,9 @@ export const useBids = ({ listingId }: UseBidsProps) => {
           // Check if current_bid has changed
           const newData = payload.new as any;
           
-          if (newData && newData.current_bid) {
-            console.log("[useBids] Updating highest bid to:", newData.current_bid);
-            setHighestBid(Number(newData.current_bid));
+          if (newData && newData.price) {
+            console.log("[useBids] Updating highest bid to:", newData.price);
+            setHighestBid(Number(newData.price));
           }
         }
       )
@@ -136,13 +138,13 @@ export const useBids = ({ listingId }: UseBidsProps) => {
     }
     
     try {
-      // Check if user already has a bid on this listing
-      const userBidStatus = await checkBidStatus({ listingId, userId: user.id });
+      // Get the current bid status to check if user already has a bid
+      const bidStatus = getUserBidStatus();
       
       let result;
-      if (userBidStatus.hasBid && userBidStatus.userBid) {
-        console.log("[useBids] User already has a bid, updating maximum bid", userBidStatus.userBid);
-        result = await updateBid(userBidStatus.userBid.id, amount);
+      if (bidStatus.hasBid && bidStatus.userBid) {
+        console.log("[useBids] User already has a bid, updating maximum bid", bidStatus.userBid);
+        result = await updateBid(bidStatus.userBid.id, amount);
       } else {
         console.log("[useBids] Creating new bid");
         result = await createBid(listingId, amount);
@@ -159,29 +161,7 @@ export const useBids = ({ listingId }: UseBidsProps) => {
       console.error("[useBids] Exception placing bid:", err);
       return { success: false, error: err instanceof Error ? err.message : "Failed to place bid" };
     }
-  }, [user, listingId, createBid, updateBid, checkBidStatus]);
-  
-  // Get user's bid status (has bid, is highest bidder, user's bid)
-  const getUserBidStatus = useCallback((): BidStatus => {
-    if (!user) {
-      return { hasBid: false, isHighestBidder: false, userBid: null };
-    }
-    
-    const userBid = bids.find(bid => bid.user_id === user.id);
-    
-    if (!userBid) {
-      return { hasBid: false, isHighestBidder: false, userBid: null };
-    }
-    
-    // If there are bids, check if this user has the highest one
-    const isHighestBidder = bids.length > 0 && bids[0].user_id === user.id;
-    
-    return {
-      hasBid: true,
-      isHighestBidder,
-      userBid
-    };
-  }, [bids, user]);
+  }, [user, listingId, createBid, updateBid, getUserBidStatus]);
   
   return {
     bids,

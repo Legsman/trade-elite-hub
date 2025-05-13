@@ -42,7 +42,7 @@ export const useBidDataFetcher = () => {
         // Fetch profiles for these users
         const { data: profilesData, error: profilesError } = await supabase
           .from('profiles')
-          .select('id, full_name, avatar_url, username')
+          .select('id, full_name, avatar_url')
           .in('id', userIds);
         
         if (profilesError) {
@@ -80,7 +80,7 @@ export const useBidDataFetcher = () => {
               user_profile: {
                 full_name: userProfile ? userProfile.full_name : null,
                 avatar_url: userProfile ? userProfile.avatar_url : null,
-                username: userProfile ? userProfile.username : null
+                username: userProfile ? userProfile.full_name : null // Fallback to full_name since username column doesn't exist
               },
               // Add mapped properties for types/index.ts compatibility
               userId: bid.user_id,
@@ -131,13 +131,13 @@ export const useBidDataFetcher = () => {
       // Try to get the current_bid first from the listings table
       const { data: listingData, error: listingError } = await supabase
         .from('listings')
-        .select('current_bid')
+        .select('price') // Use price instead of current_bid until column exists
         .eq('id', listingId)
         .single();
       
-      if (!listingError && listingData && listingData.current_bid) {
-        console.log(`[useBidDataFetcher] Found current_bid in listing: ${listingData.current_bid}`);
-        return Number(listingData.current_bid);
+      if (!listingError && listingData && listingData.price) {
+        console.log(`[useBidDataFetcher] Found price in listing: ${listingData.price}`);
+        return Number(listingData.price);
       }
       
       // Fall back to the old method if current_bid is not available

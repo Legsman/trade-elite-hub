@@ -1,7 +1,7 @@
 
 import { useCallback } from "react";
 import { useAuth } from "@/hooks/auth";
-import { Bid, UserBidStatus } from "./types";
+import { Bid, BidStatus } from "./types";
 
 interface UseBidStatusProps {
   listingId: string;
@@ -11,7 +11,7 @@ interface UseBidStatusProps {
 export const useBidStatus = ({ listingId, bids }: UseBidStatusProps) => {
   const { user } = useAuth();
   
-  const getUserBidStatus = useCallback((): UserBidStatus => {
+  const getUserBidStatus = useCallback((): BidStatus => {
     console.log(`[useBidStatus] Getting bid status for user, ${bids.length} bids available`);
     
     if (!user || !bids || bids.length === 0) {
@@ -31,7 +31,7 @@ export const useBidStatus = ({ listingId, bids }: UseBidStatusProps) => {
     // Find user's active bid, if any
     const userBid = bids.find(bid => bid.user_id === user.id && bid.status === 'active') || null;
     
-    const status: UserBidStatus = {
+    const status: BidStatus = {
       hasBid: !!userBid,
       isHighestBidder: !!userBid && userBid.id === highestBid.id,
       userBid,

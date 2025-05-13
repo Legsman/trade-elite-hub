@@ -27,6 +27,7 @@ export const useBidActions = () => {
     try {
       console.log(`[useBidActions] ${existingBidId ? 'Updating' : 'Creating'} bid with proxy function: listing=${listingId}, maxBid=${maxBid}`);
       
+      // Call the RPC function with the correct parameters
       const { data, error } = await supabase.rpc('proxy_place_or_update_bid', {
         p_listing_id: listingId,
         p_bid_id: existingBidId || null,
@@ -52,7 +53,8 @@ export const useBidActions = () => {
         };
       }
       
-      if (!data || data.length === 0) {
+      // Check if data exists and has the correct structure
+      if (!data || !Array.isArray(data) || data.length === 0) {
         return {
           success: false,
           error: 'No data returned from bid operation'
