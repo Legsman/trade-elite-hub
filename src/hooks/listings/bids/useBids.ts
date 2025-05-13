@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useBidActions } from "./useBidActions";
@@ -21,7 +22,7 @@ export const useBids = ({ listingId }: UseBidsProps) => {
   const { createBid, updateBid } = useBidActions();
   const { getUserBidStatus } = useBidStatus({ listingId, bids });
 
-  // Fetch bids function with logging
+  // Fetch bids function with improved logging
   const fetchBids = useCallback(async () => {
     console.log(`[useBids] Fetching bids for listing ${listingId}`);
     setIsLoading(true);
@@ -45,37 +46,62 @@ export const useBids = ({ listingId }: UseBidsProps) => {
     }
   }, [listingId, fetchBidsForListing, fetchHighestBid]);
 
-  // Set up realtime subscription
+  // Set up realtime subscription with improved error handling
   useEffect(() => {
     console.log(`[useBids] Setting up realtime subscription for listing ${listingId}`);
     
-    const channel = supabase
-      .channel(`auction-bids-${listingId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'bids',
-          filter: `listing_id=eq.${listingId}`
-        },
-        (payload) => {
-          console.log('[useBids] Realtime update received:', payload);
-          // Immediately fetch the latest bids when a change is detected
-          fetchBids();
-        }
-      )
-      .subscribe((status) => {
-        console.log(`[useBids] Supabase realtime subscription status: ${status}`);
-      });
+    // Create a specific channel name for this listing
+    const channelName = `auction-bids-${listingId}`;
     
-    return () => {
-      console.log('[useBids] Cleaning up realtime subscription');
-      supabase.removeChannel(channel);
-    };
+    try {
+      const channel = supabase
+        .channel(channelName)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'bids',
+            filter: `listing_id=eq.${listingId}`
+          },
+          (payload) => {
+            console.log('[useBids] Realtime update received:', payload);
+            // Immediately fetch the latest bids when a change is detected
+            fetchBids().catch(err => {
+              console.error('[useBids] Failed to fetch bids after realtime update:', err);
+            });
+          }
+        )
+        .subscribe((status) => {
+          console.log(`[useBids] Supabase realtime subscription status: ${status}`);
+          if (status !== 'SUBSCRIBED') {
+            console.warn(`[useBids] Subscription status is not 'SUBSCRIBED': ${status}`);
+          }
+        });
+    
+      // Initial fetch of bids after setting up subscription
+      fetchBids().catch(err => {
+        console.error('[useBids] Initial fetch failed:', err);
+      });
+      
+      return () => {
+        console.log(`[useBids] Cleaning up realtime subscription for ${channelName}`);
+        supabase.removeChannel(channelName);
+      };
+    } catch (err) {
+      console.error('[useBids] Error setting up realtime subscription:', err);
+      setError('Failed to set up real-time updates. Please refresh the page.');
+      
+      // Still attempt to fetch bids even if subscription fails
+      fetchBids().catch(error => {
+        console.error('[useBids] Fallback fetch failed:', error);
+      });
+      
+      return () => {};
+    }
   }, [listingId, fetchBids]);
 
-  // Place bid function - now with improved update logic
+  // Place bid function - with improved error handling
   const placeBid = useCallback(async (amount: number) => {
     console.log(`[useBids] Attempting to place bid: ${amount}`);
     try {
@@ -131,6 +157,7 @@ export const useBids = ({ listingId }: UseBidsProps) => {
 
   // Get global type compatible bids for components that expect the global Bid type
   const getGlobalBids = useCallback(() => {
+    console.log(`[useBids] Converting ${bids.length} bids to global format`);
     return adaptBidTypes.toGlobalBids(bids);
   }, [bids]);
 

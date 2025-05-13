@@ -9,4 +9,3 @@ enabled = true
 
 [realtime.subscriptions]
 tables = ["bids"]
-

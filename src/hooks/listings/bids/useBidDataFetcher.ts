@@ -1,3 +1,4 @@
+
 import { useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Bid } from "./types";
@@ -33,10 +34,12 @@ export const useBidDataFetcher = () => {
         throw new Error(`Failed to fetch bids: ${error.message}`);
       }
       
+      console.log('[useBidDataFetcher] Raw bid data returned:', data);
+      
       // Transform the data to match the Bid interface
       const formattedBids: Bid[] = data.map(bid => {
         // Handle the profiles data safely
-        const profileData = bid.profiles as any; // Using any to bypass TypeScript error
+        const profileData = bid.profiles;
         
         return {
           id: bid.id,
@@ -61,7 +64,7 @@ export const useBidDataFetcher = () => {
         };
       });
       
-      console.log(`[useBidDataFetcher] Fetched ${formattedBids.length} bids`);
+      console.log(`[useBidDataFetcher] Fetched and formatted ${formattedBids.length} bids:`, formattedBids);
       return formattedBids;
     } catch (err) {
       console.error('[useBidDataFetcher] Exception fetching bids:', err);
