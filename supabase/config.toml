@@ -3,3 +3,10 @@ project_id = "hwnsooioeqydhyukenfe"
 
 [functions.admin-role-management]
 verify_jwt = true
+
+[realtime]
+enabled = true
+
+[realtime.subscriptions]
+tables = ["bids"]
+

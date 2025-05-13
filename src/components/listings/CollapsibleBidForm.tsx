@@ -18,7 +18,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
-import { formatCurrency } from "@/lib/utils";
 
 interface CollapsibleBidFormProps {
   listingId: string;
@@ -74,10 +73,11 @@ export const CollapsibleBidForm = ({
     setLastBidAmount(values.maximumBid);
     
     try {
-      console.log("Placing bid from form:", values.maximumBid);
+      console.log("CollapsibleBidForm: Placing bid:", values.maximumBid);
       const result = await onPlaceBid(values.maximumBid);
       
       if (result.success) {
+        console.log("CollapsibleBidForm: Bid successful");
         // Reset form with updated minimum bid
         form.reset({
           maximumBid: values.maximumBid + 5
@@ -85,6 +85,8 @@ export const CollapsibleBidForm = ({
         
         // Close the form after successful bid
         setIsOpen(false);
+      } else {
+        console.log("CollapsibleBidForm: Bid failed");
       }
     } catch (error) {
       console.error("Error placing bid:", error);

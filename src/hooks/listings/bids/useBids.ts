@@ -19,23 +19,33 @@ export const useBids = (options: UseBidsOptions = {}) => {
   // Memoized function to place a bid and fetch updated data
   const handlePlaceBid = useCallback(async (amount: number) => {
     console.log(`Starting bid placement process for amount: ${amount}`);
-    const result = await placeBid(amount);
     
-    if (result.success) {
-      console.log("Bid placed successfully, fetching updated bids");
-      // Immediately fetch the updated bids after successful bid placement
-      await fetchBids();
+    try {
+      const result = await placeBid(amount);
       
-      // Show a toast notification
+      if (result.success) {
+        console.log("Bid placed successfully, immediately fetching updated bids");
+        // Immediately fetch the updated bids after successful bid placement
+        await fetchBids();
+        
+        toast({
+          title: "Bid Placed Successfully",
+          description: `Your bid of £${amount.toLocaleString()} has been placed.`,
+        });
+      }
+      return result;
+    } catch (error) {
+      console.error("Error in handlePlaceBid:", error);
       toast({
-        title: "Bid Placed Successfully",
-        description: `Your bid of £${amount.toLocaleString()} has been placed.`,
+        title: "Bid Failed",
+        description: "There was a problem placing your bid. Please try again.",
+        variant: "destructive",
       });
+      return { success: false };
     }
-    return result;
   }, [placeBid, fetchBids]);
 
-  // Fetch bids on mount or when listingId changes
+  // Fetch bids on mount and set up subscription
   useEffect(() => {
     console.log("Setting up bids subscription for listing:", listingId);
     
@@ -44,7 +54,8 @@ export const useBids = (options: UseBidsOptions = {}) => {
     
     // Set up real-time subscription for bids
     if (listingId) {
-      const channelId = `bids-${listingId}-${Date.now()}`;
+      // Use a more unique channel name to avoid conflicts
+      const channelId = `bids-${listingId}-${Math.random().toString(36).substring(2, 15)}`;
       console.log(`Creating Supabase channel: ${channelId}`);
       
       const channel = supabase
@@ -59,7 +70,7 @@ export const useBids = (options: UseBidsOptions = {}) => {
           },
           (payload) => {
             console.log("Realtime bid update received:", payload);
-            // Refetch bids when there's a change
+            // Immediately refetch bids when there's a change
             fetchBids();
           }
         )
@@ -70,7 +81,7 @@ export const useBids = (options: UseBidsOptions = {}) => {
       // Clean up the subscription
       return () => {
         console.log(`Cleaning up bids subscription for channel: ${channelId}`);
-        supabase.removeChannel(channel);
+        channel.unsubscribe();
       };
     }
   }, [listingId, fetchBids]);

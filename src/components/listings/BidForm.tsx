@@ -58,15 +58,25 @@ export const BidForm = ({
   });
 
   const handleSubmit = async (values: z.infer<typeof FormSchema>) => {
+    console.log("BidForm: Placing bid with amount:", values.maximumBid);
     setIsSubmitting(true);
-    const result = await onPlaceBid(values.maximumBid);
-    setIsSubmitting(false);
     
-    if (result.success) {
-      // Reset form with updated minimum bid
-      form.reset({
-        maximumBid: values.maximumBid + 5
-      });
+    try {
+      const result = await onPlaceBid(values.maximumBid);
+      
+      if (result.success) {
+        console.log("BidForm: Bid successful, resetting form");
+        // Reset form with updated minimum bid
+        form.reset({
+          maximumBid: values.maximumBid + 5
+        });
+      } else {
+        console.log("BidForm: Bid failed");
+      }
+    } catch (error) {
+      console.error("Error in BidForm handleSubmit:", error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 

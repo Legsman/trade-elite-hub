@@ -5,6 +5,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { BidForm } from "./BidForm";
 import { BidHistory } from "./BidHistory";
 import { useBids } from "@/hooks/listings";
+import { CollapsibleBidForm } from "./CollapsibleBidForm";
 
 interface AuctionSectionProps {
   listingId: string;
@@ -29,13 +30,34 @@ export const AuctionSection = ({
     getUserBidStatus
   } = useBids({ listingId });
   
+  // Initial fetch of bids
   useEffect(() => {
+    console.log("AuctionSection: Initial bid fetch for listing", listingId);
     fetchBids();
+  }, [fetchBids, listingId]);
+
+  // Fetch bids periodically as a fallback for realtime
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      console.log("AuctionSection: Periodic bid refresh");
+      fetchBids();
+    }, 30000); // Refresh every 30 seconds as a fallback
+    
+    return () => clearInterval(intervalId);
   }, [fetchBids]);
 
   const handlePlaceBid = useCallback(async (amount: number) => {
-    return await placeBid(amount);
-  }, [placeBid]);
+    console.log("AuctionSection: Handling bid placement", amount);
+    const result = await placeBid(amount);
+    
+    if (result.success) {
+      console.log("AuctionSection: Bid placed successfully, refreshing data");
+      // Manually trigger a refresh after successful bid
+      await fetchBids();
+    }
+    
+    return result;
+  }, [placeBid, fetchBids]);
 
   const userBidStatus = getUserBidStatus();
   
