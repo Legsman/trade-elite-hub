@@ -1,75 +1,66 @@
 
-import { Bid as HookBid } from "./types";
 import { Bid as GlobalBid } from "@/types";
+import { Bid } from "./types";
 
 /**
- * Adapts bid data between different Bid interfaces in the application
+ * Adapter to convert between the internal Bid type and the global Bid type
+ * used by components that expect the global Bid interface.
  */
 export const adaptBidTypes = {
   /**
-   * Converts a Bid from hooks/listings/bids/types to types/index.ts format
+   * Convert internal Bid array to global Bid array
    */
-  toGlobalBid(bid: HookBid): GlobalBid {
-    console.log('[bidTypeAdapter] Converting bid to global format:', bid);
+  toGlobalBids: (bids: Bid[]): GlobalBid[] => {
+    console.log(`[bidTypeAdapter] Converting ${bids?.length || 0} bids to global format`);
+    
+    if (!bids || !Array.isArray(bids)) {
+      console.warn('[bidTypeAdapter] No bids to convert or invalid input', bids);
+      return [];
+    }
     
     try {
-      // Validate bid has essential fields
-      if (!bid.id || !bid.user_id || !bid.listing_id || bid.amount === undefined) {
-        console.error('[bidTypeAdapter] Bid is missing essential fields:', bid);
-      }
-      
-      // Check profile data specifically and log warnings
-      if (!bid.user_profile) {
-        console.warn('[bidTypeAdapter] Bid is missing user_profile data:', bid);
-      } else if (!bid.user_profile.full_name) {
-        console.warn('[bidTypeAdapter] Bid user_profile is missing full_name:', bid.user_profile);
-      }
-      
-      const globalBid: GlobalBid = {
+      return bids.map(bid => ({
         id: bid.id,
-        userId: bid.user_id,
-        listingId: bid.listing_id,
-        amount: bid.amount,
-        maximumBid: bid.maximum_bid || 0,
-        bidIncrement: bid.bid_increment || 0,
+        userId: bid.user_id || bid.userId,
+        listingId: bid.listing_id || bid.listingId,
+        amount: Number(bid.amount),
         status: bid.status,
-        createdAt: bid.created_at ? new Date(bid.created_at) : new Date(),
-        user: bid.user_profile ? {
-          fullName: bid.user_profile.full_name || "Anonymous User",
-          avatarUrl: bid.user_profile.avatar_url || null
-        } : {
-          fullName: "Anonymous User", 
-          avatarUrl: null
+        createdAt: bid.createdAt || new Date(bid.created_at),
+        maximumBid: bid.maximum_bid ? Number(bid.maximum_bid) : (bid.maximumBid || 0),
+        bidIncrement: bid.bid_increment ? Number(bid.bid_increment) : (bid.bidIncrement || 5),
+        userProfile: {
+          fullName: bid.user_profile?.full_name || null,
+          avatarUrl: bid.user_profile?.avatar_url || null
         }
-      };
-      
-      console.log('[bidTypeAdapter] Converted to global bid:', globalBid);
-      return globalBid;
+      }));
     } catch (error) {
-      console.error('[bidTypeAdapter] Error converting bid to global format:', error);
-      // Provide a minimal valid object to prevent UI crashes
-      return {
-        id: bid.id || 'unknown-id',
-        userId: bid.user_id || 'unknown-user',
-        listingId: bid.listing_id || 'unknown-listing',
-        amount: bid.amount || 0,
-        maximumBid: bid.maximum_bid || 0,
-        bidIncrement: bid.bid_increment || 0,
-        status: bid.status || 'unknown',
-        createdAt: new Date(),
-        user: {
-          fullName: "Anonymous User",
-          avatarUrl: null
-        }
-      };
+      console.error('[bidTypeAdapter] Error converting bids:', error);
+      return [];
     }
   },
   
   /**
-   * Converts an array of Bids from hooks/listings/bids/types to types/index.ts format
+   * Convert a global Bid to internal Bid format
    */
-  toGlobalBids(bids: HookBid[]): GlobalBid[] {
-    console.log(`[bidTypeAdapter] Converting ${bids.length} bids to global format`);
-    return bids.map(bid => this.toGlobalBid(bid));
+  toInternalBid: (bid: GlobalBid): Bid => {
+    return {
+      id: bid.id,
+      user_id: bid.userId,
+      listing_id: bid.listingId,
+      amount: bid.amount,
+      maximum_bid: bid.maximumBid || 0,
+      bid_increment: bid.bidIncrement || 5,
+      status: bid.status,
+      created_at: bid.createdAt?.toISOString() || new Date().toISOString(),
+      user_profile: {
+        full_name: bid.userProfile?.fullName || null,
+        avatar_url: bid.userProfile?.avatarUrl || null
+      },
+      userId: bid.userId,
+      listingId: bid.listingId,
+      maximumBid: bid.maximumBid || 0,
+      bidIncrement: bid.bidIncrement || 5,
+      createdAt: bid.createdAt
+    };
   }
 };

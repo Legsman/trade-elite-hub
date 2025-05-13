@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useBidActions } from "./useBidActions";
@@ -152,7 +151,7 @@ export const useBids = ({ listingId }: UseBidsProps) => {
     }
   }, [listingId, fetchBids]);
 
-  // Place bid function - with improved error handling
+  // Place bid function - with improved error handling and proxy bidding support
   const placeBid = useCallback(async (amount: number) => {
     console.log(`[useBids] Attempting to place bid: ${amount}`);
     try {
@@ -163,10 +162,10 @@ export const useBids = ({ listingId }: UseBidsProps) => {
       
       // If user already has a bid, update it instead of creating a new one
       if (hasBid && userBid) {
-        console.log(`[useBids] User already has a bid (${userBid.id}), updating it`);
+        console.log(`[useBids] User already has a bid (${userBid.id}), updating maximum bid to: ${amount}`);
         result = await updateBid(userBid.id, amount);
       } else {
-        console.log('[useBids] Creating new bid');
+        console.log('[useBids] Creating new bid with maximum bid:', amount);
         result = await createBid(listingId, amount);
       }
       
@@ -174,7 +173,7 @@ export const useBids = ({ listingId }: UseBidsProps) => {
         console.log('[useBids] Bid placed successfully:', result);
         toast({
           title: "Bid placed",
-          description: `Your bid of £${amount} has been placed successfully.`,
+          description: `Your bid has been placed successfully. The current bid will be increased in £5 increments as needed.`,
         });
         
         // Immediately fetch updated bids

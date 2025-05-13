@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -33,13 +32,13 @@ interface CollapsibleBidFormProps {
   expiryDate: Date;
 }
 
-export const CollapsibleBidForm = ({ 
-  listingId, 
-  currentPrice, 
-  highestBid, 
+export const CollapsibleBidForm = ({
+  listingId,
+  currentPrice,
+  highestBid,
   onPlaceBid,
   userBidStatus,
-  expiryDate
+  expiryDate,
 }: CollapsibleBidFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
@@ -102,6 +101,18 @@ export const CollapsibleBidForm = ({
 
   // Check if auction has ended
   const isAuctionEnded = new Date() > expiryDate;
+  
+  // Add the proxy bidding info text
+  const proxyBiddingInfo = (
+    <div className="mt-4 p-3 bg-muted/30 rounded-md text-sm">
+      <p className="mb-1 font-medium">How proxy bidding works:</p>
+      <p>
+        When you place a maximum bid, our system will automatically increase your bid 
+        in £5 increments, but only as much as needed to outbid others. Your full 
+        maximum bid amount is not shown to other bidders.
+      </p>
+    </div>
+  );
   
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen} className="w-full">
