@@ -11,7 +11,7 @@ interface ListingDetailsMainContentProps {
   userId?: string;
   activeTab: string;
   setActiveTab: (tab: string) => void;
-  refetchListing?: () => Promise<void>; // Add refetchListing prop
+  refetchListing?: () => Promise<void>;
 }
 
 export const ListingDetailsMainContent = ({
@@ -29,7 +29,11 @@ export const ListingDetailsMainContent = ({
   
   return (
     <>
-      <ListingImageGallery images={listing.images} />
+      <ListingImageGallery 
+        images={listing.images} 
+        listingId={listing.id}
+        title={listing.title}
+      />
       
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:w-[400px]">
@@ -67,7 +71,7 @@ export const ListingDetailsMainContent = ({
               sellerId={listing.sellerId}
               currentPrice={listing.currentBid || listing.price}
               userId={userId}
-              refetchListing={refetchListing} // Pass the refetchListing function
+              refetchListing={refetchListing}
             />
           </TabsContent>
         )}
@@ -76,11 +80,10 @@ export const ListingDetailsMainContent = ({
           <TabsContent value="offers" className="mt-6">
             <OfferSection 
               listingId={listing.id}
-              sellerPrice={listing.price}
+              listingTitle={listing.title}
               sellerId={listing.sellerId}
-              currentUserId={userId}
-              isSold={isSold}
-              refetchListing={refetchListing} // Pass the refetchListing function
+              currentPrice={listing.price}
+              userId={userId}
             />
           </TabsContent>
         )}
