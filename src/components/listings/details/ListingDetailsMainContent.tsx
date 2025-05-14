@@ -1,6 +1,6 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ListingContent, ListingImageGallery, AuctionSection, OfferSection } from "@/components/listings";
+import { ListingImageGallery, AuctionSection, OfferSection, ListingDetailsTabs } from "@/components/listings";
 import { Listing } from "@/types";
 
 interface ListingDetailsMainContentProps {
@@ -39,16 +39,7 @@ export const ListingDetailsMainContent = ({
         </TabsList>
         
         <TabsContent value="details" className="space-y-4">
-          {/* Fix #1: ListingContent expects 'listings', not 'listing' - we'll adapt to its interface */}
-          <ListingContent 
-            listings={[listing]} 
-            isLoading={false}
-            error={null}
-            totalCount={1}
-            pageSize={1}
-            currentPage={1}
-            onPageChange={() => {}}
-          />
+          <ListingDetailsTabs listing={listing} />
         </TabsContent>
         
         {isAuction && (
@@ -65,7 +56,6 @@ export const ListingDetailsMainContent = ({
         
         {listing.allowBestOffer && !isAuction && !isSold && (
           <TabsContent value="offers" className="space-y-4">
-            {/* Fix #2: OfferSection expects 'currentPrice', not 'listingPrice' */}
             <OfferSection
               listingId={listing.id}
               sellerId={listing.sellerId}
