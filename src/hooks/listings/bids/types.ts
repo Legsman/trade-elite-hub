@@ -29,3 +29,9 @@ export interface BidStatus {
   userHighestBid: number;
   userMaximumBid: number;
 }
+
+// Add the missing interface for component adaptation
+export interface BidStatusWithAdaptation extends BidStatus {
+  userHighestBid: number;
+  userMaximumBid: number;
+}

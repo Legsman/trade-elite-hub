@@ -25,6 +25,7 @@ export interface Listing {
   saves: number;
   currentBid?: number | null;
   highestBidderId?: string | null;
+  bidCount?: number; // Added missing bidCount property
 }
 
 export interface Offer {

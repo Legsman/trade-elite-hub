@@ -68,10 +68,16 @@ export const ListingDetailsSidebar = ({
       Number(userBidStatus.userBid.maximum_bid) : 0
   };
 
+  // Enhance listing with bid count if it's missing
+  const enhancedListing = {
+    ...listing,
+    bidCount: listing.bidCount !== undefined ? listing.bidCount : bids.length
+  };
+
   return (
     <>
       <PriceCard
-        listing={listing}
+        listing={enhancedListing}
         user={user}
         isSaved={isSaved}
         savingState={savingState}
