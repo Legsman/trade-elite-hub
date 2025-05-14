@@ -42,11 +42,12 @@ export const useBidActions = () => {
       });
       
       if (error) {
-        // Log the error for debugging
+        // Log the full error details for debugging
         console.error('[useBidActions] Error using proxy bid function:', error);
         
-        // Provide user-friendly error based on error code
-        let userMessage = 'Failed to process bid';
+        // Provide detailed error message to user
+        let userMessage = error.message || 'Failed to process bid';
+        
         if (error.code === 'P0001') {
           userMessage = 'You can only update your own bids';
         } else if (error.code === 'P0002') {
@@ -67,15 +68,18 @@ export const useBidActions = () => {
       
       // Check if data exists and has the correct structure
       if (!data || !Array.isArray(data) || data.length === 0) {
+        const errorMsg = "No data returned from bid operation";
+        console.error('[useBidActions]', errorMsg);
+        
         toast({
           title: "Bid Failed",
-          description: "No data returned from bid operation",
+          description: errorMsg,
           variant: "destructive",
         });
         
         return {
           success: false,
-          error: 'No data returned from bid operation'
+          error: errorMsg
         };
       }
       
@@ -87,25 +91,24 @@ export const useBidActions = () => {
         description: `Your maximum bid of £${maxBid} has been placed. Current price: £${data[0].new_current_bid}`,
       });
       
-      // Remove the ineffective manual listing refresh
-      // The component will now handle refreshing the listing data
-      
       return { 
         success: true,
-        bidId: existingBidId // Return the existing bid ID or undefined for new bids
+        bidId: data[0].listing_id // Return the listing ID for refetching
       };
     } catch (err) {
       console.error('[useBidActions] Exception in bid operation:', err);
       
+      const errorMessage = err instanceof Error ? err.message : 'Failed to process bid';
+      
       toast({
         title: "Bid Failed",
-        description: err instanceof Error ? err.message : 'Failed to process bid',
+        description: errorMessage,
         variant: "destructive",
       });
       
       return { 
         success: false, 
-        error: err instanceof Error ? err.message : 'Failed to process bid' 
+        error: errorMessage
       };
     }
   }, [user]);
@@ -140,7 +143,7 @@ export const useBidActions = () => {
         
         return { 
           success: false, 
-          error: 'Could not find the bid to update' 
+          error: bidError ? bidError.message : 'Could not find the bid to update' 
         };
       }
       
@@ -148,15 +151,17 @@ export const useBidActions = () => {
     } catch (err) {
       console.error('[useBidActions] Exception retrieving bid data:', err);
       
+      const errorMessage = err instanceof Error ? err.message : 'Failed to update bid';
+      
       toast({
         title: "Bid Update Failed",
-        description: err instanceof Error ? err.message : "Failed to update bid",
+        description: errorMessage,
         variant: "destructive",
       });
       
       return { 
         success: false, 
-        error: err instanceof Error ? err.message : 'Failed to update bid' 
+        error: errorMessage
       };
     }
   }, [placeOrUpdateBid]);

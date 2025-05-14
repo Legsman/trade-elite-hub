@@ -20,7 +20,7 @@ interface ListingDetailsSidebarProps {
   onRelistClick: () => void;
   navigate: NavigateFunction;
   setActiveTab: (tab: string) => void;
-  refetchListing: () => Promise<void>; // Added refetchListing prop
+  refetchListing: () => Promise<void>; // Required refetchListing prop
 }
 
 export const ListingDetailsSidebar = ({
@@ -63,10 +63,18 @@ export const ListingDetailsSidebar = ({
     // If successful, refresh both the listing and bids data
     if (result.success) {
       console.log("Bid placed successfully, refreshing data...");
-      await Promise.all([
-        refetchListing(), // Pull in the new currentBid
-        fetchBids()       // Update the bid history
-      ]);
+      try {
+        // Execute these in parallel for better performance
+        await Promise.all([
+          refetchListing(), // Pull in the new currentBid
+          fetchBids()       // Update the bid history
+        ]);
+        console.log("Data refreshed successfully after bid");
+      } catch (err) {
+        console.error("Error refreshing data after bid:", err);
+      }
+    } else {
+      console.error("Bid placement failed:", result.error);
     }
     
     return result;

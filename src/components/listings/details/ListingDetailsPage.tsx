@@ -94,6 +94,10 @@ export const ListingDetailsPage = () => {
     } else {
       // Fallback: copy to clipboard
       navigator.clipboard.writeText(window.location.href).then(() => {
+        toast({
+          title: "Link copied!",
+          description: "The listing URL has been copied to your clipboard.",
+        });
         trackEvent("listing_link_copied", { listingId: listing?.id });
       }).catch(console.error);
     }
@@ -139,11 +143,12 @@ export const ListingDetailsPage = () => {
           <div className="lg:col-span-2 space-y-6">
             <ListingDetailsMainContent 
               listing={listing}
-              bids={[]} // This is handled by the BidHistory component
+              bids={[]} 
               isOwner={isOwner}
               userId={user?.id}
               activeTab={activeTab}
               setActiveTab={setActiveTab}
+              refetchListing={refetchListing} // Pass refetchListing to child
             />
           </div>
 
@@ -162,7 +167,7 @@ export const ListingDetailsPage = () => {
               onRelistClick={() => setRelistFormOpen(true)}
               navigate={navigate}
               setActiveTab={setActiveTab}
-              refetchListing={refetchListing} // Pass the refetchListing function
+              refetchListing={refetchListing} // Pass refetchListing to sidebar
             />
           </div>
         </div>

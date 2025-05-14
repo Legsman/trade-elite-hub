@@ -67,17 +67,23 @@ export const AuctionSection = ({
     if (result.success) {
       console.log("AuctionSection: Bid placed successfully, refreshing data");
       
-      // Refresh both listing and bids data
-      await Promise.all([
-        refetchListing && refetchListing(), // Pull in the new currentBid if available
-        fetchBids()                        // Update the bid history
-      ]);
-      
-      toast({
-        title: "Bid Placed",
-        description: "Your bid has been placed successfully.",
-      });
+      try {
+        // Refresh both listing and bids data
+        await Promise.all([
+          refetchListing && refetchListing(), // Pull in the new currentBid if available
+          fetchBids()                        // Update the bid history
+        ]);
+        
+        toast({
+          title: "Bid Placed",
+          description: "Your bid has been placed successfully.",
+        });
+      } catch (err) {
+        console.error("Error refreshing data after bid:", err);
+      }
     } else {
+      console.error("Bid placement failed:", result.error);
+      
       toast({
         title: "Bid Failed",
         description: result.error || "Failed to place bid. Please try again.",
