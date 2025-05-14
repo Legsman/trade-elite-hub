@@ -40,23 +40,43 @@ export const useBids = ({ listingId }: UseBidsProps) => {
       const highestBidAmount = await fetchHighestBid(listingId);
       setHighestBid(highestBidAmount);
       
-      // Then fetch all bids for the listing
-      const fetchedBids = await fetchBidsForListing(listingId);
+      // Fetch all bids for the listing
+      let fetchedBids = await fetchBidsForListing(listingId);
       console.log("[useBids] Fetched bids:", fetchedBids);
-      
-      // Sort bids by amount in descending order
+
+      // Belt-and-suspenders: override the winning bid's visible amount
+      try {
+        const { data: listingData } = await supabase
+          .from("listings")
+          .select("current_bid, highest_bidder_id")
+          .eq("id", listingId)
+          .single();
+        if (listingData?.current_bid != null && listingData.highest_bidder_id) {
+          fetchedBids = fetchedBids.map(bid =>
+            bid.user_id === listingData.highest_bidder_id && bid.status === "active"
+              ? { ...bid, amount: Number(listingData.current_bid) }
+              : bid
+          );
+          console.log(
+            "[useBids] Overrode bid amount for winner:",
+            listingData.highest_bidder_id,
+            "→",
+            listingData.current_bid
+          );
+        }
+      } catch (err) {
+        console.error("[useBids] Could not override bid amount:", err);
+      }
+
+      // Sort bids by the (possibly overridden) amount
       const sortedBids = fetchedBids.sort((a, b) => {
-        // Primary sort by amount descending
         if (b.amount !== a.amount) return b.amount - a.amount;
-        
-        // Secondary sort by creation date ascending (earlier wins ties)
         const dateA = new Date(a.created_at);
         const dateB = new Date(b.created_at);
         return dateA.getTime() - dateB.getTime();
       });
-      
       setBids(sortedBids);
-      
+
       // Convert bids to the global Bid type
       const adaptedBids = adaptBidTypes.toGlobalBids(sortedBids);
       setGlobalBids(adaptedBids);
