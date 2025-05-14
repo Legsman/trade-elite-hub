@@ -14,13 +14,16 @@ interface BidHistoryProps {
   isLoading: boolean;
   onRefresh: () => void;
   currentUserId?: string;
+  /** The user ID of the current highest bidder */
+  highestBidderId?: string;
 }
 
 export const BidHistory = ({ 
   bids, 
   isLoading,
   onRefresh,
-  currentUserId
+  currentUserId,
+  highestBidderId
 }: BidHistoryProps) => {
   const [showAll, setShowAll] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -120,7 +123,7 @@ export const BidHistory = ({
                         {bid.userId === currentUserId && (
                           <Badge variant="outline" className="ml-2 text-xs">You</Badge>
                         )}
-                        {index === 0 && (
+                        {bid.userId === highestBidderId && (
                           <Badge className="ml-2 text-xs bg-green-500">Highest</Badge>
                         )}
                       </div>
@@ -133,7 +136,7 @@ export const BidHistory = ({
                     <div className="font-medium">
                       £{bid.maximumBid.toLocaleString()}
                     </div>
-                    {index === 0 && bid.amount !== bid.maximumBid && (
+                    {bid.userId === highestBidderId && bid.amount !== bid.maximumBid && (
                       <div className="text-xs text-muted-foreground text-right">
                         Current: £{bid.amount.toLocaleString()}
                       </div>

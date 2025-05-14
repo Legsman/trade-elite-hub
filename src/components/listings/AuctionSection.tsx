@@ -13,7 +13,9 @@ interface AuctionSectionProps {
   sellerId: string;
   currentPrice: number;
   userId?: string;
-  refetchListing?: () => Promise<void>; // Add refetchListing prop
+  refetchListing?: () => Promise<void>;
+  /** True winner of this auction, by user ID */
+  highestBidderId?: string;
 }
 
 export const AuctionSection = ({ 
@@ -21,7 +23,8 @@ export const AuctionSection = ({
   sellerId, 
   currentPrice,
   userId,
-  refetchListing
+  refetchListing,
+  highestBidderId
 }: AuctionSectionProps) => {
   const { 
     bids, 
@@ -120,6 +123,7 @@ export const AuctionSection = ({
             isLoading={isLoading}
             onRefresh={fetchBids}
             currentUserId={userId}
+            highestBidderId={highestBidderId} // Pass highestBidderId to BidHistory
           />
         </div>
         

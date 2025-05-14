@@ -49,7 +49,8 @@ export const ListingDetailsMainContent = ({
               sellerId={listing.sellerId} 
               currentPrice={listing.currentBid ?? listing.price} 
               userId={userId}
-              refetchListing={refetchListing} // Pass the refetchListing function 
+              refetchListing={refetchListing}
+              highestBidderId={listing.highestBidderId} // Added highestBidderId prop
             />
           </TabsContent>
         )}
@@ -60,7 +61,7 @@ export const ListingDetailsMainContent = ({
               listingId={listing.id}
               sellerId={listing.sellerId}
               currentPrice={listing.price}
-              listingTitle={listing.title} // Adding the missing required prop
+              listingTitle={listing.title}
               userId={userId}
             />
           </TabsContent>
