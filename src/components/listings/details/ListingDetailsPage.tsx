@@ -15,6 +15,7 @@ import { ListingDetailsMainContent } from './ListingDetailsMainContent';
 import { ListingDetailsSidebar } from './sidebar/ListingDetailsSidebar';
 import { ListingDetailsContactDialog } from './ListingDetailsContactDialog';
 import { ListingDetailsRelistDialog } from './ListingDetailsRelistDialog';
+import { toast } from "@/hooks/use-toast";
 
 export const ListingDetailsPage = () => {
   const { id } = useParams();
