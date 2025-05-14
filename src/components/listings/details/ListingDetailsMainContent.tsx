@@ -25,7 +25,11 @@ export const ListingDetailsMainContent = ({
   
   return (
     <>
-      <ListingImageGallery images={listing.images} alt={listing.title} />
+      <ListingImageGallery 
+        images={listing.images} 
+        listingId={listing.id}
+        title={listing.title}
+      />
       
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList>

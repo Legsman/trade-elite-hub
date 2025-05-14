@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ChevronLeft } from "lucide-react";
@@ -144,7 +143,6 @@ export const ListingDetailsPage = () => {
           <div className="lg:col-span-2 space-y-6">
             <ListingDetailsMainContent 
               listing={listing}
-              bids={[]} 
               isOwner={isOwner}
               userId={user?.id}
               activeTab={activeTab}
