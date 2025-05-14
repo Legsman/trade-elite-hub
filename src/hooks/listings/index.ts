@@ -7,3 +7,4 @@ export { useCreateListing } from './useCreateListing';
 export { useRelistListing } from './useRelistListing';
 export { useSavedListings } from './useSavedListings';
 export { useListingsPage } from './useListingsPage';
+export { useListingBids } from './useListingBids'; // Added this export
