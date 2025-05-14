@@ -61,6 +61,24 @@ export const useBids = ({ listingId }: UseBidsProps) => {
       const adaptedBids = adaptBidTypes.toGlobalBids(sortedBids);
       setGlobalBids(adaptedBids);
       
+      // Also refresh the current listing data to get the latest current_bid
+      try {
+        const { data: listingData } = await supabase
+          .from('listings')
+          .select('current_bid')
+          .eq('id', listingId)
+          .single();
+        
+        if (listingData && listingData.current_bid) {
+          console.log("[useBids] Updated current_bid from listing:", listingData.current_bid);
+          if (!highestBidAmount || Number(listingData.current_bid) > highestBidAmount) {
+            setHighestBid(Number(listingData.current_bid));
+          }
+        }
+      } catch (listingErr) {
+        console.error("[useBids] Error fetching listing current_bid:", listingErr);
+      }
+      
       setIsLoading(false);
     } catch (err) {
       console.error("[useBids] Error fetching bids:", err);
@@ -158,12 +176,12 @@ export const useBids = ({ listingId }: UseBidsProps) => {
       
       if (result.success) {
         console.log("[useBids] Bid placed successfully");
-        // Immediately refresh bids to update the UI - add await here
+        
+        // Immediately refresh both bids and listing data to update the UI
         await fetchBids();
-        toast({
-          title: "Bid Placed Successfully",
-          description: `Your bid has been placed successfully. Current highest bid: £${highestBid || 0}`,
-        });
+        
+        // We don't need to display a toast here as the useBidActions already does
+        
         return { success: true };
       } else {
         console.error("[useBids] Error placing bid:", result.error);
@@ -173,7 +191,7 @@ export const useBids = ({ listingId }: UseBidsProps) => {
       console.error("[useBids] Exception placing bid:", err);
       return { success: false, error: err instanceof Error ? err.message : "Failed to place bid" };
     }
-  }, [user, listingId, createBid, updateBid, getUserBidStatus, fetchBids, highestBid]);
+  }, [user, listingId, createBid, updateBid, getUserBidStatus, fetchBids]);
   
   return {
     bids,

@@ -14,9 +14,17 @@ export const useListingBids = (listingIds: string[]) => {
       console.log(`Fetching bids for ${listingIds.length} listings`);
       
       try {
-        // For each listing, fetch the highest bid amount
+        // For each listing, fetch the highest bid amount AND check the current_bid from listings
         const promises = listingIds.map(async (listingId) => {
-          const { data, error } = await supabase
+          // First check current_bid from listings
+          const { data: listingData, error: listingError } = await supabase
+            .from("listings")
+            .select("current_bid")
+            .eq("id", listingId)
+            .single();
+          
+          // Then check the highest bid from bids table
+          const { data: bidData, error: bidError } = await supabase
             .from("bids")
             .select("amount")
             .eq("listing_id", listingId)
@@ -24,9 +32,19 @@ export const useListingBids = (listingIds: string[]) => {
             .order("amount", { ascending: false })
             .limit(1);
           
-          if (error) throw error;
+          // Use listingData.current_bid if available, otherwise use the highest bid
+          const listingCurrentBid = listingData && listingData.current_bid 
+            ? Number(listingData.current_bid) 
+            : null;
+            
+          const highestBid = bidData && bidData.length > 0 
+            ? Number(bidData[0].amount) 
+            : null;
           
-          const highestBid = data.length > 0 ? Number(data[0].amount) : null;
+          // Use whichever is higher or available
+          const effectiveHighestBid = listingCurrentBid !== null
+            ? (highestBid !== null ? Math.max(listingCurrentBid, highestBid) : listingCurrentBid)
+            : highestBid;
           
           // Also fetch the count of bids
           const { count, error: countError } = await supabase
@@ -35,9 +53,11 @@ export const useListingBids = (listingIds: string[]) => {
             .eq("listing_id", listingId)
             .eq("status", "active");
           
-          if (countError) throw countError;
-          
-          return { listingId, highestBid, bidCount: count || 0 };
+          return { 
+            listingId, 
+            highestBid: effectiveHighestBid, 
+            bidCount: count || 0 
+          };
         });
         
         const results = await Promise.all(promises);
@@ -86,10 +106,30 @@ export const useListingBids = (listingIds: string[]) => {
       .subscribe((status) => {
         console.log("Supabase realtime subscription status for auction bids:", status);
       });
+      
+    // Also subscribe to listing updates for current_bid changes
+    const listingsChannel = supabase
+      .channel('auction-listings-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'listings',
+          filter: `id=in.(${listingIds.join(',')})` 
+        },
+        (payload) => {
+          console.log("Realtime listing update received:", payload);
+          // Refetch bids when there's a change to a listing
+          fetchBidsForListings();
+        }
+      )
+      .subscribe();
     
     return () => {
       console.log("Cleaning up bids subscription for multiple listings");
       supabase.removeChannel(channel);
+      supabase.removeChannel(listingsChannel);
     };
   }, [listingIds]);
   
