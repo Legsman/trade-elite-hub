@@ -23,8 +23,8 @@ export interface Listing {
   status: string;
   views: number;
   saves: number;
-  current_bid?: number | null;
-  highest_bidder_id?: string | null;
+  currentBid?: number | null;
+  highestBidderId?: string | null;
 }
 
 export interface Offer {

@@ -45,9 +45,9 @@ export const ListingDetailsSidebar = ({
   const isSold = listing.status === "sold";
   const { highestBid, bids, placeBid, getUserBidStatus } = useBids({ listingId: listing.id });
   
-  // Use current_bid if available, or highestBid from useBids, or fall back to price
+  // Updated to use camelCase property currentBid instead of current_bid
   const displayPrice = isAuction 
-    ? listing.current_bid || highestBid || listing.price 
+    ? listing.currentBid || highestBid || listing.price 
     : listing.price;
 
   const formatDate = (date: Date) => {

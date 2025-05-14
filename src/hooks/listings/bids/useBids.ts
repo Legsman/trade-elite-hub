@@ -158,8 +158,12 @@ export const useBids = ({ listingId }: UseBidsProps) => {
       
       if (result.success) {
         console.log("[useBids] Bid placed successfully");
-        // Immediately refresh bids to update the UI
+        // Immediately refresh bids to update the UI - add await here
         await fetchBids();
+        toast({
+          title: "Bid Placed Successfully",
+          description: `Your bid has been placed successfully. Current highest bid: £${highestBid || 0}`,
+        });
         return { success: true };
       } else {
         console.error("[useBids] Error placing bid:", result.error);
@@ -169,7 +173,7 @@ export const useBids = ({ listingId }: UseBidsProps) => {
       console.error("[useBids] Exception placing bid:", err);
       return { success: false, error: err instanceof Error ? err.message : "Failed to place bid" };
     }
-  }, [user, listingId, createBid, updateBid, getUserBidStatus, fetchBids]);
+  }, [user, listingId, createBid, updateBid, getUserBidStatus, fetchBids, highestBid]);
   
   return {
     bids,

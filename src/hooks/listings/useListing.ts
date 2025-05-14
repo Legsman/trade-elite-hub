@@ -32,7 +32,7 @@ export const useListing = (id?: string) => {
         throw error;
       }
 
-      // Convert database record to Listing type
+      // Convert database record to Listing type with proper camelCase
       const mappedListing: Listing = {
         id: data.id,
         sellerId: data.seller_id,
@@ -51,8 +51,8 @@ export const useListing = (id?: string) => {
         status: data.status,
         views: data.views,
         saves: data.saves,
-        current_bid: data.current_bid ? Number(data.current_bid) : null,
-        highest_bidder_id: data.highest_bidder_id || null
+        currentBid: data.current_bid ? Number(data.current_bid) : null,
+        highestBidderId: data.highest_bidder_id || null
       };
 
       setListing(mappedListing);
