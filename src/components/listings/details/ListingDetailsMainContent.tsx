@@ -1,6 +1,6 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ListingImageGallery, ListingDetailsTabs, AuctionSection, OfferSection } from "@/components/listings";
+import { ListingContent, ListingImageGallery, AuctionSection, OfferSection } from "@/components/listings";
 import { Listing } from "@/types";
 
 interface ListingDetailsMainContentProps {
@@ -9,19 +9,19 @@ interface ListingDetailsMainContentProps {
   userId?: string;
   activeTab: string;
   setActiveTab: (tab: string) => void;
-  refetchListing: () => Promise<void>; // Make sure this prop exists
+  refetchListing: () => Promise<void>; // Required to refresh listing data after bid/offer
 }
 
-export const ListingDetailsMainContent = ({ 
+export const ListingDetailsMainContent = ({
   listing,
   isOwner,
   userId,
   activeTab,
   setActiveTab,
-  refetchListing // Make sure we're passing this down
+  refetchListing
 }: ListingDetailsMainContentProps) => {
   const isAuction = listing.type === "auction";
-  const allowOffers = !isAuction && listing.allowBestOffer;
+  const isSold = listing.status === "sold";
   
   return (
     <>
@@ -34,33 +34,32 @@ export const ListingDetailsMainContent = ({
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList>
           <TabsTrigger value="details">Details</TabsTrigger>
-          {isAuction && <TabsTrigger value="bids">Bids</TabsTrigger>}
-          {allowOffers && <TabsTrigger value="offers">Make Offer</TabsTrigger>}
+          {isAuction && <TabsTrigger value="auction">Auction</TabsTrigger>}
+          {listing.allowBestOffer && !isAuction && !isSold && <TabsTrigger value="offers">Offers</TabsTrigger>}
         </TabsList>
         
-        <TabsContent value="details">
-          <ListingDetailsTabs listing={listing} />
+        <TabsContent value="details" className="space-y-4">
+          <ListingContent listing={listing} />
         </TabsContent>
         
         {isAuction && (
-          <TabsContent value="bids">
+          <TabsContent value="auction" className="space-y-4">
             <AuctionSection 
-              listingId={listing.id}
-              sellerId={listing.sellerId}
-              currentPrice={listing.currentBid || listing.price}
+              listingId={listing.id} 
+              sellerId={listing.sellerId} 
+              currentPrice={listing.currentBid || listing.price} 
               userId={userId}
-              refetchListing={refetchListing} // Pass down refetchListing
+              refetchListing={refetchListing} // Pass the refetchListing function 
             />
           </TabsContent>
         )}
         
-        {allowOffers && (
-          <TabsContent value="offers">
-            <OfferSection 
+        {listing.allowBestOffer && !isAuction && !isSold && (
+          <TabsContent value="offers" className="space-y-4">
+            <OfferSection
               listingId={listing.id}
-              listingTitle={listing.title}
               sellerId={listing.sellerId}
-              currentPrice={listing.price}
+              listingPrice={listing.price}
               userId={userId}
             />
           </TabsContent>
