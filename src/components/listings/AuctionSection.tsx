@@ -13,13 +13,15 @@ interface AuctionSectionProps {
   sellerId: string;
   currentPrice: number;
   userId?: string;
+  refetchListing?: () => Promise<void>; // Add refetchListing prop
 }
 
 export const AuctionSection = ({ 
   listingId, 
   sellerId, 
   currentPrice,
-  userId
+  userId,
+  refetchListing
 }: AuctionSectionProps) => {
   const { 
     bids, 
@@ -64,13 +66,17 @@ export const AuctionSection = ({
     
     if (result.success) {
       console.log("AuctionSection: Bid placed successfully, refreshing data");
+      
+      // Refresh both listing and bids data
+      await Promise.all([
+        refetchListing && refetchListing(), // Pull in the new currentBid if available
+        fetchBids()                        // Update the bid history
+      ]);
+      
       toast({
         title: "Bid Placed",
         description: "Your bid has been placed successfully.",
       });
-      
-      // Manually trigger a refresh after successful bid
-      await fetchBids();
     } else {
       toast({
         title: "Bid Failed",
@@ -80,7 +86,7 @@ export const AuctionSection = ({
     }
     
     return result;
-  }, [placeBid, fetchBids, userId]);
+  }, [placeBid, fetchBids, userId, refetchListing]);
 
   const userBidStatus = getUserBidStatus();
   

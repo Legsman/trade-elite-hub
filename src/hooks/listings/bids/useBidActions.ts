@@ -87,17 +87,8 @@ export const useBidActions = () => {
         description: `Your maximum bid of £${maxBid} has been placed. Current price: £${data[0].new_current_bid}`,
       });
       
-      // After successful bid, explicitly refresh the listing data to get the latest current_bid
-      try {
-        console.log('[useBidActions] Refreshing listing data after successful bid');
-        await supabase
-          .from('listings')
-          .update({ updated_at: new Date().toISOString() })
-          .eq('id', listingId);
-      } catch (refreshErr) {
-        console.error('[useBidActions] Error refreshing listing data:', refreshErr);
-        // Non-critical error, don't fail the operation
-      }
+      // Remove the ineffective manual listing refresh
+      // The component will now handle refreshing the listing data
       
       return { 
         success: true,

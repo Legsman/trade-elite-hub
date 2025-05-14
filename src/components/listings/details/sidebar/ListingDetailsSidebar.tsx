@@ -20,6 +20,7 @@ interface ListingDetailsSidebarProps {
   onRelistClick: () => void;
   navigate: NavigateFunction;
   setActiveTab: (tab: string) => void;
+  refetchListing: () => Promise<void>; // Added refetchListing prop
 }
 
 export const ListingDetailsSidebar = ({
@@ -34,10 +35,11 @@ export const ListingDetailsSidebar = ({
   onContactClick,
   onRelistClick,
   navigate,
-  setActiveTab
+  setActiveTab,
+  refetchListing
 }: ListingDetailsSidebarProps) => {
   const isAuction = listing.type === "auction";
-  const { highestBid, bids, placeBid, getUserBidStatus } = useBids({ listingId: listing.id });
+  const { highestBid, bids, placeBid, getUserBidStatus, fetchBids } = useBids({ listingId: listing.id });
   
   // Updated to use camelCase property currentBid instead of current_bid
   const displayPrice = isAuction 
@@ -55,7 +57,19 @@ export const ListingDetailsSidebar = ({
       return { success: false };
     }
     
-    return await placeBid(amount);
+    // Place the bid
+    const result = await placeBid(amount);
+    
+    // If successful, refresh both the listing and bids data
+    if (result.success) {
+      console.log("Bid placed successfully, refreshing data...");
+      await Promise.all([
+        refetchListing(), // Pull in the new currentBid
+        fetchBids()       // Update the bid history
+      ]);
+    }
+    
+    return result;
   };
 
   // Get user bid status and convert to the format expected by CollapsibleBidForm

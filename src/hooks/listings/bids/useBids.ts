@@ -80,10 +80,12 @@ export const useBids = ({ listingId }: UseBidsProps) => {
       }
       
       setIsLoading(false);
+      return true; // Return success indicator
     } catch (err) {
       console.error("[useBids] Error fetching bids:", err);
       setError(err instanceof Error ? err.message : "Failed to fetch bids");
       setIsLoading(false);
+      return false; // Return failure indicator
     }
   }, [listingId, fetchBidsForListing, fetchHighestBid]);
   
@@ -177,10 +179,11 @@ export const useBids = ({ listingId }: UseBidsProps) => {
       if (result.success) {
         console.log("[useBids] Bid placed successfully");
         
-        // Immediately refresh both bids and listing data to update the UI
+        // Immediately refresh the bids to update the UI
+        // Note: The listing refresh will be handled by the component
         await fetchBids();
         
-        // We don't need to display a toast here as the useBidActions already does
+        // We don't show a toast here since the component will handle it
         
         return { success: true };
       } else {
@@ -200,7 +203,7 @@ export const useBids = ({ listingId }: UseBidsProps) => {
     error,
     highestBid,
     placeBid,
-    fetchBids,
+    fetchBids, // Explicitly expose fetchBids for manual refresh
     getUserBidStatus
   };
 };

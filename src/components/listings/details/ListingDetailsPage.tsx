@@ -12,7 +12,7 @@ import { Loading } from "@/components/ui/loading";
 import { ListingDetailSoldAlert } from "@/components/listings";
 import { ListingDetailsHeader } from './ListingDetailsHeader';
 import { ListingDetailsMainContent } from './ListingDetailsMainContent';
-import { ListingDetailsSidebar } from './ListingDetailsSidebar';
+import { ListingDetailsSidebar } from './sidebar/ListingDetailsSidebar';
 import { ListingDetailsContactDialog } from './ListingDetailsContactDialog';
 import { ListingDetailsRelistDialog } from './ListingDetailsRelistDialog';
 
@@ -20,7 +20,14 @@ export const ListingDetailsPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { listing, isLoading: listingLoading, error: listingError, toggleSave, checkSaved } = useListing(id);
+  const { 
+    listing, 
+    isLoading: listingLoading, 
+    error: listingError, 
+    toggleSave, 
+    checkSaved,
+    refetch: refetchListing 
+  } = useListing(id);
   const { seller, isLoading: sellerLoading } = useSellerProfile(listing?.sellerId);
   const { trackEvent } = useAnalytics();
   
@@ -155,6 +162,7 @@ export const ListingDetailsPage = () => {
               onRelistClick={() => setRelistFormOpen(true)}
               navigate={navigate}
               setActiveTab={setActiveTab}
+              refetchListing={refetchListing} // Pass the refetchListing function
             />
           </div>
         </div>
