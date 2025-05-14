@@ -39,7 +39,16 @@ export const ListingDetailsMainContent = ({
         </TabsList>
         
         <TabsContent value="details" className="space-y-4">
-          <ListingContent listing={listing} />
+          {/* Fix #1: ListingContent expects 'listings', not 'listing' - we'll adapt to its interface */}
+          <ListingContent 
+            listings={[listing]} 
+            isLoading={false}
+            error={null}
+            totalCount={1}
+            pageSize={1}
+            currentPage={1}
+            onPageChange={() => {}}
+          />
         </TabsContent>
         
         {isAuction && (
@@ -56,10 +65,12 @@ export const ListingDetailsMainContent = ({
         
         {listing.allowBestOffer && !isAuction && !isSold && (
           <TabsContent value="offers" className="space-y-4">
+            {/* Fix #2: OfferSection expects 'currentPrice', not 'listingPrice' */}
             <OfferSection
               listingId={listing.id}
               sellerId={listing.sellerId}
-              listingPrice={listing.price}
+              currentPrice={listing.price}
+              listingTitle={listing.title} // Adding the missing required prop
               userId={userId}
             />
           </TabsContent>
