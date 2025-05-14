@@ -129,8 +129,15 @@ export const BidHistory = ({
                       </div>
                     </div>
                   </div>
-                  <div className="font-medium">
-                    £{bid.amount.toLocaleString()}
+                  <div>
+                    <div className="font-medium">
+                      £{bid.maximumBid.toLocaleString()}
+                    </div>
+                    {index === 0 && bid.amount !== bid.maximumBid && (
+                      <div className="text-xs text-muted-foreground text-right">
+                        Current: £{bid.amount.toLocaleString()}
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}

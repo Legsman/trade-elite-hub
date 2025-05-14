@@ -6,6 +6,7 @@ import { BidForm } from "./BidForm";
 import { BidHistory } from "./BidHistory";
 import { useBids } from "@/hooks/listings";
 import { CollapsibleBidForm } from "./CollapsibleBidForm";
+import { toast } from "@/hooks/use-toast";
 
 interface AuctionSectionProps {
   listingId: string;
@@ -22,7 +23,7 @@ export const AuctionSection = ({
 }: AuctionSectionProps) => {
   const { 
     bids, 
-    globalBids, // Use globalBids which is compatible with the component
+    globalBids,
     isLoading, 
     error, 
     placeBid, 
@@ -49,20 +50,44 @@ export const AuctionSection = ({
 
   const handlePlaceBid = useCallback(async (amount: number) => {
     console.log("AuctionSection: Handling bid placement", amount);
+    
+    if (!userId) {
+      toast({
+        title: "Authentication required",
+        description: "You must be logged in to place a bid",
+        variant: "destructive",
+      });
+      return { success: false };
+    }
+    
     const result = await placeBid(amount);
     
     if (result.success) {
       console.log("AuctionSection: Bid placed successfully, refreshing data");
+      toast({
+        title: "Bid Placed",
+        description: "Your bid has been placed successfully.",
+      });
+      
       // Manually trigger a refresh after successful bid
       await fetchBids();
+    } else {
+      toast({
+        title: "Bid Failed",
+        description: result.error || "Failed to place bid. Please try again.",
+        variant: "destructive",
+      });
     }
     
     return result;
-  }, [placeBid, fetchBids]);
+  }, [placeBid, fetchBids, userId]);
 
   const userBidStatus = getUserBidStatus();
   
   const isSeller = userId === sellerId;
+
+  // Use the maintained highest bid or current price, whichever is higher
+  const displayPrice = highestBid && highestBid > currentPrice ? highestBid : currentPrice;
 
   return (
     <div className="space-y-6">
@@ -79,7 +104,7 @@ export const AuctionSection = ({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <BidHistory 
-            bids={globalBids} // Use globalBids instead of bids
+            bids={globalBids}
             isLoading={isLoading}
             onRefresh={fetchBids}
             currentUserId={userId}
@@ -90,7 +115,7 @@ export const AuctionSection = ({
           {!isSeller && userId && (
             <BidForm 
               listingId={listingId}
-              currentPrice={currentPrice}
+              currentPrice={displayPrice}
               highestBid={highestBid}
               onPlaceBid={handlePlaceBid}
               userBidStatus={userBidStatus}

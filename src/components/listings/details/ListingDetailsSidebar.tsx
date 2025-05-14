@@ -1,3 +1,4 @@
+
 import { Loader2, Heart, Share2, MessageSquare, MapPin, Shield, User, Star, ThumbsUp, Gavel } from "lucide-react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -44,7 +45,10 @@ export const ListingDetailsSidebar = ({
   const isSold = listing.status === "sold";
   const { highestBid, bids, placeBid, getUserBidStatus } = useBids({ listingId: listing.id });
   
-  const displayPrice = isAuction && highestBid ? highestBid : listing.price;
+  // Use current_bid if available, or highestBid from useBids, or fall back to price
+  const displayPrice = isAuction 
+    ? listing.current_bid || highestBid || listing.price 
+    : listing.price;
 
   const formatDate = (date: Date) => {
     return new Intl.DateTimeFormat('en-GB', {
@@ -107,7 +111,7 @@ export const ListingDetailsSidebar = ({
             listing.sellerId !== user?.id && user && !isSold ? (
               <CollapsibleBidForm
                 listingId={listing.id}
-                currentPrice={listing.price}
+                currentPrice={displayPrice}
                 highestBid={highestBid}
                 onPlaceBid={handlePlaceBid}
                 userBidStatus={adaptedUserBidStatus}
@@ -115,13 +119,13 @@ export const ListingDetailsSidebar = ({
               />
             ) : (
               <div className="space-y-1">
-                {highestBid ? (
+                {displayPrice ? (
                   <div className="flex items-baseline">
                     <div className="flex items-center">
                       <Gavel className="h-4 w-4 mr-1 text-purple" />
                       <span className="text-sm text-muted-foreground">Current bid:</span>
                     </div>
-                    <span className="text-3xl font-bold text-purple ml-2">£{highestBid.toLocaleString()}</span>
+                    <span className="text-3xl font-bold text-purple ml-2">£{displayPrice.toLocaleString()}</span>
                   </div>
                 ) : (
                   <div className="flex items-baseline">

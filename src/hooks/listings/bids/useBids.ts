@@ -8,6 +8,7 @@ import { useBidStatus } from "./useBidStatus";
 import { adaptBidTypes } from "./bidTypeAdapter";
 import { Bid, BidStatus } from "./types";
 import { Bid as GlobalBid } from "@/types";
+import { toast } from "@/hooks/use-toast";
 
 interface UseBidsProps {
   listingId: string;
@@ -110,9 +111,9 @@ export const useBids = ({ listingId }: UseBidsProps) => {
           // Check if current_bid has changed
           const newData = payload.new as any;
           
-          if (newData && newData.price) {
-            console.log("[useBids] Updating highest bid to:", newData.price);
-            setHighestBid(Number(newData.price));
+          if (newData && newData.current_bid) {
+            console.log("[useBids] Updating highest bid to:", newData.current_bid);
+            setHighestBid(Number(newData.current_bid));
           }
         }
       )
@@ -134,6 +135,11 @@ export const useBids = ({ listingId }: UseBidsProps) => {
     console.log(`[useBids] Placing bid on listing ${listingId} for amount ${amount}`);
     
     if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "You must be logged in to place a bid",
+        variant: "destructive",
+      });
       return { success: false, error: "You must be logged in to place a bid" };
     }
     
@@ -152,6 +158,8 @@ export const useBids = ({ listingId }: UseBidsProps) => {
       
       if (result.success) {
         console.log("[useBids] Bid placed successfully");
+        // Immediately refresh bids to update the UI
+        await fetchBids();
         return { success: true };
       } else {
         console.error("[useBids] Error placing bid:", result.error);
@@ -161,7 +169,7 @@ export const useBids = ({ listingId }: UseBidsProps) => {
       console.error("[useBids] Exception placing bid:", err);
       return { success: false, error: err instanceof Error ? err.message : "Failed to place bid" };
     }
-  }, [user, listingId, createBid, updateBid, getUserBidStatus]);
+  }, [user, listingId, createBid, updateBid, getUserBidStatus, fetchBids]);
   
   return {
     bids,

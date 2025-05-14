@@ -23,6 +23,8 @@ export interface Listing {
   status: string;
   views: number;
   saves: number;
+  current_bid?: number | null;
+  highest_bidder_id?: string | null;
 }
 
 export interface Offer {
@@ -48,8 +50,8 @@ export interface Bid {
   amount: number;
   status: string;
   createdAt: Date;
-  maximumBid?: number;
-  bidIncrement?: number;
+  maximumBid: number;
+  bidIncrement: number;
   user?: {
     fullName: string | null;
     avatarUrl: string | null;

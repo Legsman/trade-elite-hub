@@ -2,6 +2,7 @@
 import { useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/auth";
+import { toast } from "@/hooks/use-toast";
 
 interface BidResult {
   success: boolean;
@@ -21,6 +22,11 @@ export const useBidActions = () => {
     existingBidId?: string
   ): Promise<BidResult> => {
     if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "You must be logged in to place a bid",
+        variant: "destructive",
+      });
       return { success: false, error: 'You must be logged in to place a bid' };
     }
     
@@ -28,7 +34,6 @@ export const useBidActions = () => {
       console.log(`[useBidActions] ${existingBidId ? 'Updating' : 'Creating'} bid with proxy function: listing=${listingId}, maxBid=${maxBid}`);
       
       // Call the RPC function with the correct parameters
-      // Removed @ts-ignore as we now have proper type definitions for this function
       const { data, error } = await supabase.rpc('proxy_place_or_update_bid', {
         p_listing_id: listingId,
         p_bid_id: existingBidId || null,
@@ -48,6 +53,12 @@ export const useBidActions = () => {
           userMessage = 'This listing was not found';
         }
         
+        toast({
+          title: "Bid Failed",
+          description: userMessage,
+          variant: "destructive",
+        });
+        
         return { 
           success: false, 
           error: userMessage 
@@ -56,6 +67,12 @@ export const useBidActions = () => {
       
       // Check if data exists and has the correct structure
       if (!data || !Array.isArray(data) || data.length === 0) {
+        toast({
+          title: "Bid Failed",
+          description: "No data returned from bid operation",
+          variant: "destructive",
+        });
+        
         return {
           success: false,
           error: 'No data returned from bid operation'
@@ -64,12 +81,25 @@ export const useBidActions = () => {
       
       console.log('[useBidActions] Bid processed successfully:', data[0]);
       
+      // Display success toast with current bid amount
+      toast({
+        title: "Bid Placed Successfully",
+        description: `Your maximum bid of £${maxBid} has been placed. Current price: £${data[0].new_current_bid}`,
+      });
+      
       return { 
         success: true,
         bidId: existingBidId // Return the existing bid ID or undefined for new bids
       };
     } catch (err) {
       console.error('[useBidActions] Exception in bid operation:', err);
+      
+      toast({
+        title: "Bid Failed",
+        description: err instanceof Error ? err.message : 'Failed to process bid',
+        variant: "destructive",
+      });
+      
       return { 
         success: false, 
         error: err instanceof Error ? err.message : 'Failed to process bid' 
@@ -98,6 +128,13 @@ export const useBidActions = () => {
       
       if (bidError || !bidData) {
         console.error('[useBidActions] Error retrieving bid for update:', bidError);
+        
+        toast({
+          title: "Bid Update Failed",
+          description: "Could not find the bid to update",
+          variant: "destructive",
+        });
+        
         return { 
           success: false, 
           error: 'Could not find the bid to update' 
@@ -107,6 +144,13 @@ export const useBidActions = () => {
       return placeOrUpdateBid(bidData.listing_id, amount, bidId);
     } catch (err) {
       console.error('[useBidActions] Exception retrieving bid data:', err);
+      
+      toast({
+        title: "Bid Update Failed",
+        description: err instanceof Error ? err.message : "Failed to update bid",
+        variant: "destructive",
+      });
+      
       return { 
         success: false, 
         error: err instanceof Error ? err.message : 'Failed to update bid' 
