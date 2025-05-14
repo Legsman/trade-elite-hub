@@ -47,7 +47,7 @@ export const ListingDetailsMainContent = ({
             <AuctionSection 
               listingId={listing.id} 
               sellerId={listing.sellerId} 
-              currentPrice={listing.currentBid || listing.price} 
+              currentPrice={listing.currentBid ?? listing.price} 
               userId={userId}
               refetchListing={refetchListing} // Pass the refetchListing function 
             />
