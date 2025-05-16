@@ -131,13 +131,13 @@ export const useBidDataFetcher = () => {
       // Try to get the current_bid first from the listings table
       const { data: listingData, error: listingError } = await supabase
         .from('listings')
-        .select('price') // Use price instead of current_bid until column exists
+        .select('current_bid, highest_bidder_id')  // Changed from 'price' to 'current_bid, highest_bidder_id'
         .eq('id', listingId)
         .single();
       
-      if (!listingError && listingData && listingData.price) {
-        console.log(`[useBidDataFetcher] Found price in listing: ${listingData.price}`);
-        return Number(listingData.price);
+      if (!listingError && listingData && listingData.current_bid) {
+        console.log(`[useBidDataFetcher] Found current bid in listing: ${listingData.current_bid}`);
+        return Number(listingData.current_bid);
       }
       
       // Fall back to the old method if current_bid is not available
