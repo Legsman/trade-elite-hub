@@ -1,4 +1,3 @@
-
 import { useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Bid } from "./types";
@@ -123,27 +122,31 @@ export const useBidDataFetcher = () => {
     }
   }, []);
   
-  // Fetch just the highest bid amount for a listing
-  const fetchHighestBid = useCallback(async (listingId: string): Promise<number | null> => {
+  // Fetch just the highest bid amount and highest bidder ID for a listing
+  const fetchHighestBid = useCallback(async (listingId: string): Promise<{amount: number | null, highestBidderId: string | null}> => {
     console.log(`[useBidDataFetcher] Fetching highest bid for listing: ${listingId}`);
     
     try {
       // Try to get the current_bid first from the listings table
       const { data: listingData, error: listingError } = await supabase
         .from('listings')
-        .select('current_bid, highest_bidder_id')  // Changed from 'price' to 'current_bid, highest_bidder_id'
+        .select('current_bid, highest_bidder_id')
         .eq('id', listingId)
         .single();
       
       if (!listingError && listingData && listingData.current_bid) {
         console.log(`[useBidDataFetcher] Found current bid in listing: ${listingData.current_bid}`);
-        return Number(listingData.current_bid);
+        console.log(`[useBidDataFetcher] Highest bidder ID: ${listingData.highest_bidder_id}`);
+        return {
+          amount: Number(listingData.current_bid),
+          highestBidderId: listingData.highest_bidder_id
+        };
       }
       
       // Fall back to the old method if current_bid is not available
       const { data, error } = await supabase
         .from('bids')
-        .select('amount')
+        .select('amount, user_id')
         .eq('listing_id', listingId)
         .eq('status', 'active')
         .order('amount', { ascending: false })
@@ -156,11 +159,14 @@ export const useBidDataFetcher = () => {
       
       if (data.length === 0) {
         console.log('[useBidDataFetcher] No bids found for this listing');
-        return null;
+        return {amount: null, highestBidderId: null};
       }
       
-      console.log(`[useBidDataFetcher] Highest bid amount: ${data[0].amount}`);
-      return Number(data[0].amount);
+      console.log(`[useBidDataFetcher] Highest bid amount: ${data[0].amount} from user: ${data[0].user_id}`);
+      return {
+        amount: Number(data[0].amount),
+        highestBidderId: data[0].user_id
+      };
     } catch (err) {
       console.error('[useBidDataFetcher] Exception fetching highest bid:', err);
       throw err;

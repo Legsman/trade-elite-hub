@@ -50,7 +50,7 @@ export const ListingDetailsMainContent = ({
               currentPrice={listing.currentBid ?? listing.price} 
               userId={userId}
               refetchListing={refetchListing}
-              highestBidderId={listing.highestBidderId} // Added highestBidderId prop
+              highestBidderId={listing.highestBidderId}
             />
           </TabsContent>
         )}

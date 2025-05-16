@@ -24,7 +24,7 @@ export const AuctionSection = ({
   currentPrice,
   userId,
   refetchListing,
-  highestBidderId
+  highestBidderId: propHighestBidderId // Rename to avoid confusion
 }: AuctionSectionProps) => {
   const { 
     bids, 
@@ -34,6 +34,7 @@ export const AuctionSection = ({
     placeBid, 
     fetchBids,
     highestBid,
+    highestBidderId, // Use the highestBidderId from useBids
     getUserBidStatus
   } = useBids({ listingId });
   
@@ -104,6 +105,9 @@ export const AuctionSection = ({
   // Use the maintained highest bid or current price, whichever is higher
   const displayPrice = highestBid && highestBid > currentPrice ? highestBid : currentPrice;
 
+  // Use either the prop highestBidderId from the listing or the one from useBids
+  const effectiveHighestBidderId = propHighestBidderId || highestBidderId;
+
   return (
     <div className="space-y-6">
       {error && (
@@ -123,7 +127,7 @@ export const AuctionSection = ({
             isLoading={isLoading}
             onRefresh={fetchBids}
             currentUserId={userId}
-            highestBidderId={highestBidderId} // Pass highestBidderId to BidHistory
+            highestBidderId={effectiveHighestBidderId} // Pass the effective highestBidderId
           />
         </div>
         

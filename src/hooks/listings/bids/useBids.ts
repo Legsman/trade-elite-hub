@@ -24,6 +24,7 @@ export const useBids = ({ listingId }: UseBidsProps) => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [highestBid, setHighestBid] = useState<number | null>(null);
+  const [highestBidderId, setHighestBidderId] = useState<string | null>(null);
   
   // Initialize bid status hook with current bids
   const { getUserBidStatus } = useBidStatus({ listingId, bids });
@@ -37,8 +38,9 @@ export const useBids = ({ listingId }: UseBidsProps) => {
       setError(null);
       
       // First, try to get the highest bid - this is faster than fetching all bids
-      const highestBidAmount = await fetchHighestBid(listingId);
-      setHighestBid(highestBidAmount);
+      const highestBidData = await fetchHighestBid(listingId);
+      setHighestBid(highestBidData.amount);
+      setHighestBidderId(highestBidData.highestBidderId);
       
       // Fetch all bids for the listing
       let fetchedBids = await fetchBidsForListing(listingId);
@@ -85,18 +87,21 @@ export const useBids = ({ listingId }: UseBidsProps) => {
       try {
         const { data: listingData } = await supabase
           .from('listings')
-          .select('current_bid')
+          .select('current_bid, highest_bidder_id')
           .eq('id', listingId)
           .single();
         
-        if (listingData && listingData.current_bid) {
-          console.log("[useBids] Updated current_bid from listing:", listingData.current_bid);
-          if (!highestBidAmount || Number(listingData.current_bid) > highestBidAmount) {
+        if (listingData) {
+          console.log("[useBids] Updated from listing:", listingData);
+          if (listingData.current_bid) {
             setHighestBid(Number(listingData.current_bid));
+          }
+          if (listingData.highest_bidder_id) {
+            setHighestBidderId(listingData.highest_bidder_id);
           }
         }
       } catch (listingErr) {
-        console.error("[useBids] Error fetching listing current_bid:", listingErr);
+        console.error("[useBids] Error fetching listing data:", listingErr);
       }
       
       setIsLoading(false);
@@ -222,8 +227,9 @@ export const useBids = ({ listingId }: UseBidsProps) => {
     isLoading,
     error,
     highestBid,
+    highestBidderId, // Add highestBidderId to the return value
     placeBid,
-    fetchBids, // Explicitly expose fetchBids for manual refresh
+    fetchBids,
     getUserBidStatus
   };
 };
