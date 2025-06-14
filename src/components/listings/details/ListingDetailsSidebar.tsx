@@ -11,6 +11,7 @@ import { Listing } from "@/types";
 import { User as UserType } from "@/types";
 import { NavigateFunction } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
+import { ShippingInfoCard } from "./sidebar/ShippingInfoCard"; // <-- ADD THIS IMPORT
 
 interface ListingDetailsSidebarProps {
   listing: Listing;
@@ -364,6 +365,9 @@ export const ListingDetailsSidebar = ({
           </ul>
         </CardContent>
       </Card>
+
+      {/* NEW: Shipping Information Card */}
+      <ShippingInfoCard />
     </>
   );
 };

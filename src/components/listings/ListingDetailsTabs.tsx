@@ -20,7 +20,6 @@ export const ListingDetailsTabs = ({ listing }: ListingDetailsTabsProps) => {
       <TabsList>
         <TabsTrigger value="description">Description</TabsTrigger>
         <TabsTrigger value="details">Details</TabsTrigger>
-        <TabsTrigger value="shipping">Shipping</TabsTrigger>
       </TabsList>
       
       <TabsContent value="description" className="space-y-4">
@@ -65,21 +64,6 @@ export const ListingDetailsTabs = ({ listing }: ListingDetailsTabsProps) => {
             <span className="text-muted-foreground">Item ID</span>
             <span className="font-medium">{listing.id}</span>
           </div>
-        </div>
-      </TabsContent>
-      
-      <TabsContent value="shipping" className="space-y-4">
-        <p>
-          The seller is responsible for arranging shipping. Contact the seller for shipping options and costs.
-        </p>
-        <div className="p-4 bg-muted/40 rounded-lg">
-          <h4 className="font-medium mb-2">Shipping Terms</h4>
-          <ul className="list-disc pl-5 space-y-1 text-sm">
-            <li>Buyer is responsible for all shipping and handling costs</li>
-            <li>Items will be shipped within 7 business days of cleared payment</li>
-            <li>International buyers are responsible for any customs fees</li>
-            <li>Insurance is recommended for high-value items</li>
-          </ul>
         </div>
       </TabsContent>
     </Tabs>
