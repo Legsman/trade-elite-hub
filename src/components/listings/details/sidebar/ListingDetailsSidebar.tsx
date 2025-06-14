@@ -6,10 +6,11 @@ import { toast } from "@/hooks/use-toast";
 import { PriceCard } from "./PriceCard";
 import { SellerInfoCard } from "./SellerInfoCard";
 import { SafetyTipsCard } from "./SafetyTipsCard";
+import { ShippingInfoCard } from "./ShippingInfoCard"; // <-- Import ShippingInfoCard
 
 interface ListingDetailsSidebarProps {
   listing: Listing;
-  seller: any;  // Using any for now since the seller type isn't explicitly defined
+  seller: any;
   user?: UserType;
   isSaved: boolean;
   savingState: boolean;
@@ -20,7 +21,7 @@ interface ListingDetailsSidebarProps {
   onRelistClick: () => void;
   navigate: NavigateFunction;
   setActiveTab: (tab: string) => void;
-  refetchListing: () => Promise<void>; // Required refetchListing prop
+  refetchListing: () => Promise<void>;
 }
 
 export const ListingDetailsSidebar = ({
@@ -36,17 +37,15 @@ export const ListingDetailsSidebar = ({
   onRelistClick,
   navigate,
   setActiveTab,
-  refetchListing
+  refetchListing,
 }: ListingDetailsSidebarProps) => {
   const isAuction = listing.type === "auction";
   const { highestBid, bids, placeBid, getUserBidStatus, fetchBids } = useBids({ listingId: listing.id });
   
-  // Updated to use camelCase property currentBid instead of current_bid
   const displayPrice = isAuction 
     ? listing.currentBid || highestBid || listing.price 
     : listing.price;
 
-  // Handle placing a bid
   const handlePlaceBid = async (amount: number) => {
     if (!user) {
       toast({
@@ -57,17 +56,13 @@ export const ListingDetailsSidebar = ({
       return { success: false };
     }
     
-    // Place the bid
     const result = await placeBid(amount);
-    
-    // If successful, refresh both the listing and bids data
     if (result.success) {
       console.log("Bid placed successfully, refreshing data...");
       try {
-        // Execute these in parallel for better performance
         await Promise.all([
-          refetchListing(), // Pull in the new currentBid
-          fetchBids()       // Update the bid history
+          refetchListing(),
+          fetchBids()
         ]);
         console.log("Data refreshed successfully after bid");
       } catch (err) {
@@ -76,13 +71,10 @@ export const ListingDetailsSidebar = ({
     } else {
       console.error("Bid placement failed:", result.error);
     }
-    
     return result;
   };
 
-  // Get user bid status and convert to the format expected by CollapsibleBidForm
   const userBidStatus = getUserBidStatus();
-  
   const adaptedUserBidStatus = {
     ...userBidStatus,
     userHighestBid: userBidStatus.userBid ? Number(userBidStatus.userBid.amount) : 0,
@@ -90,7 +82,6 @@ export const ListingDetailsSidebar = ({
       Number(userBidStatus.userBid.maximum_bid) : 0
   };
 
-  // Enhance listing with bid count if it's missing
   const enhancedListing = {
     ...listing,
     bidCount: listing.bidCount !== undefined ? listing.bidCount : bids.length
@@ -121,6 +112,9 @@ export const ListingDetailsSidebar = ({
       )}
       
       <SafetyTipsCard />
+
+      {/* Render ShippingInfoCard beneath SafetyTipsCard */}
+      <ShippingInfoCard />
     </>
   );
 };
