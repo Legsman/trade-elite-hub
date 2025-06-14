@@ -24,14 +24,17 @@ import { useIsAdmin } from "@/hooks/useIsAdmin";
 
 const Navbar = () => {
   const { user, supabaseUser, logout } = useAuth();
-  const { isAdmin } = useIsAdmin();
+  const { isAdmin, checking: checkingAdmin } = useIsAdmin();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const navigate = useNavigate();
 
+  // Defensive: Only allow admin links if both isAuthenticated and isAdmin are true (and not checking)
+  const isAuthenticated = !!supabaseUser;
+
   // Debug log for admin status
   useEffect(() => {
-    console.log("Navbar - Is Admin:", isAdmin, "User:", !!user);
-  }, [isAdmin, user]);
+    console.log("Navbar - Is Admin:", isAdmin, "User:", !!user, "CheckingAdmin:", checkingAdmin);
+  }, [isAdmin, user, checkingAdmin]);
 
   const handleLogout = async () => {
     try {
@@ -50,8 +53,6 @@ const Navbar = () => {
       });
     }
   };
-
-  const isAuthenticated = !!supabaseUser;
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -92,7 +93,8 @@ const Navbar = () => {
                     <Link to="/profile" className="text-lg font-semibold hover:text-purple transition-colors">
                       My Profile
                     </Link>
-                    {isAdmin && (
+                    {/* Only render admin panel link if user is authenticated AND isAdmin is true AND not checking */}
+                    {isAuthenticated && isAdmin && !checkingAdmin && (
                       <Link to="/admin" className="text-lg font-semibold text-green-600 hover:text-green-800 transition-colors">
                         Admin Panel
                       </Link>
@@ -128,7 +130,8 @@ const Navbar = () => {
           <Link to="/contact" className="text-sm font-medium transition-colors hover:text-purple">
             Contact
           </Link>
-          {isAdmin && isAuthenticated && (
+          {/* Only show if authenticated and isAdmin */}
+          {isAuthenticated && isAdmin && !checkingAdmin && (
             <Link to="/admin" className="text-sm font-medium text-green-600 transition-colors hover:text-green-800">
               Admin
             </Link>
@@ -189,7 +192,8 @@ const Navbar = () => {
                           <span>Settings</span>
                         </div>
                       </Link>
-                      {isAdmin && (
+                      {/* Only render if authenticated, isAdmin, and check finished */}
+                      {isAuthenticated && isAdmin && !checkingAdmin && (
                         <Link
                           to="/admin"
                           className="block px-4 py-2 text-sm text-green-600 hover:bg-gray-100"
