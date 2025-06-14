@@ -26,6 +26,7 @@ interface ListingDetailsSidebarProps {
   onRelistClick: () => void;
   navigate: NavigateFunction;
   setActiveTab: (tab: string) => void;
+  refetchListing: () => Promise<void>; // Added this line!
 }
 
 export const ListingDetailsSidebar = ({
@@ -40,7 +41,8 @@ export const ListingDetailsSidebar = ({
   onContactClick,
   onRelistClick,
   navigate,
-  setActiveTab
+  setActiveTab,
+  refetchListing // Added this line!
 }: ListingDetailsSidebarProps) => {
   const isAuction = listing.type === "auction";
   const isSold = listing.status === "sold";
