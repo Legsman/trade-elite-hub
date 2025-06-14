@@ -134,11 +134,17 @@ export const BidHistory = ({
                   </div>
                   <div>
                     <div className="font-medium">
-                      £{bid.maximumBid.toLocaleString()}
+                      {/* Show max bid only for bidder themselves, otherwise show public visible amount */}
+                      {bid.userId === currentUserId
+                        ? <>£{bid.maximumBid.toLocaleString()} <span className="text-xs text-muted-foreground">(Your max bid)</span></>
+                        : <>£{bid.amount.toLocaleString()}</>
+                      }
                     </div>
-                    {bid.userId === highestBidderId && bid.amount !== bid.maximumBid && (
+                    {/* For the highest bidder, if their current visible bid is less than their max, show "Current: £X".
+                        But do NOT expose the maximumBid if this isn't your bid! */}
+                    {bid.userId === highestBidderId && bid.userId !== currentUserId && bid.amount !== bid.maximumBid && (
                       <div className="text-xs text-muted-foreground text-right">
-                        Current: £{bid.amount.toLocaleString()}
+                        Top bidder's current: £{bid.amount.toLocaleString()}
                       </div>
                     )}
                   </div>
