@@ -38,7 +38,8 @@ export const useBidStatus = ({ listingId, bids }: UseBidStatusProps) => {
       hasBid: !!userBid,
       isHighestBidder,
       userBid,
-      userHighestBid: userBid ? Number(userBid.amount) : 0,
+      // MAIN CHANGE: show the user's maximum bid as their "highest bid"
+      userHighestBid: userBid ? Number(userBid.maximum_bid) : 0,
       userMaximumBid: userBid && userBid.maximum_bid 
         ? Number(userBid.maximum_bid) 
         : 0,
