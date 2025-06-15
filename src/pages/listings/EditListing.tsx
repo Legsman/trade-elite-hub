@@ -59,9 +59,13 @@ const EditListingPage = () => {
   // Populate form with existing listing data
   useEffect(() => {
     if (listing) {
-      // Category and type must be correct union types:
-      const safeCategory = CATEGORY_VALUES.includes(listing.category) ? listing.category as typeof CATEGORY_VALUES[number] : "other";
-      const safeType = TYPE_VALUES.includes(listing.type) ? listing.type as typeof TYPE_VALUES[number] : "classified";
+      // Correctly narrow category/type to union with runtime guard & assertion
+      const safeCategory = CATEGORY_VALUES.includes(listing.category as any)
+        ? (listing.category as (typeof CATEGORY_VALUES)[number])
+        : "other";
+      const safeType = TYPE_VALUES.includes(listing.type as any)
+        ? (listing.type as (typeof TYPE_VALUES)[number])
+        : "classified";
       form.reset({
         title: listing.title ?? "",
         description: listing.description ?? "",
