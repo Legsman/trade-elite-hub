@@ -61,6 +61,19 @@ const Dashboard = () => {
     );
   }
 
+  // NOTE: For the buying and selling sub-tabs, we'll use button-based selection instead of TabsList/TabsTrigger
+  const buyingTabs = [
+    { value: "saved", label: "Saved Listings" },
+    { value: "bids", label: "My Bids" },
+    { value: "offers", label: "My Offers" },
+    { value: "purchases", label: "Purchase History" },
+  ];
+  const sellingTabs = [
+    { value: "listings", label: "My Listings" },
+    { value: "sold", label: "Sold Items" },
+    { value: "feedback", label: "Feedback" },
+  ];
+
   return (
     <MainLayout>
       <div className="container py-8">
@@ -123,9 +136,12 @@ const Dashboard = () => {
 
           {/* Main content */}
           <div className="md:col-span-2">
-            {/* Buying/Selling Mode Toggle */}
+            {/* Parent Buying/Selling Mode Toggle */}
             <div className="mb-6">
-              <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as "buying" | "selling")}>
+              <Tabs
+                value={viewMode}
+                onValueChange={(value) => setViewMode(value as "buying" | "selling")}
+              >
                 <TabsList className="w-full border-b rounded-none justify-start">
                   <TabsTrigger value="buying">Buying</TabsTrigger>
                   <TabsTrigger value="selling">Selling</TabsTrigger>
@@ -133,90 +149,127 @@ const Dashboard = () => {
               </Tabs>
             </div>
 
+            {/* BUYING SECTION */}
             {viewMode === "buying" ? (
-              <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-                <TabsList className="w-full border-b rounded-none justify-start">
-                  <TabsTrigger value="saved">Saved Listings</TabsTrigger>
-                  <TabsTrigger value="bids">My Bids</TabsTrigger>
-                  <TabsTrigger value="offers">My Offers</TabsTrigger>
-                  <TabsTrigger value="purchases">Purchase History</TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="saved">
+              <div className="space-y-6">
+                {/* New button-style tab bar for buying */}
+                <div className="flex gap-2 mb-4">
+                  {buyingTabs.map((tab) => (
+                    <Button
+                      key={tab.value}
+                      variant={activeTab === tab.value ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setActiveTab(tab.value)}
+                    >
+                      {tab.label}
+                    </Button>
+                  ))}
+                </div>
+
+                {activeTab === "saved" && (
                   <div className="space-y-4">
                     <div className="flex justify-between items-center">
                       <h2 className="text-2xl font-semibold tracking-tight">
                         Your Saved Listings
                       </h2>
-                      <Button variant="outline" size="sm" onClick={() => navigate("/listings")}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => navigate("/listings")}
+                      >
                         Browse Listings
                       </Button>
                     </div>
-                    
                     {savedListings.length === 0 ? (
                       <div className="text-center py-8 text-muted-foreground">
                         <h3 className="text-lg font-medium mb-2">No saved listings yet</h3>
-                        <p className="text-sm">Save listings to your dashboard to keep track of them.</p>
-                        <Button variant="link" className="mt-4" onClick={() => navigate("/listings")}>
+                        <p className="text-sm">
+                          Save listings to your dashboard to keep track of them.
+                        </p>
+                        <Button
+                          variant="link"
+                          className="mt-4"
+                          onClick={() => navigate("/listings")}
+                        >
                           Browse Listings
                         </Button>
                       </div>
                     ) : (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {savedListings.map((listing) => (
-                          <ListingCard 
-                            key={listing.id} 
-                            listing={listing} 
-                            highestBid={listing.type === "auction" ? highestBids[listing.id] || null : null}
-                            bidCount={listing.type === "auction" ? bidCounts[listing.id] || 0 : 0}
+                          <ListingCard
+                            key={listing.id}
+                            listing={listing}
+                            highestBid={
+                              listing.type === "auction"
+                                ? highestBids[listing.id] || null
+                                : null
+                            }
+                            bidCount={
+                              listing.type === "auction"
+                                ? bidCounts[listing.id] || 0
+                                : 0
+                            }
                           />
                         ))}
                       </div>
                     )}
                   </div>
-                </TabsContent>
-                
-                <TabsContent value="bids">
+                )}
+
+                {activeTab === "bids" && (
                   <UserBidsOffersTabs userId={user.id} initialTab="my-bids" />
-                </TabsContent>
-                
-                <TabsContent value="offers">
+                )}
+
+                {activeTab === "offers" && (
                   <UserBidsOffersTabs userId={user.id} initialTab="my-offers" />
-                </TabsContent>
-                
-                <TabsContent value="purchases">
+                )}
+
+                {activeTab === "purchases" && (
                   <PurchaseHistoryTab userId={user.id} />
-                </TabsContent>
-              </Tabs>
+                )}
+              </div>
             ) : (
-              <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-                <TabsList className="w-full border-b rounded-none justify-start">
-                  <TabsTrigger value="listings">My Listings</TabsTrigger>
-                  <TabsTrigger value="sold">Sold Items</TabsTrigger>
-                  <TabsTrigger value="feedback">Feedback</TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="listings">
+              // SELLING SECTION
+              <div className="space-y-6">
+                {/* Button-style tab bar for selling */}
+                <div className="flex gap-2 mb-4">
+                  {sellingTabs.map((tab) => (
+                    <Button
+                      key={tab.value}
+                      variant={activeTab === tab.value ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setActiveTab(tab.value)}
+                    >
+                      {tab.label}
+                    </Button>
+                  ))}
+                </div>
+
+                {activeTab === "listings" && (
                   <div className="space-y-4">
                     <div className="flex justify-between items-center">
                       <h2 className="text-2xl font-semibold tracking-tight">
                         Your Listings
                       </h2>
-                      <Button variant="outline" size="sm" onClick={() => navigate("/listings/create")}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => navigate("/listings/create")}
+                      >
                         <PlusCircle className="mr-2 h-4 w-4" />
                         Create Listing
                       </Button>
                     </div>
-                    
                     <UserListingsTab userId={user.id} />
                   </div>
-                </TabsContent>
-                
-                <TabsContent value="sold">
+                )}
+
+                {activeTab === "sold" && (
                   <ImportedSoldItemsTab userId={user.id} />
-                </TabsContent>
-                
-                <TabsContent value="feedback">
+                )}
+
+                {activeTab === "feedback" && (
                   <div className="space-y-4">
                     <h2 className="text-2xl font-semibold tracking-tight">
                       Your Feedback
@@ -224,15 +277,16 @@ const Dashboard = () => {
                     <div className="flex items-center mb-4">
                       <Star className="h-5 w-5 text-yellow-400 fill-yellow-400 mr-1" />
                       <span className="font-medium">5.0</span>
-                      <span className="text-sm text-muted-foreground ml-1">(10 sales)</span>
+                      <span className="text-sm text-muted-foreground ml-1">
+                        (10 sales)
+                      </span>
                     </div>
-                    
                     <div className="text-center py-8 text-muted-foreground">
                       <p>You haven't received any feedback yet.</p>
                     </div>
                   </div>
-                </TabsContent>
-              </Tabs>
+                )}
+              </div>
             )}
           </div>
         </div>
