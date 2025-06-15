@@ -4,7 +4,12 @@ import { formatDistanceToNow } from "date-fns";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { StarRating } from "./StarRating";
 import { FeedbackItem as FeedbackItemType } from "./types";
-import { getInitials } from "@/lib/utils";
+
+// Only use username (not full name) for display and initials
+function getInitials(username?: string | null) {
+  if (!username) return "??";
+  return username.slice(0, 2).toUpperCase();
+}
 
 interface FeedbackItemProps {
   item: FeedbackItemType;
@@ -18,10 +23,10 @@ export const FeedbackItem: React.FC<FeedbackItemProps> = ({ item }) => {
       <div className="flex justify-between">
         <div className="flex items-center space-x-3">
           <Avatar>
-            <AvatarImage src={item.user.avatarUrl || ""} alt={item.user.name} />
-            <AvatarFallback>{getInitials(item.user.name)}</AvatarFallback>
+            <AvatarImage src={item.user.avatarUrl || ""} alt={item.user.username ? `@${item.user.username}` : "unknown"} />
+            <AvatarFallback>{getInitials(item.user.username)}</AvatarFallback>
           </Avatar>
-          <span className="font-medium">{item.user.name}</span>
+          <span className="font-medium text-foreground">@{item.user.username || "unknown"}</span>
         </div>
         <StarRating rating={item.rating} size={16} />
       </div>

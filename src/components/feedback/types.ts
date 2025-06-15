@@ -8,7 +8,7 @@ export interface FeedbackItem {
   transactionType: string;
   user: {
     id: string;
-    name: string;
+    username: string;
     avatarUrl?: string | null;
   };
 }

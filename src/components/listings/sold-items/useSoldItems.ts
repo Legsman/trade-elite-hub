@@ -34,12 +34,12 @@ export const useSoldItems = (userId: string, triggerRefresh: any) => {
           )
         );
 
-        let buyersById: Record<string, { id: string; name: string; avatar: string | null }> = {};
+        let buyersById: Record<string, { id: string; username: string; avatar: string | null }> = {};
 
         if (buyerIds.length > 0) {
           const { data: buyerProfiles, error: profileError } = await supabase
             .from("profiles")
-            .select("id, full_name, avatar_url")
+            .select("id, username, avatar_url")
             .in("id", buyerIds);
 
           if (profileError) {
@@ -48,7 +48,7 @@ export const useSoldItems = (userId: string, triggerRefresh: any) => {
             buyersById = buyerProfiles.reduce((acc, p) => {
               acc[p.id] = {
                 id: p.id,
-                name: p.full_name ?? "Unknown User",
+                username: p.username ?? "unknown",
                 avatar: p.avatar_url ?? null,
               };
               return acc;

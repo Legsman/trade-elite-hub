@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -31,7 +30,7 @@ export const PurchaseHistoryTab = ({ userId }: PurchaseHistoryTabProps) => {
             *,
             profiles: seller_id (
               id,
-              full_name
+              username
             )
           `)
           .eq("sale_buyer_id", userId)
@@ -39,7 +38,6 @@ export const PurchaseHistoryTab = ({ userId }: PurchaseHistoryTabProps) => {
 
         if (offerError) throw offerError;
 
-        // Purchases by auction win (relies on same sale fields, so already included above)
         const purchasedListings = (offerPurchases || []).map((l) => ({
           ...l,
           purchaseType: 'offerOrAuction',
@@ -48,11 +46,10 @@ export const PurchaseHistoryTab = ({ userId }: PurchaseHistoryTabProps) => {
           expiresAt: new Date(l.expires_at),
           seller: l.profiles ? {
             id: l.profiles.id,
-            name: l.profiles.full_name
+            username: l.profiles.username
           } : null
         }));
 
-        // Sort by purchase date
         purchasedListings.sort((a, b) => {
           if (!a.purchaseDate || !b.purchaseDate) return 0;
           return b.purchaseDate.getTime() - a.purchaseDate.getTime();
@@ -92,7 +89,6 @@ export const PurchaseHistoryTab = ({ userId }: PurchaseHistoryTabProps) => {
       </h2>
       <div className="grid grid-cols-1 gap-4">
         {purchases.map(purchase => {
-          // Remove previous mock hasFeedback flag.
           return (
             <Card key={purchase.id} className="overflow-hidden">
               <div className="flex flex-col sm:flex-row">
@@ -128,7 +124,7 @@ export const PurchaseHistoryTab = ({ userId }: PurchaseHistoryTabProps) => {
                   {purchase.seller && (
                     <div className="mb-2 text-sm">
                       <span className="font-medium">Seller:</span>{" "}
-                      <span>{purchase.seller.name ?? "Unknown"}</span>
+                      <span className="text-foreground">@{purchase.seller.username ?? "unknown"}</span>
                     </div>
                   )}
                   <Button
@@ -142,6 +138,7 @@ export const PurchaseHistoryTab = ({ userId }: PurchaseHistoryTabProps) => {
                     <FeedbackChecker
                       buyerId={user.id}
                       sellerId={purchase.seller.id}
+                      sellerUsername={purchase.seller.username}
                       listingId={purchase.id}
                       openModal={() => setFeedbackModal({ purchase })}
                     />
@@ -170,11 +167,13 @@ export const PurchaseHistoryTab = ({ userId }: PurchaseHistoryTabProps) => {
 function FeedbackChecker({
   buyerId,
   sellerId,
+  sellerUsername,
   listingId,
   openModal
 }: {
   buyerId: string;
   sellerId: string;
+  sellerUsername?: string;
   listingId: string;
   openModal: () => void;
 }) {
@@ -202,6 +201,7 @@ function FeedbackChecker({
       className="ml-2"
       disabled={alreadyLeft || isLoading}
       onClick={openModal}
+      title={sellerUsername ? `Leave feedback for @${sellerUsername}` : ""}
     >
       {isLoading
         ? "Checking..."
@@ -211,4 +211,3 @@ function FeedbackChecker({
     </Button>
   );
 }
-

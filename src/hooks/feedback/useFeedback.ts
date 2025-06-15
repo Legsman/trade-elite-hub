@@ -7,7 +7,11 @@ export function useFeedback({ userId, as = "seller", listingId }) {
   return useQuery({
     queryKey: ["feedback", { userId, as, listingId }],
     queryFn: async () => {
-      let query = supabase.from("feedback").select(`*, from_user:from_user_id (full_name, avatar_url)`);
+      // Select username, not full_name, to avoid privacy breach
+      let query = supabase.from("feedback").select(`
+        *,
+        from_user:from_user_id (username, avatar_url)
+      `);
 
       if (userId) {
         if (as === "seller") {
