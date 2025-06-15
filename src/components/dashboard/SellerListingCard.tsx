@@ -1,3 +1,4 @@
+
 import { Listing } from "@/types";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -43,9 +44,7 @@ export function SellerListingCard({
     <Card className="relative overflow-hidden">
       {/* 3-dot action menu, top-left */}
       <ListingActionMenu
-        status={effectiveStatus}
-        type={listing.type}
-        allowBestOffer={listing.allowBestOffer}
+        listing={listing}
         onEdit={onEdit}
         onEnd={onEnd}
         onReviewOffers={onReviewOffers}
