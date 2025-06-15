@@ -47,25 +47,32 @@ export const adaptBidTypes = {
    * Convert a global Bid to internal Bid format
    */
   toInternalBid: (bid: GlobalBid): Bid => {
-    // Explicitly type user variable
+    // Explicitly type user variable for safe property access
     type UserShape = { fullName: string | null, avatarUrl: string | null, username: string | null };
 
-    let user: UserShape;
+    let user: UserShape = { fullName: null, avatarUrl: null, username: null };
 
-    if ("user" in bid && bid.user) {
+    if (
+      "user" in bid &&
+      bid.user &&
+      typeof bid.user === "object" &&
+      bid.user !== null
+    ) {
       user = {
-        fullName: bid.user.fullName ?? null,
-        avatarUrl: bid.user.avatarUrl ?? null,
-        username: typeof bid.user.username === "string" ? bid.user.username : null,
+        fullName: "fullName" in bid.user ? (bid.user as any).fullName ?? null : null,
+        avatarUrl: "avatarUrl" in bid.user ? (bid.user as any).avatarUrl ?? null : null,
+        username: "username" in bid.user ? (bid.user as any).username ?? null : null,
       };
-    } else if (bid.user_profile) {
+    } else if (
+      bid.user_profile &&
+      typeof bid.user_profile === "object" &&
+      bid.user_profile !== null
+    ) {
       user = {
-        fullName: (bid.user_profile as any).full_name ?? null,
-        avatarUrl: (bid.user_profile as any).avatar_url ?? null,
-        username: (bid.user_profile as any).username ?? null,
+        fullName: "full_name" in bid.user_profile ? (bid.user_profile as any).full_name ?? null : null,
+        avatarUrl: "avatar_url" in bid.user_profile ? (bid.user_profile as any).avatar_url ?? null : null,
+        username: "username" in bid.user_profile ? (bid.user_profile as any).username ?? null : null,
       };
-    } else {
-      user = { fullName: null, avatarUrl: null, username: null };
     }
 
     return {
