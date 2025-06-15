@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/hooks/auth";
 import { supabase } from "@/integrations/supabase/client";
@@ -90,6 +91,7 @@ export const useUserProfile = (userId?: string) => {
     try {
       // Map UserProfile fields to database fields
       const dbUpdateData: Record<string, any> = {
+        username: updateData.username,
         full_name: updateData.fullName,
         email: updateData.email,
         address_line1: updateData.addressLine1,
@@ -231,10 +233,10 @@ export const useSellerProfile = (sellerId?: string) => {
     setError(null);
 
     try {
-      // Fetch seller profile
+      // Fetch seller profile including username
       const { data: profileData, error: profileError } = await supabase
         .from("profiles")
-        .select("id, full_name, avatar_url, created_at, feedback_rating")
+        .select("id, full_name, username, avatar_url, created_at, feedback_rating")
         .eq("id", sellerId)
         .single();
 
@@ -249,16 +251,15 @@ export const useSellerProfile = (sellerId?: string) => {
 
       if (listingsError) throw listingsError;
 
-      // Use actual username stored in full_name field for both name and username
       setSeller({
         id: profileData.id,
-        name: profileData.full_name || "Unknown Seller",
+        name: profileData.full_name || "Unknown Seller", // real name (private)
         avatarUrl: profileData.avatar_url,
         joinDate: new Date(profileData.created_at),
         rating: profileData.feedback_rating || 0,
         salesCount: listingsCount || 0,
-        verified: true, // For now, assume all sellers are verified
-        username: profileData.full_name || "Unknown Seller",
+        verified: true,
+        username: profileData.username || null, // public-facing username
       });
     } catch (err) {
       console.error("Error fetching seller profile:", err);

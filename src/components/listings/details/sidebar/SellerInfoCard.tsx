@@ -7,7 +7,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { NavigateFunction } from "react-router-dom";
 
 interface SellerInfoCardProps {
-  seller: any; // Using any for now since the seller type isn't explicitly defined
+  seller: any;
   navigate: NavigateFunction;
 }
 
@@ -31,7 +31,7 @@ export const SellerInfoCard = ({ seller, navigate }: SellerInfoCardProps) => {
             {seller.avatarUrl ? (
               <img 
                 src={seller.avatarUrl} 
-                alt={seller.name}
+                alt={seller.username || seller.name}
                 className="h-12 w-12 rounded-full object-cover"
               />
             ) : (
@@ -40,7 +40,7 @@ export const SellerInfoCard = ({ seller, navigate }: SellerInfoCardProps) => {
           </div>
           <div>
             <div className="font-medium flex items-center">
-              {seller.name}
+              @{seller.username || "unknown"}
               {seller.verified && (
                 <TooltipProvider>
                   <Tooltip>
@@ -59,7 +59,6 @@ export const SellerInfoCard = ({ seller, navigate }: SellerInfoCardProps) => {
             </div>
           </div>
         </div>
-        
         <div className="flex items-center justify-between">
           <div className="flex items-center">
             <Star className="h-4 w-4 text-yellow-400 fill-yellow-400 mr-1" />
@@ -72,9 +71,7 @@ export const SellerInfoCard = ({ seller, navigate }: SellerInfoCardProps) => {
             View Profile
           </Button>
         </div>
-        
         <Separator />
-        
         <div className="p-3 border rounded-md bg-muted/20 text-sm">
           <div className="flex items-start">
             <Shield className="h-4 w-4 text-amber-500 mt-0.5 mr-2 flex-shrink-0" />
@@ -84,7 +81,6 @@ export const SellerInfoCard = ({ seller, navigate }: SellerInfoCardProps) => {
             </p>
           </div>
         </div>
-        
         <Button 
           className="w-full" 
           variant="outline" 

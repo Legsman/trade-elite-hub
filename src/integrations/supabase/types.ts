@@ -402,6 +402,7 @@ export type Database = {
           subscription_tier: string | null
           trading_address: string | null
           updated_at: string
+          username: string
         }
         Insert: {
           address_line1?: string | null
@@ -428,6 +429,7 @@ export type Database = {
           subscription_tier?: string | null
           trading_address?: string | null
           updated_at?: string
+          username: string
         }
         Update: {
           address_line1?: string | null
@@ -454,6 +456,7 @@ export type Database = {
           subscription_tier?: string | null
           trading_address?: string | null
           updated_at?: string
+          username?: string
         }
         Relationships: []
       }

@@ -7,17 +7,60 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { Loading } from "@/components/ui/loading";
+import { supabase } from "@/integrations/supabase/client";
 
 const Signup = () => {
   const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
+  const [usernameAvailable, setUsernameAvailable] = useState(true);
+  const [checkingUsername, setCheckingUsername] = useState(false);
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { signup } = useAuth();
   const navigate = useNavigate();
 
+  const validateUsername = (val: string) => /^[A-Za-z0-9_]{3,30}$/.test(val);
+
+  const checkUsername = async (val: string) => {
+    setCheckingUsername(true);
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("username", val)
+      .maybeSingle();
+    setUsernameAvailable(!data && !error);
+    setCheckingUsername(false);
+  };
+
+  const handleUsernameChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setUsername(val);
+    if (validateUsername(val)) {
+      await checkUsername(val);
+    } else {
+      setUsernameAvailable(true);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validateUsername(username)) {
+      toast({
+        title: "Invalid username",
+        description: "Username must be 3-30 chars, only letters, numbers, and underscores.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (!usernameAvailable) {
+      toast({
+        title: "Username taken",
+        description: "Please choose a different username.",
+        variant: "destructive",
+      });
+      return;
+    }
     setIsLoading(true);
 
     try {
@@ -25,6 +68,7 @@ const Signup = () => {
         email,
         password,
         fullName,
+        username,
       });
       
       if (error) {
@@ -78,6 +122,30 @@ const Signup = () => {
                   onChange={(e) => setFullName(e.target.value)}
                   required
                 />
+              </div>
+
+              <div>
+                <Label htmlFor="username">Username</Label>
+                <Input
+                  id="username"
+                  type="text"
+                  placeholder="Choose a unique username"
+                  value={username}
+                  onChange={handleUsernameChange}
+                  minLength={3}
+                  maxLength={30}
+                  required
+                  autoComplete="username"
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  Username must be 3-30 characters, only letters, numbers, and underscores.
+                </p>
+                {checkingUsername && (
+                  <p className="text-xs text-muted-foreground">Checking availability...</p>
+                )}
+                {!checkingUsername && !usernameAvailable && (
+                  <p className="text-xs text-destructive">Username is already taken.</p>
+                )}
               </div>
 
               <div>

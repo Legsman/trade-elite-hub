@@ -3,6 +3,7 @@ export interface Profile {
   email?: string | null;
   full_name?: string | null;
   avatar_url?: string | null;
+  username?: string | null;
 }
 
 export interface Listing {
@@ -57,6 +58,7 @@ export interface Bid {
   user_profile?: {
     full_name: string | null;
     avatar_url: string | null;
+    username?: string | null;
   };
 }
 
@@ -65,6 +67,7 @@ export interface User {
   id: string;
   name: string;
   email: string;
+  username: string;
   role: string;
   createdAt: Date;
   purchases?: number;
@@ -83,6 +86,7 @@ export interface UserProfile {
   id: string;
   fullName: string;
   email: string;
+  username: string;
   avatarUrl?: string | null;
   addressLine1?: string;
   addressLine2?: string;

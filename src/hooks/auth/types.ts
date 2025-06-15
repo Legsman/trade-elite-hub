@@ -16,6 +16,7 @@ export interface SignupData {
   email: string;
   password: string;
   fullName: string;
+  username: string;
   addressLine1?: string;
   addressLine2?: string;
   city?: string;

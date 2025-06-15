@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -49,6 +50,10 @@ import SubscriptionTab from "./components/SubscriptionTab";
 import SecurityTab from "./components/SecurityTab";
 
 const profileFormSchema = z.object({
+  username: z.string()
+    .min(3, "Username must be at least 3 characters")
+    .max(30, "Username must be at most 30 characters")
+    .regex(/^[A-Za-z0-9_]+$/, "Username can only contain letters, numbers, and underscores"),
   fullName: z.string().min(2, "Name must be at least 2 characters").max(100),
   email: z.string().email("Invalid email address"),
   phoneNumber: z.string().optional(),
@@ -86,6 +91,7 @@ const UserSettingsPage = () => {
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
     defaultValues: {
+      username: "",
       fullName: "",
       email: "",
       phoneNumber: "",
@@ -102,6 +108,7 @@ const UserSettingsPage = () => {
   useEffect(() => {
     if (profile) {
       form.reset({
+        username: profile.username || "",
         fullName: profile.fullName || "",
         email: profile.email || "",
         phoneNumber: profile.phoneNumber || "",
@@ -160,7 +167,6 @@ const UserSettingsPage = () => {
 
   const onSubmit = async (values: ProfileFormValues) => {
     setIsSubmitting(true);
-    
     try {
       const result = await updateProfile(values as Partial<UserProfile>);
       

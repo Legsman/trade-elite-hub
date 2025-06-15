@@ -1,4 +1,3 @@
-
 import { useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
@@ -34,6 +33,7 @@ export const useAuthService = (
       options: {
         data: {
           fullName: data.fullName,
+          username: data.username,
           address_line1: data.addressLine1 ?? null,
           address_line2: data.addressLine2 ?? null,
           city: data.city ?? null,
