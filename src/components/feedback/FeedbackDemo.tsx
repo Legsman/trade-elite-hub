@@ -13,7 +13,7 @@ const mockFeedbackItems: FeedbackItem[] = [
     transactionType: "Purchase",
     user: {
       id: "user-2",
-      name: "Jane Cooper",
+      username: "JaneCooper",
       avatarUrl: "https://api.dicebear.com/7.x/avataaars/svg?seed=Jane"
     }
   },
@@ -26,7 +26,7 @@ const mockFeedbackItems: FeedbackItem[] = [
     transactionType: "Purchase",
     user: {
       id: "user-3",
-      name: "Alex Johnson",
+      username: "AlexJohnson",
       avatarUrl: "https://api.dicebear.com/7.x/avataaars/svg?seed=Alex"
     }
   },
@@ -39,7 +39,7 @@ const mockFeedbackItems: FeedbackItem[] = [
     transactionType: "Sale",
     user: {
       id: "user-4",
-      name: "Sam Wilson",
+      username: "SamWilson",
       avatarUrl: "https://api.dicebear.com/7.x/avataaars/svg?seed=Sam"
     }
   }
