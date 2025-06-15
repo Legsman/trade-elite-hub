@@ -1,3 +1,4 @@
+
 import { Loader2, Heart, Share2, MessageSquare, MapPin, Shield, User, Star, ThumbsUp, Gavel } from "lucide-react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,10 +11,10 @@ import { Listing } from "@/types";
 import { User as UserType } from "@/types";
 import { NavigateFunction } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
-import { ShippingInfoCard } from "./sidebar/ShippingInfoCard";
-import { PriceCard } from "./sidebar/PriceCard";
-import { SafetyTipsCard } from "./sidebar/SafetyTipsCard";
-import { SellerInfoCard } from "./sidebar/SellerInfoCard";
+import { ShippingInfoCard } from "./ShippingInfoCard";
+import { PriceCard } from "./PriceCard";
+import { SafetyTipsCard } from "./SafetyTipsCard";
+import { SellerInfoCard } from "./SellerInfoCard";
 
 interface ListingDetailsSidebarProps {
   listing: Listing;
@@ -113,8 +114,8 @@ export const ListingDetailsSidebar = ({
         <SellerInfoCard seller={seller} navigate={navigate} />
       )}
       <SafetyTipsCard />
-      {/* NEW: Shipping Information Card */}
       <ShippingInfoCard />
     </>
   );
 };
+
