@@ -21,6 +21,8 @@ import { useAuth } from "@/hooks/auth";
 import { toast } from "@/hooks/use-toast";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import NotificationDropdown from "./NotificationDropdown";
+import NotificationBell from "./NotificationBell";
+import UserMenu from "./UserMenu";
 import { useNotifications } from "@/hooks/useNotifications";
 
 const Navbar = () => {
@@ -148,98 +150,8 @@ const Navbar = () => {
               <Button variant="ghost" size="icon" aria-label="Search">
                 <Search className="h-5 w-5" />
               </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label="Notifications"
-                className="relative"
-                onClick={() => setShowNotif((v) => !v)}
-              >
-                <Bell className="h-5 w-5" />
-                {unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 rounded-full bg-red-500 text-white text-[10px] px-1.5 py-0.5 font-semibold leading-none flex items-center justify-center">
-                    {unreadCount}
-                  </span>
-                )}
-              </Button>
-              {showNotif && (
-                <div className="absolute right-0 top-12 z-50">
-                  <NotificationDropdown onClose={() => setShowNotif(false)} />
-                </div>
-              )}
-              <div className="relative">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  aria-label="Profile"
-                  onClick={() => setIsMenuOpen(!isMenuOpen)}
-                >
-                  <User className="h-5 w-5" />
-                </Button>
-                {isMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5">
-                    <div className="py-1">
-                      <Link
-                        to="/dashboard"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                      >
-                        Dashboard
-                      </Link>
-                      <Link
-                        to="/messages"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                      >
-                        <div className="flex items-center gap-2">
-                          <MessageSquare className="h-4 w-4" />
-                          <span>Messages</span>
-                        </div>
-                      </Link>
-                      <Link
-                        to="/saved"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                      >
-                        <div className="flex items-center gap-2">
-                          <Heart className="h-4 w-4" />
-                          <span>Saved Items</span>
-                        </div>
-                      </Link>
-                      <Link
-                        to="/settings"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                      >
-                        <div className="flex items-center gap-2">
-                          <Settings className="h-4 w-4" />
-                          <span>Settings</span>
-                        </div>
-                      </Link>
-                      {/* Only render if authenticated, isAdmin, and check finished */}
-                      {isAuthenticated && isAdmin && !checkingAdmin && (
-                        <Link
-                          to="/admin"
-                          className="block px-4 py-2 text-sm text-green-600 hover:bg-gray-100"
-                        >
-                          <div className="flex items-center gap-2">
-                            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}
-                              strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M12 2l2 7h7l-5.5 4.3L19 21l-7-4.7L5 21l2.5-7.7L2 9h7z" />
-                            </svg>
-                            <span>Admin Panel</span>
-                          </div>
-                        </Link>
-                      )}
-                      <button
-                        className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                        onClick={handleLogout}
-                      >
-                        <div className="flex items-center gap-2">
-                          <LogOut className="h-4 w-4" />
-                          <span>Logout</span>
-                        </div>
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
+              <NotificationBell />
+              <UserMenu />
             </>
           ) : (
             <>
