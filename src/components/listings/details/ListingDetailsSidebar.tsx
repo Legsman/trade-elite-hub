@@ -283,7 +283,7 @@ export const ListingDetailsSidebar = ({
               </div>
               <div>
                 <div className="font-medium flex items-center">
-                  {/* Show @username instead of name */}
+                  {/* Only show @username, not full name */}
                   {seller.username ? (
                     <span className="text-foreground">@{seller.username}</span>
                   ) : (
