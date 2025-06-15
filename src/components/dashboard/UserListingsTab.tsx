@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { EndListingDialog } from "@/components/listings/EndListingDialog";
 import { useEndListing } from "@/hooks/listings/useEndListing";
 import { SellerListingCard } from "./SellerListingCard";
+import { SoldItemsList } from "@/components/listings/sold-items/SoldItemsList";
+import { useSoldItems } from "@/components/listings/sold-items/useSoldItems";
 
 // Clipboard share util
 async function copyListingUrl(listingId: string) {
@@ -33,7 +35,18 @@ export const UserListingsTab = ({ userId }: UserListingsTabProps) => {
   const [endingItem, setEndingItem] = useState<any>(null);
   const { isEnding, endListing } = useEndListing(endingItem?.id);
 
+  // For relisting - forward compatible with SoldItemsList flow
+  const [relistingItem, setRelistingItem] = useState<any>(null);
+  // If re-using a relisting hook, adapt as needed
+
+  // For advanced sold items integration
+  const {
+    soldItems,
+    isLoading: isSoldLoading,
+  } = useSoldItems(userId, relistingItem);
+
   useEffect(() => {
+    if (tab === "sold") return; // Don't fetch here, handled in useSoldItems
     const fetchListings = async () => {
       setIsLoading(true);
       try {
@@ -101,6 +114,11 @@ export const UserListingsTab = ({ userId }: UserListingsTabProps) => {
     setEndingItem(listing);
   };
 
+  // For sold items: handle relist click (can be forward compatible)
+  const handleRelistClick = (item: any) => {
+    setRelistingItem(item);
+  };
+
   let tabOptions: { value: TabType; label: string }[] = [
     { value: "active", label: "Active" },
     { value: "ended", label: "Ended" },
@@ -124,7 +142,14 @@ export const UserListingsTab = ({ userId }: UserListingsTabProps) => {
         ))}
       </div>
 
-      {isLoading ? (
+      {/* SOLD TAB - use SoldItemsList for feedback */}
+      {tab === "sold" ? (
+        <SoldItemsList
+          soldItems={soldItems}
+          isLoading={isSoldLoading}
+          onRelistClick={handleRelistClick}
+        />
+      ) : isLoading ? (
         <Loading message="Loading your listings..." />
       ) : listings.length === 0 ? (
         <div className="text-center py-8 text-muted-foreground">
