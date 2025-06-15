@@ -61,7 +61,6 @@ export const useListing = (id?: string) => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(user?.access_token ? { Authorization: `Bearer ${user.access_token}` } : {}),
         },
         body: JSON.stringify({ listingId: id }),
       });
@@ -79,7 +78,7 @@ export const useListing = (id?: string) => {
     } finally {
       setIsLoading(false);
     }
-  }, [id, user?.access_token]);
+  }, [id]);
 
   useEffect(() => {
     fetchListing();
