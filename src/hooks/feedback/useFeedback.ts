@@ -1,8 +1,7 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
-// Fetch feedback for a user (as seller), as buyer, or by listing
+// Fetch feedback for a user (as seller), as buyer, as giver, or by listing
 export function useFeedback({ userId, as = "seller", listingId }) {
   return useQuery({
     queryKey: ["feedback", { userId, as, listingId }],
@@ -18,12 +17,18 @@ export function useFeedback({ userId, as = "seller", listingId }) {
           query = query.eq("to_user_id", userId);
         } else if (as === "buyer") {
           query = query.eq("from_user_id", userId);
+        } else if (as === "giver") {
+          // Explicitly feedbacks given BY this user
+          query = query.eq("from_user_id", userId);
         }
       }
       if (listingId) {
         query = query.eq("listing_id", listingId);
       }
       const { data, error } = await query.order("created_at", { ascending: false });
+      if (process.env.NODE_ENV === "development") {
+        console.log("[useFeedback] Fetched feedback with params", { userId, as, listingId, data });
+      }
       if (error) throw error;
       return data;
     },

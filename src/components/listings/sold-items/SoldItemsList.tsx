@@ -106,14 +106,14 @@ function FeedbackChecker({
   listingId: string;
   openModal: () => void;
 }) {
-  // Fetch ALL feedbacks from this seller for this listing
+  // Fetch feedbacks given BY this seller for this listing
   const { data: feedback, isLoading } = useFeedback({
     userId,
-    as: undefined, // remove ambiguity (we want all feedback from this seller)
+    as: "giver",
     listingId,
   });
 
-  // Filter for records to the right buyer/listing
+  // Filter for records where to_user_id matches our buyer for this listing
   const alreadyLeft = Array.isArray(feedback)
     ? feedback.some(
         (fb) =>
@@ -123,12 +123,12 @@ function FeedbackChecker({
       )
     : false;
 
-  // Debug: log feedbacks returned for this item
   if (process.env.NODE_ENV === "development") {
-    console.log("[FeedbackChecker:sold-items] Feedbacks fetched:", feedback, {
+    console.log("[FeedbackChecker:sold-items]", {
       userId,
       buyerId,
       listingId,
+      feedback,
       alreadyLeft,
     });
   }
