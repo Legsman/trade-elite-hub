@@ -8,6 +8,18 @@ import { EndListingDialog } from "@/components/listings/EndListingDialog";
 import { useEndListing } from "@/hooks/listings/useEndListing";
 import { SellerListingCard } from "./SellerListingCard";
 
+// Clipboard share util
+async function copyListingUrl(listingId: string) {
+  try {
+    const url = `${window.location.origin}/listings/${listingId}`;
+    await navigator.clipboard.writeText(url);
+    // Small feedback, but ideally would use a toast
+    window.alert("Listing URL copied to clipboard!");
+  } catch {
+    window.alert("Failed to copy URL");
+  }
+}
+
 type TabType = "active" | "ended" | "sold" | "all";
 
 interface UserListingsTabProps {
@@ -43,7 +55,7 @@ export const UserListingsTab = ({ userId }: UserListingsTabProps) => {
         if (error) throw error;
 
         // Convert date strings to Date
-        const transformedListings = data.map(listing => ({
+        const transformedListings = data.map((listing) => ({
           ...listing,
           expiresAt: new Date(listing.expires_at),
           createdAt: new Date(listing.created_at),
@@ -61,15 +73,21 @@ export const UserListingsTab = ({ userId }: UserListingsTabProps) => {
     fetchListings();
   }, [userId, tab, isEnding]);
 
-  // Dummy implementations for stats, relist, feedback; replace with real handlers
-  const handleViewStats = (listing: any) => {
-    navigate(`/listings/${listing.id}/stats`);
+  // Handlers for each action
+  const handleEdit = (listing: any) => {
+    navigate(`/listings/${listing.id}/edit`);
   };
-  const handleRelist = (listing: any) => {
-    navigate(`/listings/${listing.id}/relist`);
+  const handleReviewOffers = (listing: any) => {
+    navigate(`/listings/${listing.id}/offers`);
   };
-  const handleLeaveFeedback = (listing: any) => {
-    navigate(`/listings/${listing.id}/feedback`);
+  const handleShare = (listing: any) => {
+    copyListingUrl(listing.id);
+  };
+  const handleChangeToAuction = (listing: any) => {
+    navigate(`/listings/${listing.id}/change-to-auction`);
+  };
+  const handleEnd = (listing: any) => {
+    setEndingItem(listing);
   };
 
   let tabOptions: { value: TabType; label: string }[] = [
@@ -101,7 +119,11 @@ export const UserListingsTab = ({ userId }: UserListingsTabProps) => {
         <div className="text-center py-8 text-muted-foreground">
           <h3 className="text-lg font-medium mb-2">No listings found</h3>
           <p className="text-sm">Create a listing to sell your items.</p>
-          <Button variant="link" className="mt-4" onClick={() => navigate("/listings/create")}>
+          <Button
+            variant="link"
+            className="mt-4"
+            onClick={() => navigate("/listings/create")}
+          >
             Create Listing
           </Button>
         </div>
@@ -111,11 +133,19 @@ export const UserListingsTab = ({ userId }: UserListingsTabProps) => {
             <SellerListingCard
               key={listing.id}
               listing={listing}
-              onRevise={() => navigate(`/listings/${listing.id}/edit`)}
-              onEnd={() => setEndingItem(listing)}
-              onRelist={() => handleRelist(listing)}
-              onViewStats={() => handleViewStats(listing)}
-              onLeaveFeedback={() => handleLeaveFeedback(listing)}
+              onEdit={() => handleEdit(listing)}
+              onEnd={() => handleEnd(listing)}
+              onReviewOffers={
+                listing.allowBestOffer
+                  ? () => handleReviewOffers(listing)
+                  : undefined
+              }
+              onShare={() => handleShare(listing)}
+              onChangeToAuction={
+                listing.type === "classified"
+                  ? () => handleChangeToAuction(listing)
+                  : undefined
+              }
               disableEnd={isEnding}
             />
           ))}

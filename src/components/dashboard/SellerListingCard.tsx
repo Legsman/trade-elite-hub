@@ -10,42 +10,66 @@ import React from "react";
 
 interface SellerListingCardProps {
   listing: Listing;
-  onRevise: () => void;
-  onEnd: () => void;
-  onRelist: () => void;
-  onViewStats: () => void;
-  onLeaveFeedback: () => void;
+  onEdit?: () => void;
+  onEnd?: () => void;
+  onReviewOffers?: () => void;
+  onShare?: () => void;
+  onChangeToAuction?: () => void;
   disableEnd?: boolean;
 }
 
 export function SellerListingCard({
   listing,
-  onRevise,
+  onEdit,
   onEnd,
-  onRelist,
-  onViewStats,
-  onLeaveFeedback,
+  onReviewOffers,
+  onShare,
+  onChangeToAuction,
   disableEnd = false,
 }: SellerListingCardProps) {
   const now = new Date();
-  const expiresAt = listing.expiresAt instanceof Date ? listing.expiresAt : new Date(listing.expiresAt);
+  const expiresAt =
+    listing.expiresAt instanceof Date
+      ? listing.expiresAt
+      : new Date(listing.expiresAt);
+
   const navigate = useNavigate();
 
   // Status Badge
   const getStatusBadge = () => {
     if (listing.status === "sold") {
-      return <Badge className="bg-green-600 text-white absolute top-2 right-2">Sold</Badge>;
+      return (
+        <Badge className="bg-green-600 text-white absolute top-2 right-2">
+          Sold
+        </Badge>
+      );
     }
-    if (listing.status === "ended" || listing.status === "expired" || now > expiresAt) {
-      return <Badge className="bg-gray-500 text-white absolute top-2 right-2">Ended</Badge>;
+    if (
+      listing.status === "ended" ||
+      listing.status === "expired" ||
+      now > expiresAt
+    ) {
+      return (
+        <Badge className="bg-gray-500 text-white absolute top-2 right-2">
+          Ended
+        </Badge>
+      );
     }
     if (listing.status === "active") {
       // Ending soon (within 24h)
       const hours = (expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60);
       if (hours > 0 && hours < 24) {
-        return <Badge className="bg-red-500 animate-pulse text-white absolute top-2 right-2">Ending Soon</Badge>;
+        return (
+          <Badge className="bg-red-500 animate-pulse text-white absolute top-2 right-2">
+            Ending Soon
+          </Badge>
+        );
       }
-      return <Badge className="bg-blue-500 text-white absolute top-2 right-2">Active</Badge>;
+      return (
+        <Badge className="bg-blue-500 text-white absolute top-2 right-2">
+          Active
+        </Badge>
+      );
     }
     return null;
   };
@@ -55,11 +79,13 @@ export function SellerListingCard({
       {/* 3-dot action menu, top-left */}
       <ListingActionMenu
         status={listing.status}
-        onRevise={onRevise}
+        type={listing.type}
+        allowBestOffer={listing.allowBestOffer}
+        onEdit={onEdit}
         onEnd={onEnd}
-        onRelist={onRelist}
-        onViewStats={onViewStats}
-        onLeaveFeedback={onLeaveFeedback}
+        onReviewOffers={onReviewOffers}
+        onShare={onShare}
+        onChangeToAuction={onChangeToAuction}
         disableEnd={disableEnd}
       />
       <div className="aspect-video overflow-hidden">
@@ -75,7 +101,9 @@ export function SellerListingCard({
         <div className="flex justify-between items-start">
           <h3 className="font-semibold line-clamp-1">{listing.title}</h3>
         </div>
-        <div className="text-xs text-muted-foreground mb-1">{listing.location}</div>
+        <div className="text-xs text-muted-foreground mb-1">
+          {listing.location}
+        </div>
         <div className="mt-2 font-bold text-lg">
           £{listing.price.toLocaleString()}
         </div>
@@ -83,7 +111,6 @@ export function SellerListingCard({
         <div className="flex items-center gap-2 mt-3 text-xs text-muted-foreground font-medium">
           <Eye className="h-4 w-4" /> {listing.views} views
           <Heart className="h-4 w-4 ml-4" /> {listing.saves || 0} saves
-          {/* More metrics can be added here */}
         </div>
       </CardContent>
       <Separator />
