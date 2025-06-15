@@ -1,10 +1,9 @@
-
 import { AlertCircle, Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useState } from "react";
-import { useStartConversation } from "@/hooks/use-message";
+import { useStartConversation } from "@/hooks/useStartConversation";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import { useAnalytics } from "@/hooks/use-analytics";

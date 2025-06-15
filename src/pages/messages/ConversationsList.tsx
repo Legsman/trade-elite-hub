@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Search, ChevronRight, BadgeAlert } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -6,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import NoConversations from "./NoConversations";
-import { Conversation } from "@/hooks/use-message";
+import { Conversation } from "@/hooks/messageTypes";
 import { formatDate } from "./utils/messageHelpers";
 import { Loading } from "@/components/ui/loading";
 
