@@ -1,10 +1,11 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Loading } from "@/components/ui/loading";
 import { Button } from "@/components/ui/button";
 import { ListingCard } from "@/components/listings/ListingCard";
+import { EndListingDialog } from "@/components/listings/EndListingDialog";
+import { useEndListing } from "@/hooks/listings/useEndListing";
 
 interface UserListingsTabProps {
   userId: string;
@@ -14,7 +15,11 @@ export const UserListingsTab = ({ userId }: UserListingsTabProps) => {
   const navigate = useNavigate();
   const [listings, setListings] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  
+
+  // State for End Listing dialog
+  const [endingItem, setEndingItem] = useState<any>(null);
+  const { isEnding, endListing } = useEndListing(endingItem?.id);
+
   useEffect(() => {
     const fetchListings = async () => {
       setIsLoading(true);
@@ -25,17 +30,16 @@ export const UserListingsTab = ({ userId }: UserListingsTabProps) => {
           .eq("seller_id", userId)
           .eq("status", "active")
           .order("created_at", { ascending: false });
-        
+
         if (error) throw error;
-        
-        // Transform dates
+
         const transformedListings = data.map(listing => ({
           ...listing,
           expiresAt: new Date(listing.expires_at),
           createdAt: new Date(listing.created_at),
           updatedAt: new Date(listing.updated_at)
         }));
-        
+
         setListings(transformedListings);
       } catch (error) {
         console.error("Error fetching user listings:", error);
@@ -43,14 +47,14 @@ export const UserListingsTab = ({ userId }: UserListingsTabProps) => {
         setIsLoading(false);
       }
     };
-    
+
     fetchListings();
-  }, [userId]);
-  
+  }, [userId, isEnding]);
+
   if (isLoading) {
     return <Loading message="Loading your listings..." />;
   }
-  
+
   if (listings.length === 0) {
     return (
       <div className="text-center py-8 text-muted-foreground">
@@ -62,15 +66,43 @@ export const UserListingsTab = ({ userId }: UserListingsTabProps) => {
       </div>
     );
   }
-  
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      {listings.map((listing) => (
-        <ListingCard 
-          key={listing.id} 
-          listing={listing} 
+    <div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {listings.map((listing) => (
+          <div key={listing.id} className="relative">
+            <ListingCard listing={listing} />
+            <div className="absolute top-2 left-2 z-10 flex gap-1">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => navigate(`/listings/${listing.id}/edit`)}
+              >
+                Revise
+              </Button>
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={() => setEndingItem(listing)}
+                disabled={isEnding}
+              >
+                End
+              </Button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {endingItem && (
+        <EndListingDialog
+          open={!!endingItem}
+          onOpenChange={(open) => !open && setEndingItem(null)}
+          onEnd={endListing}
+          listingTitle={endingItem.title}
+          isEnding={isEnding}
         />
-      ))}
+      )}
     </div>
   );
 };
