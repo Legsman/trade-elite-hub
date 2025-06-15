@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 export type FilterOptions = {
@@ -26,18 +25,17 @@ export const applyListingFilters = (query: any, filters: FilterOptions) => {
     showCompleted,
   } = filters;
 
-  // Filter by status (active or include completed)
+  // --- DB Queries: always use DB status, effective status derives in UI ---
   let filteredQuery = query;
-  
+
   if (showCompleted !== "true") {
     // Only show active and non-expired listings
     filteredQuery = filteredQuery
       .eq("status", "active")
       .gt("expires_at", new Date().toISOString());
   } else {
-    // If showing completed listings, include both active, completed/expired, and sold
     filteredQuery = filteredQuery.in("status", ["active", "completed", "expired", "sold"]);
-    // NO expires_at filter since user wants to see all
+    // NO expires_at filter when showing completed
   }
 
   // Apply category filter

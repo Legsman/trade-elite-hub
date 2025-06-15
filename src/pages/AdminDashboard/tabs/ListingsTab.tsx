@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,6 +20,7 @@ import {
 import { Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAdminDashboardContext } from "../context/AdminDashboardContext";
+import { getEffectiveListingStatus, getStatusBadgeVariant } from "@/utils/listingStatus";
 
 const ListingsTab: React.FC = () => {
   const navigate = useNavigate();
@@ -81,66 +81,72 @@ const ListingsTab: React.FC = () => {
                 </TableCell>
               </TableRow>
             ) : (
-              filteredListings.map((listing) => (
-                <TableRow key={listing.id}>
-                  <TableCell className="font-medium">{listing.title}</TableCell>
-                  <TableCell>{listing.seller_name}</TableCell>
-                  <TableCell>£{listing.price.toLocaleString()}</TableCell>
-                  <TableCell className="capitalize">{listing.category}</TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={
-                        listing.status === 'active'
-                          ? 'default'
-                          : listing.status === 'pending'
-                          ? 'secondary'
-                          : 'destructive'
-                      }
-                    >
-                      {listing.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{formatDate(listing.created_at)}</TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => navigate(`/listings/${listing.id}`)}
-                      >
-                        View
-                      </Button>
-                      {listing.status === 'pending' && (
-                        <>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleApproveItem(listing.id, 'listing')}
-                          >
-                            Approve
-                          </Button>
+              filteredListings.map((listing) => {
+                // Use effective status logic for admin display
+                const effectiveStatus = getEffectiveListingStatus(listing);
+                const badge = getStatusBadgeVariant(listing);
+
+                return (
+                  <TableRow key={listing.id}>
+                    <TableCell className="font-medium">{listing.title}</TableCell>
+                    <TableCell>{listing.seller_name}</TableCell>
+                    <TableCell>£{listing.price.toLocaleString()}</TableCell>
+                    <TableCell className="capitalize">{listing.category}</TableCell>
+                    <TableCell>
+                      <div className="flex flex-col gap-0.5">
+                        <span className={`px-2 py-0.5 rounded text-xs text-white ${badge.color} ${badge.pulse ? "animate-pulse" : ""}`}>
+                          {badge.text}
+                        </span>
+                        <span className="block text-[10px] text-muted-foreground mt-1">
+                          db: <strong>{listing.status}</strong>
+                          {effectiveStatus !== listing.status && (
+                            <> → eff: <strong>{effectiveStatus}</strong></>
+                          )}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell>{formatDate(listing.created_at)}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => navigate(`/listings/${listing.id}`)}
+                        >
+                          View
+                        </Button>
+                        {listing.status === 'pending' && (
+                          <>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleApproveItem(listing.id, 'listing')}
+                            >
+                              Approve
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleRejectItem(listing.id, 'listing')}
+                            >
+                              Reject
+                            </Button>
+                          </>
+                        )}
+                        {listing.status === 'active' && (
                           <Button
                             variant="outline"
                             size="sm"
                             onClick={() => handleRejectItem(listing.id, 'listing')}
                           >
-                            Reject
+                            Suspend
                           </Button>
-                        </>
-                      )}
-                      {listing.status === 'active' && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleRejectItem(listing.id, 'listing')}
-                        >
-                          Suspend
-                        </Button>
-                      )}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
             )}
           </TableBody>
         </Table>

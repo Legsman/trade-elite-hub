@@ -1,6 +1,7 @@
 
 import { useState, useMemo } from "react";
 import { UserAdmin, ListingAdmin } from "../types";
+import { getEffectiveListingStatus } from "@/utils/listingStatus";
 
 export function useAdminSearchFilters(users: UserAdmin[], listings: ListingAdmin[]) {
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -25,16 +26,19 @@ export function useAdminSearchFilters(users: UserAdmin[], listings: ListingAdmin
     });
   }, [users, searchQuery, userFilter]);
 
-  // Filter listings based on search query and selected filter
+  // --- UPDATED: Use centralized "effectiveStatus" for admin listing filters ---
   const filteredListings = useMemo(() => {
     return listings.filter((listing) => {
       const matchesSearch =
         !searchQuery ||
         listing.title?.toLowerCase().includes(searchQuery.toLowerCase());
 
+      const effectiveStatus = getEffectiveListingStatus(listing);
+
+      // Admin UI: Show by "effective status" for filtering
       const matchesFilter =
         listingFilter === "all" ||
-        listing.status.toLowerCase() === listingFilter.toLowerCase();
+        effectiveStatus.toLowerCase() === listingFilter.toLowerCase();
 
       return matchesSearch && matchesFilter;
     });
@@ -51,3 +55,4 @@ export function useAdminSearchFilters(users: UserAdmin[], listings: ListingAdmin
     filteredListings,
   };
 }
+

@@ -651,6 +651,10 @@ export type Database = {
           is_admin: boolean
         }[]
       }
+      update_expired_listings: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
     }
     Enums: {
       user_role_type: "unverified" | "verified" | "admin"
