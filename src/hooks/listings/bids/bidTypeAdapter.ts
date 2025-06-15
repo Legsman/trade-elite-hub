@@ -47,6 +47,18 @@ export const adaptBidTypes = {
    * Convert a global Bid to internal Bid format
    */
   toInternalBid: (bid: GlobalBid): Bid => {
+    // Defensive extraction: GlobalBid has .user, but fallback to user_profile if needed.
+    const user =
+      "user" in bid && bid.user
+        ? bid.user
+        : bid.user_profile
+        ? {
+            fullName: (bid.user_profile as any).full_name || null,
+            avatarUrl: (bid.user_profile as any).avatar_url || null,
+            username: (bid.user_profile as any).username || null,
+          }
+        : { fullName: null, avatarUrl: null, username: null };
+
     return {
       id: bid.id,
       user_id: bid.userId,
@@ -55,17 +67,23 @@ export const adaptBidTypes = {
       maximum_bid: bid.maximumBid || 0,
       bid_increment: bid.bidIncrement || 0,
       status: bid.status,
-      created_at: bid.createdAt instanceof Date ? bid.createdAt.toISOString() : new Date(bid.createdAt).toISOString(),
+      created_at:
+        bid.createdAt instanceof Date
+          ? bid.createdAt.toISOString()
+          : new Date(bid.createdAt).toISOString(),
       user_profile: {
-        full_name: bid.user?.fullName || null,
-        avatar_url: bid.user?.avatarUrl || null,
-        username: bid.user?.username || null,
+        full_name: user.fullName || null,
+        avatar_url: user.avatarUrl || null,
+        username: user.username || null,
       },
       userId: bid.userId,
       listingId: bid.listingId,
       maximumBid: bid.maximumBid || 0,
       bidIncrement: bid.bidIncrement || 0,
-      createdAt: bid.createdAt instanceof Date ? bid.createdAt : new Date(bid.createdAt)
+      createdAt:
+        bid.createdAt instanceof Date
+          ? bid.createdAt
+          : new Date(bid.createdAt),
     };
   }
 };
