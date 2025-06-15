@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { SoldItemCard } from "./SoldItemCard";
 import { EmptyStateMessage } from "./EmptyStateMessage";
@@ -92,7 +91,7 @@ export const SoldItemsList: React.FC<SoldItemsListProps> = ({
 
 /**
  * Renders a feedback button for a single sold item, checking if feedback already exists.
- * Uses the useFeedback hook to load feedback given by userId (seller) about this buyer/listing.
+ * Now fetches feedbacks where "from_user_id" (the seller) left feedback to "to_user_id" (the buyer) for this listing.
  */
 function FeedbackChecker({
   userId,
@@ -101,20 +100,20 @@ function FeedbackChecker({
   listingId,
   openModal,
 }: {
-  userId: string;
-  buyerId: string;
+  userId: string; // seller id
+  buyerId: string; // buyer id
   buyerUsername?: string;
   listingId: string;
   openModal: () => void;
 }) {
-  // Only fetch feedback records from seller (userId) about this buyer + listing
+  // Fetch ALL feedbacks from this seller for this listing
   const { data: feedback, isLoading } = useFeedback({
     userId,
-    as: "buyer",
+    as: undefined, // remove ambiguity (we want all feedback from this seller)
     listingId,
   });
 
-  // We only care about feedback entries where "from_user_id" = userId and "to_user_id" = buyerId for this listing
+  // Filter for records to the right buyer/listing
   const alreadyLeft = Array.isArray(feedback)
     ? feedback.some(
         (fb) =>
@@ -123,6 +122,16 @@ function FeedbackChecker({
           fb.listing_id === listingId
       )
     : false;
+
+  // Debug: log feedbacks returned for this item
+  if (process.env.NODE_ENV === "development") {
+    console.log("[FeedbackChecker:sold-items] Feedbacks fetched:", feedback, {
+      userId,
+      buyerId,
+      listingId,
+      alreadyLeft,
+    });
+  }
 
   return (
     <Button
