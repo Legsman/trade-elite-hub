@@ -12,12 +12,12 @@ export const adaptBidTypes = {
    */
   toGlobalBids: (bids: Bid[]): GlobalBid[] => {
     console.log(`[bidTypeAdapter] Converting ${bids?.length || 0} bids to global format`);
-    
+
     if (!bids || !Array.isArray(bids)) {
       console.warn('[bidTypeAdapter] No bids to convert or invalid input', bids);
       return [];
     }
-    
+
     try {
       return bids.map(bid => ({
         id: bid.id,
@@ -28,10 +28,11 @@ export const adaptBidTypes = {
         createdAt: bid.createdAt || new Date(bid.created_at),
         maximumBid: bid.maximum_bid ? Number(bid.maximum_bid) : (bid.maximumBid || 0),
         bidIncrement: bid.bid_increment ? Number(bid.bid_increment) : (bid.bidIncrement || 0),
+        // The Bid type on the component expects a .user property with fullName, avatarUrl, username fields.
         user: {
           fullName: bid.user_profile?.full_name || null,
           avatarUrl: bid.user_profile?.avatar_url || null,
-          username: bid.user_profile?.username || null
+          username: bid.user_profile?.username || null,
         }
       }));
     } catch (error) {
@@ -39,7 +40,7 @@ export const adaptBidTypes = {
       return [];
     }
   },
-  
+
   /**
    * Convert a global Bid to internal Bid format
    */
@@ -56,7 +57,7 @@ export const adaptBidTypes = {
       user_profile: {
         full_name: bid.user?.fullName || null,
         avatar_url: bid.user?.avatarUrl || null,
-        username: bid.user?.username || null
+        username: bid.user?.username || null,
       },
       userId: bid.userId,
       listingId: bid.listingId,

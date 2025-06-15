@@ -75,12 +75,12 @@ export const useBidDataFetcher = () => {
               created_at: bid.created_at,
               maximum_bid: bid.maximum_bid || 0,
               bid_increment: bid.bid_increment || 0,
-              // Use the profile data from our map
+              // User_profile type must contain username as optional, set null
               user_profile: {
                 full_name: userProfile ? userProfile.full_name : null,
                 avatar_url: userProfile ? userProfile.avatar_url : null,
+                username: null
               },
-              // Add mapped properties for types/index.ts compatibility
               userId: bid.user_id,
               listingId: bid.listing_id,
               maximumBid: bid.maximum_bid || 0,
@@ -107,6 +107,7 @@ export const useBidDataFetcher = () => {
         user_profile: {
           full_name: null,
           avatar_url: null,
+          username: null
         },
         userId: bid.user_id,
         listingId: bid.listing_id,

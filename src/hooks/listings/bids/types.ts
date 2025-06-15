@@ -11,9 +11,9 @@ export interface Bid {
   user_profile?: {
     full_name: string | null;
     avatar_url: string | null;
-    username: string | null;
+    username?: string | null; // Now optional!
   };
-  
+
   // For compatibility with types/index.ts
   userId: string;
   listingId: string;
