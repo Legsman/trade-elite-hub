@@ -1,8 +1,7 @@
-
-import { useState, useEffect, useCallback } from "react";
-import { useAuth } from "@/hooks/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/auth";
+import { useState, useEffect, useCallback } from "react";
 
 export interface Message {
   id: string;
@@ -320,7 +319,7 @@ export const useConversation = (otherUserId: string, listingId?: string) => {
     }
 
     try {
-      // Basic check for contact info (email, phone)
+      // Detect contact info
       const hasContactInfo = /([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)|\b\d{10,11}\b|\+\d{1,3}\s?\d{6,14}\b|\(\d{3}\)\s?\d{3}[-.]?\d{4}/.test(content);
 
       const { data, error } = await supabase
@@ -351,6 +350,42 @@ export const useConversation = (otherUserId: string, listingId?: string) => {
       };
 
       setMessages(prev => [...prev, newMessage]);
+
+      // --- NOTIFICATION: Only create for the RECIPIENT ---
+      if (user.id !== otherUserId) {
+        // Get sender name (from profile)
+        const { data: senderProfile } = await supabase
+          .from("profiles")
+          .select("full_name")
+          .eq("id", user.id)
+          .maybeSingle();
+
+        let listingTitle: string | undefined = undefined;
+        if (listingId) {
+          const { data: listingData } = await supabase
+            .from("listings")
+            .select("title")
+            .eq("id", listingId)
+            .maybeSingle();
+          listingTitle = listingData?.title;
+        }
+
+        // Preview: truncate message content to 50 chars
+        const preview = content.length > 50 ? `${content.slice(0, 50)}...` : content;
+
+        // Create the notification
+        await supabase.from("notifications").insert({
+          user_id: otherUserId,
+          type: "new_message",
+          message: `${senderProfile?.full_name || "Someone"}: ${preview}`,
+          is_read: false,
+          metadata: {
+            conversationId: user.id,
+            listingId: listingId || null,
+            listingTitle: listingTitle || null,
+          },
+        });
+      }
 
       return { success: true };
     } catch (err) {

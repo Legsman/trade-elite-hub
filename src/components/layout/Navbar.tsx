@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -21,6 +20,8 @@ import {
 import { useAuth } from "@/hooks/auth";
 import { toast } from "@/hooks/use-toast";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
+import NotificationDropdown from "./NotificationDropdown";
+import { useNotifications } from "@/hooks/useNotifications";
 
 const Navbar = () => {
   const { user, supabaseUser, logout } = useAuth();
@@ -53,6 +54,9 @@ const Navbar = () => {
       });
     }
   };
+
+  const [showNotif, setShowNotif] = useState(false);
+  const { unreadCount } = useNotifications();
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -144,9 +148,25 @@ const Navbar = () => {
               <Button variant="ghost" size="icon" aria-label="Search">
                 <Search className="h-5 w-5" />
               </Button>
-              <Button variant="ghost" size="icon" aria-label="Notifications">
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="Notifications"
+                className="relative"
+                onClick={() => setShowNotif((v) => !v)}
+              >
                 <Bell className="h-5 w-5" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 rounded-full bg-red-500 text-white text-[10px] px-1.5 py-0.5 font-semibold leading-none flex items-center justify-center">
+                    {unreadCount}
+                  </span>
+                )}
               </Button>
+              {showNotif && (
+                <div className="absolute right-0 top-12 z-50">
+                  <NotificationDropdown onClose={() => setShowNotif(false)} />
+                </div>
+              )}
               <div className="relative">
                 <Button
                   variant="ghost"
