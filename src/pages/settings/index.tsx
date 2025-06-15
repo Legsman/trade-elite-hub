@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -40,6 +39,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/auth";
 import { useUserProfile } from "@/hooks/use-user-profile";
+import { useProfileUpdater } from "@/hooks/user-profile";
 import { useSubscription } from "@/hooks/use-subscription";
 import { useAnalytics } from "@/hooks/use-analytics";
 import { toast } from "@/hooks/use-toast";
@@ -71,7 +71,9 @@ type ProfileFormValues = z.infer<typeof profileFormSchema>;
 const UserSettingsPage = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
-  const { profile, isLoading: profileLoading, updateProfile, uploadAvatar } = useUserProfile();
+  const { profile, isLoading: profileLoading, setProfile } = useUserProfile();
+  const userId = profile?.id;
+  const { updateProfile, uploadAvatar } = useProfileUpdater(userId, setProfile);
   const { 
     subscribed, 
     subscription_tier, 
