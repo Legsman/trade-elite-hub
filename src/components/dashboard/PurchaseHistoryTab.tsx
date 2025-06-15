@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { LeaveFeedbackModal } from "@/components/feedback/LeaveFeedbackModal";
 import { useAuth } from "@/hooks/auth";
+import { useFeedback } from "@/hooks/feedback";
 
 interface PurchaseHistoryTabProps {
   userId: string;
@@ -90,8 +92,7 @@ export const PurchaseHistoryTab = ({ userId }: PurchaseHistoryTabProps) => {
       </h2>
       <div className="grid grid-cols-1 gap-4">
         {purchases.map(purchase => {
-          // Placeholder for hasFeedback flag (when we have feedback tracking)
-          const hasFeedback = purchase.seller_feedback_left;
+          // Remove previous mock hasFeedback flag.
           return (
             <Card key={purchase.id} className="overflow-hidden">
               <div className="flex flex-col sm:flex-row">
@@ -137,15 +138,14 @@ export const PurchaseHistoryTab = ({ userId }: PurchaseHistoryTabProps) => {
                   >
                     View Details
                   </Button>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    className="ml-2"
-                    disabled={hasFeedback}
-                    onClick={() => setFeedbackModal({ purchase })}
-                  >
-                    {hasFeedback ? "Feedback Submitted" : "Leave Feedback"}
-                  </Button>
+                  {user && purchase.seller?.id &&
+                    <FeedbackChecker
+                      buyerId={user.id}
+                      sellerId={purchase.seller.id}
+                      listingId={purchase.id}
+                      openModal={() => setFeedbackModal({ purchase })}
+                    />
+                  }
                 </div>
               </div>
             </Card>
@@ -166,4 +166,49 @@ export const PurchaseHistoryTab = ({ userId }: PurchaseHistoryTabProps) => {
   );
 };
 
-export default PurchaseHistoryTab;
+// Check if the current user (buyer) already left feedback for this seller/listing
+function FeedbackChecker({
+  buyerId,
+  sellerId,
+  listingId,
+  openModal
+}: {
+  buyerId: string;
+  sellerId: string;
+  listingId: string;
+  openModal: () => void;
+}) {
+  // as="seller" means feedback about this seller (to_user_id=sellerId, from_user_id=buyerId)
+  const { data: feedback, isLoading } = useFeedback({
+    userId: buyerId,
+    as: "seller",
+    listingId,
+  });
+
+  // Look for feedback where from_user_id == buyerId, to_user_id == sellerId, for this listing
+  const alreadyLeft = Array.isArray(feedback)
+    ? feedback.some(
+      (fb) =>
+        fb.from_user_id === buyerId &&
+        fb.to_user_id === sellerId &&
+        fb.listing_id === listingId
+    )
+    : false;
+
+  return (
+    <Button
+      variant="secondary"
+      size="sm"
+      className="ml-2"
+      disabled={alreadyLeft || isLoading}
+      onClick={openModal}
+    >
+      {isLoading
+        ? "Checking..."
+        : alreadyLeft
+        ? "Feedback Submitted"
+        : "Leave Feedback"}
+    </Button>
+  );
+}
+
