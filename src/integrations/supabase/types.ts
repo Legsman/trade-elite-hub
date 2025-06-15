@@ -105,6 +105,33 @@ export type Database = {
           },
         ]
       }
+      listing_views: {
+        Row: {
+          id: string
+          ip_address: string | null
+          listing_id: string
+          user_agent: string | null
+          user_id: string | null
+          viewed_at: string
+        }
+        Insert: {
+          id?: string
+          ip_address?: string | null
+          listing_id: string
+          user_agent?: string | null
+          user_id?: string | null
+          viewed_at?: string
+        }
+        Update: {
+          id?: string
+          ip_address?: string | null
+          listing_id?: string
+          user_agent?: string | null
+          user_id?: string | null
+          viewed_at?: string
+        }
+        Relationships: []
+      }
       listings: {
         Row: {
           allow_best_offer: boolean
@@ -589,6 +616,13 @@ export type Database = {
           _role: Database["public"]["Enums"]["user_role_type"]
         }
         Returns: boolean
+      }
+      increment_views: {
+        Args: { l_id: string }
+        Returns: {
+          listing_id: string
+          new_views: number
+        }[]
       }
       is_admin: {
         Args: { _user_id: string }

@@ -57,13 +57,34 @@ export const useListing = (id?: string) => {
       setListing(mappedListing);
 
       // Track view using edge function (deduplicated)
-      await fetch("/functions/v1/track-listing-view", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ listingId: id }),
-      });
+      try {
+        const resp = await fetch("https://hwnsooioeqydhyukenfe.supabase.co/functions/v1/track-listing-view", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ listingId: id }),
+        });
+        if (resp.ok) {
+          const json = await resp.json();
+          if (json && typeof json.views === "number") {
+            setListing(l => l ? { ...l, views: json.views } : l); // Update local views
+          }
+        } else {
+          // Fallback: refresh listing from db
+          const refetch = await supabase
+            .from("listings")
+            .select("*")
+            .eq("id", id)
+            .maybeSingle();
+          if (refetch.data && typeof refetch.data.views === "number") {
+            setListing(l => l ? { ...l, views: refetch.data.views } : l);
+          }
+        }
+      } catch (trackErr) {
+        // Fallback: try to keep UI going
+        console.error("Failed to call track-listing-view", trackErr);
+      }
 
       // Optionally, refetch views after increment (for immediate UI update if needed)
       // You could poll or trigger a re-fetch here if needed

@@ -36,7 +36,7 @@ serve(async (req: Request) => {
         const payload = JSON.parse(atob(jwt.split(".")[1]));
         user_id = payload.sub ?? null;
       } catch (_) {
-        // Ignore decode error, treated as anon
+        // Ignore decode error, treat as anon
       }
     }
 
@@ -88,24 +88,30 @@ serve(async (req: Request) => {
     if (insertError) throw insertError;
 
     // Atomically update the view count
+    let updatedViews = 0;
     const { data: updated, error: updateError } = await supabase.rpc("increment_views", { l_id: listingId });
     if (updateError) {
-      // fallback: increment manually
+      // fallback: increment manually, very rare
       await supabase
         .from("listings")
         .update({ views: supabase.literal("views + 1") })
         .eq("id", listingId);
     }
+    if (updated && updated[0] && updated[0].new_views !== undefined) {
+      updatedViews = updated[0].new_views;
+    } else {
+      // fallback: fetch views manually
+      const { data: newview } = await supabase
+        .from("listings")
+        .select("views")
+        .eq("id", listingId)
+        .maybeSingle();
+      updatedViews = newview?.views ?? 0;
+    }
 
     // Return new count
-    const { data: listing } = await supabase
-      .from("listings")
-      .select("views")
-      .eq("id", listingId)
-      .maybeSingle();
-
     return new Response(
-      JSON.stringify({ counted: true, views: listing?.views ?? 0 }),
+      JSON.stringify({ counted: true, views: updatedViews }),
       { headers: corsHeaders }
     );
   } catch (err) {
