@@ -147,6 +147,9 @@ export type Database = {
           images: string[]
           location: string
           price: number
+          sale_amount: number | null
+          sale_buyer_id: string | null
+          sale_date: string | null
           saves: number
           seller_id: string
           status: string
@@ -169,6 +172,9 @@ export type Database = {
           images?: string[]
           location: string
           price: number
+          sale_amount?: number | null
+          sale_buyer_id?: string | null
+          sale_date?: string | null
           saves?: number
           seller_id: string
           status: string
@@ -191,6 +197,9 @@ export type Database = {
           images?: string[]
           location?: string
           price?: number
+          sale_amount?: number | null
+          sale_buyer_id?: string | null
+          sale_date?: string | null
           saves?: number
           seller_id?: string
           status?: string

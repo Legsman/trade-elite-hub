@@ -25,16 +25,18 @@ export const SoldItemCard: React.FC<SoldItemCardProps> = ({ item, onRelistClick 
         <div className="p-4 flex-1">
           <h3 className="font-semibold text-lg mb-1">{item.title}</h3>
           <div className="text-sm text-muted-foreground mb-2">
-            {new Intl.DateTimeFormat('en-GB', {
-              day: 'numeric',
-              month: 'short',
-              year: 'numeric'
-            }).format(item.saleDate)}
+            {item.saleDate
+              ? new Intl.DateTimeFormat('en-GB', {
+                  day: 'numeric',
+                  month: 'short',
+                  year: 'numeric'
+                }).format(item.saleDate)
+              : ""}
           </div>
           <div className="mb-2">
             <span className="font-medium">Sale price:</span>{' '}
             <span className="text-green-600 font-bold">
-              £{item.saleAmount.toLocaleString()}
+              £{item.saleAmount ? Number(item.saleAmount).toLocaleString() : "-"}
             </span>
           </div>
           {item.buyer && (

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,86 +18,40 @@ export const PurchaseHistoryTab = ({ userId }: PurchaseHistoryTabProps) => {
     const fetchPurchases = async () => {
       setIsLoading(true);
       try {
-        // Fetch listings won through accepted offers
+        // Purchases by accepted offer
         const { data: offerPurchases, error: offerError } = await supabase
-          .from("offers")
+          .from("listings")
           .select(`
-            amount,
-            updated_at,
-            listings (
+            *,
+            profiles: seller_id (
               id,
-              title,
-              price,
-              images,
-              category,
-              type,
-              location,
-              condition,
-              status,
-              expires_at,
-              created_at,
-              views,
-              saves,
-              seller_id,
-              description,
-              allow_best_offer
+              full_name
             )
           `)
-          .eq("user_id", userId)
-          .eq("status", "accepted");
-        
+          .eq("sale_buyer_id", userId)
+          .eq("status", "sold");
+
         if (offerError) throw offerError;
-        
-        // Fetch listings won through auctions
-        const { data: auctionWins, error: auctionError } = await supabase
-          .from("bids")
-          .select(`
-            amount,
-            listings (
-              id,
-              title,
-              price,
-              images,
-              category,
-              type,
-              location,
-              condition,
-              status,
-              expires_at,
-              created_at,
-              views,
-              saves,
-              seller_id,
-              description,
-              allow_best_offer
-            )
-          `)
-          .eq("user_id", userId)
-          .eq("status", "won");
-          
-        if (auctionError) throw auctionError;
-        
-        // Transform the data into the Listing format with purchase details
-        const purchasedListings = [
-          ...offerPurchases.map(op => ({
-            ...op.listings,
-            purchaseType: 'offer',
-            purchaseAmount: op.amount,
-            purchaseDate: new Date(op.updated_at),
-            expiresAt: new Date(op.listings.expires_at)
-          })),
-          ...auctionWins.map(win => ({
-            ...win.listings,
-            purchaseType: 'auction',
-            purchaseAmount: win.amount,
-            purchaseDate: new Date(win.listings.expires_at),
-            expiresAt: new Date(win.listings.expires_at)
-          }))
-        ];
-        
-        // Sort by purchase date, newest first
-        purchasedListings.sort((a, b) => b.purchaseDate.getTime() - a.purchaseDate.getTime());
-        
+
+        // Purchases by auction win (relies on same sale fields, so already included above)
+        const purchasedListings = (offerPurchases || []).map((l) => ({
+          ...l,
+          purchaseType: 'offerOrAuction',
+          purchaseAmount: l.sale_amount,
+          purchaseDate: l.sale_date ? new Date(l.sale_date) : undefined,
+          expiresAt: new Date(l.expires_at),
+          seller: l.profiles ? {
+            id: l.profiles.id,
+            name: l.profiles.full_name
+          } : null
+        }));
+
+        // Sort by purchase date
+        purchasedListings.sort((a, b) => {
+          if (!a.purchaseDate || !b.purchaseDate) return 0;
+          return b.purchaseDate.getTime() - a.purchaseDate.getTime();
+        });
+
         setPurchases(purchasedListings);
       } catch (error) {
         console.error("Error fetching purchase history:", error);
@@ -106,10 +59,10 @@ export const PurchaseHistoryTab = ({ userId }: PurchaseHistoryTabProps) => {
         setIsLoading(false);
       }
     };
-    
+
     fetchPurchases();
   }, [userId]);
-  
+
   if (isLoading) {
     return <Loading message="Loading purchase history..." />;
   }
@@ -145,23 +98,31 @@ export const PurchaseHistoryTab = ({ userId }: PurchaseHistoryTabProps) => {
               <div className="p-4 flex-1">
                 <h3 className="font-semibold text-lg mb-1">{purchase.title}</h3>
                 <div className="text-sm text-muted-foreground mb-2">
-                  {new Intl.DateTimeFormat('en-GB', {
-                    day: 'numeric',
-                    month: 'short',
-                    year: 'numeric'
-                  }).format(purchase.purchaseDate)}
+                  {purchase.purchaseDate
+                    ? new Intl.DateTimeFormat('en-GB', {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric'
+                      }).format(purchase.purchaseDate)
+                    : ""}
                 </div>
                 <div className="mb-2">
                   <span className="font-medium">Purchase price:</span>{' '}
                   <span className="text-green-600 font-bold">
-                    £{purchase.purchaseAmount.toLocaleString()}
+                    £{purchase.purchaseAmount ? Number(purchase.purchaseAmount).toLocaleString() : "-"}
                   </span>
                 </div>
                 <div className="text-sm mb-4">
                   <span className="bg-gray-100 text-gray-800 rounded-full px-3 py-1 text-xs">
-                    {purchase.purchaseType === 'offer' ? 'Offer Accepted' : 'Auction Won'}
+                    Sale
                   </span>
                 </div>
+                {purchase.seller && (
+                  <div className="mb-2 text-sm">
+                    <span className="font-medium">Seller:</span>{' '}
+                    <span>{purchase.seller.name ?? "Unknown"}</span>
+                  </div>
+                )}
                 <Button 
                   variant="outline" 
                   size="sm" 

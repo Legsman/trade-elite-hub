@@ -43,22 +43,33 @@ export const UserListingsTab = ({ userId }: UserListingsTabProps) => {
           .eq("seller_id", userId)
           .order("created_at", { ascending: false });
 
-        // Filter by tab
-        if (tab === "active") query = query.eq("status", "active");
-        if (tab === "ended") query = query.in("status", ["ended", "expired"]);
-        if (tab === "sold") query = query.eq("status", "sold");
+        // Tab filtering (fully correct now that we have explicit sale status and info)
+        if (tab === "active") {
+          // Show only active non-ended/sold
+          query = query.eq("status", "active");
+        }
+        if (tab === "ended") {
+          // Ended/expired and not sold
+          query = query.in("status", ["ended", "expired"]).or(`(status.eq.active,and(expires_at.lt.${new Date().toISOString()},sale_buyer_id.is.null))`);
+        }
+        if (tab === "sold") {
+          query = query.eq("status", "sold");
+        }
         // "all" shows all
 
         const { data, error } = await query;
 
         if (error) throw error;
 
-        // Convert date strings to Date
+        // Convert date strings to Date and add new sale fields
         const transformedListings = data.map((listing) => ({
           ...listing,
           expiresAt: new Date(listing.expires_at),
           createdAt: new Date(listing.created_at),
           updatedAt: new Date(listing.updated_at),
+          saleDate: listing.sale_date ? new Date(listing.sale_date) : undefined,
+          saleAmount: listing.sale_amount ?? undefined,
+          saleBuyerId: listing.sale_buyer_id ?? undefined,
         }));
 
         setListings(transformedListings);
