@@ -7,9 +7,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { MoreHorizontal, Share, Edit } from "lucide-react";
+import { getEffectiveListingStatus, canEndListing } from "@/utils/listingStatus";
 
 interface ListingActionMenuProps {
-  status: string;
+  status: string; // Now using the *effective status*!
   type: string;
   allowBestOffer: boolean;
   onEdit?: () => void;
@@ -31,16 +32,10 @@ export function ListingActionMenu({
   onEnd,
   disableEnd = false,
 }: ListingActionMenuProps) {
-  // Only show End option if not ended/expired/sold
-  const showEnd =
-    !["ended", "expired", "sold"].includes(status.toLowerCase());
-
-  // Only show Edit if active
-  const showEdit = status.toLowerCase() === "active";
-  // Only show Review Offers if best offer enabled
+  // Now, status is the effective status!
+  const showEnd = canEndListing({ status: status, expiresAt: new Date(0) }); // expiresAt not used by canEndListing now
+  const showEdit = status === "active";
   const showReviewOffers = allowBestOffer;
-  // Always show Share
-  // Only show Change to auction if classified
   const showChangeToAuction = type.toLowerCase() === "classified";
 
   return (

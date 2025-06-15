@@ -9,6 +9,8 @@ import { memo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { getBidCountText } from "@/lib/utils";
 import { useEffect } from "react";
+import { getEffectiveListingStatus } from "@/utils/listingStatus";
+import { getStatusBadgeVariant, isListingActive } from "@/utils/listingStatus";
 
 interface ListingCardProps {
   listing: Listing;
@@ -87,6 +89,11 @@ export const ListingCard = memo(({ listing, onClick, highestBid, bidCount = 0 }:
     return listing.status === "active" && now < expiresAt;
   };
 
+  // --- REPLACE status logic ---
+  // Remove all custom expiration/status logic and use the centralized helpers
+  const effectiveStatus = getEffectiveListingStatus(listing);
+  const badge = getStatusBadgeVariant(listing);
+
   useEffect(() => {
     // Use Intersection Observer to only count view when card is actually visible, and only once
     let hasTracked = false;
@@ -127,7 +134,7 @@ export const ListingCard = memo(({ listing, onClick, highestBid, bidCount = 0 }:
     <Card
       id={`listing-card-${listing.id}`}
       className={`overflow-hidden cursor-pointer transition-all hover:shadow-md ${
-        listing.status === "sold" ? "border-green-500" : ""
+        effectiveStatus === "sold" ? "border-green-500" : ""
       }`}
       onClick={handleClick}
     >
@@ -136,14 +143,16 @@ export const ListingCard = memo(({ listing, onClick, highestBid, bidCount = 0 }:
           src={listing.images[0]}
           alt={listing.title}
           className={`object-cover h-full w-full ${
-            listing.status === "sold" ? "opacity-80" : ""
+            effectiveStatus === "sold" ? "opacity-80" : ""
           }`}
           loading="lazy"
         />
-        {getStatusBadge()}
-
+        {/* Status Badge */}
+        <div className={`absolute top-2 right-2 text-white text-xs font-medium rounded-full px-2 py-1 ${badge.color} ${badge.pulse ? "animate-pulse" : ""}`}>
+          {badge.text}
+        </div>
         {/* Overlay SOLD indicator for better visibility */}
-        {listing.status === "sold" && (
+        {effectiveStatus === "sold" && (
           <div className="absolute inset-0 flex items-center justify-center">
             <Badge variant="secondary" className="text-lg font-bold bg-white/80 text-green-600 px-6 py-3 transform rotate-[-20deg]">
               <Check className="mr-1 h-4 w-4" /> SOLD
@@ -192,20 +201,20 @@ export const ListingCard = memo(({ listing, onClick, highestBid, bidCount = 0 }:
 
         {/* Countdown or ended status */}
         <div className="mt-2">
-          {showCountdown() ? (
+          {isListingActive(listing) ? (
             <ListingCountdown 
-              expiryDate={expiresAt} 
+              expiryDate={listing.expiresAt instanceof Date ? listing.expiresAt : new Date(listing.expiresAt)} 
               isAuction={listing.type === "auction"} 
-              listingStatus={listing.status}
+              listingStatus={effectiveStatus}
               className="text-xs"
             />
           ) : (
             <p className="text-xs text-muted-foreground">
-              {listing.status === "sold"
+              {effectiveStatus === "sold"
                 ? "No longer available"
-                : now > expiresAt
+                : effectiveStatus === "expired" || effectiveStatus === "ended"
                   ? "Ended"
-                  : "Ended"}
+                  : effectiveStatus.charAt(0).toUpperCase() + effectiveStatus.slice(1)}
             </p>
           )}
         </div>

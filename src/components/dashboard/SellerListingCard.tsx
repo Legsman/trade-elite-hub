@@ -1,4 +1,3 @@
-
 import { Listing } from "@/types";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -7,6 +6,7 @@ import { Gavel, Eye, Heart } from "lucide-react";
 import { ListingActionMenu } from "../listings/ListingActionMenu";
 import { useNavigate } from "react-router-dom";
 import React from "react";
+import { getEffectiveListingStatus, getStatusBadgeVariant } from "@/utils/listingStatus";
 
 interface SellerListingCardProps {
   listing: Listing;
@@ -35,50 +35,15 @@ export function SellerListingCard({
 
   const navigate = useNavigate();
 
-  // Status Badge
-  const getStatusBadge = () => {
-    if (listing.status === "sold") {
-      return (
-        <Badge className="bg-green-600 text-white absolute top-2 right-2">
-          Sold
-        </Badge>
-      );
-    }
-    if (
-      listing.status === "ended" ||
-      listing.status === "expired" ||
-      now > expiresAt
-    ) {
-      return (
-        <Badge className="bg-gray-500 text-white absolute top-2 right-2">
-          Ended
-        </Badge>
-      );
-    }
-    if (listing.status === "active") {
-      // Ending soon (within 24h)
-      const hours = (expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60);
-      if (hours > 0 && hours < 24) {
-        return (
-          <Badge className="bg-red-500 animate-pulse text-white absolute top-2 right-2">
-            Ending Soon
-          </Badge>
-        );
-      }
-      return (
-        <Badge className="bg-blue-500 text-white absolute top-2 right-2">
-          Active
-        </Badge>
-      );
-    }
-    return null;
-  };
+  // --- REPLACED BADGE LOGIC ---
+  const effectiveStatus = getEffectiveListingStatus(listing);
+  const badge = getStatusBadgeVariant(listing);
 
   return (
     <Card className="relative overflow-hidden">
       {/* 3-dot action menu, top-left */}
       <ListingActionMenu
-        status={listing.status}
+        status={effectiveStatus}
         type={listing.type}
         allowBestOffer={listing.allowBestOffer}
         onEdit={onEdit}
@@ -95,7 +60,10 @@ export function SellerListingCard({
           className="object-cover w-full h-full"
           loading="lazy"
         />
-        {getStatusBadge()}
+        {/* Unified badge */}
+        <Badge className={`${badge.color} text-white absolute top-2 right-2 ${badge.pulse ? "animate-pulse" : ""}`}>
+          {badge.text}
+        </Badge>
       </div>
       <CardContent className="p-4">
         <div className="flex justify-between items-start">
