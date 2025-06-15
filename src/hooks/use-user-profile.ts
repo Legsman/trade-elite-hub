@@ -1,9 +1,9 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/hooks/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { User, UserProfile } from "@/types";
+import { obfuscateText } from "@/utils/stringUtils";
 
 export const useUserProfile = (userId?: string) => {
   const { user: authUser } = useAuth();
@@ -215,6 +215,7 @@ export const useSellerProfile = (sellerId?: string) => {
     rating: number;
     salesCount: number;
     verified: boolean;
+    username?: string | null;
   } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -248,14 +249,18 @@ export const useSellerProfile = (sellerId?: string) => {
 
       if (listingsError) throw listingsError;
 
+      // Instead of showing real full name, show obfuscated username (for privacy, matches bid history)
+      const safeObfuscated = obfuscateText(profileData.full_name || "", 2);
+
       setSeller({
         id: profileData.id,
-        name: profileData.full_name || "Unknown Seller",
+        name: safeObfuscated || "Unknown Seller",
         avatarUrl: profileData.avatar_url,
         joinDate: new Date(profileData.created_at),
         rating: profileData.feedback_rating || 0,
         salesCount: listingsCount || 0,
         verified: true, // For now, assume all sellers are verified
+        username: safeObfuscated,
       });
     } catch (err) {
       console.error("Error fetching seller profile:", err);
