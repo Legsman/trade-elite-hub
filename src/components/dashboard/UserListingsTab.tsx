@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { ListingCard } from "@/components/listings/ListingCard";
 import { EndListingDialog } from "@/components/listings/EndListingDialog";
 import { useEndListing } from "@/hooks/listings/useEndListing";
+import { ListingActionMenu } from "@/components/listings/ListingActionMenu";
 
 interface UserListingsTabProps {
   userId: string;
@@ -15,8 +17,6 @@ export const UserListingsTab = ({ userId }: UserListingsTabProps) => {
   const navigate = useNavigate();
   const [listings, setListings] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-
-  // State for End Listing dialog
   const [endingItem, setEndingItem] = useState<any>(null);
   const { isEnding, endListing } = useEndListing(endingItem?.id);
 
@@ -28,7 +28,7 @@ export const UserListingsTab = ({ userId }: UserListingsTabProps) => {
           .from("listings")
           .select("*")
           .eq("seller_id", userId)
-          .eq("status", "active")
+          .eq("status", "active") // Only show active listings, per tab (could be a prop!)
           .order("created_at", { ascending: false });
 
         if (error) throw error;
@@ -72,24 +72,14 @@ export const UserListingsTab = ({ userId }: UserListingsTabProps) => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {listings.map((listing) => (
           <div key={listing.id} className="relative">
+            {/* 3-dot menu in top-left, only show allowed actions based on status */}
+            <ListingActionMenu
+              status={listing.status}
+              onRevise={() => navigate(`/listings/${listing.id}/edit`)}
+              onEnd={() => setEndingItem(listing)}
+              disableEnd={isEnding}
+            />
             <ListingCard listing={listing} />
-            <div className="absolute top-2 left-2 z-10 flex gap-1">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => navigate(`/listings/${listing.id}/edit`)}
-              >
-                Revise
-              </Button>
-              <Button
-                size="sm"
-                variant="destructive"
-                onClick={() => setEndingItem(listing)}
-                disabled={isEnding}
-              >
-                End
-              </Button>
-            </div>
           </div>
         ))}
       </div>
