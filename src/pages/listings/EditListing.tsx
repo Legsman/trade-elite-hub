@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -36,6 +37,9 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
+const CATEGORY_VALUES = ["cars", "watches", "homes", "commercials", "collectables", "other"] as const;
+const TYPE_VALUES = ["auction", "classified"] as const;
+
 const EditListingPage = () => {
   const { user } = useAuth();
   const { id } = useParams();
@@ -55,21 +59,25 @@ const EditListingPage = () => {
   // Populate form with existing listing data
   useEffect(() => {
     if (listing) {
+      // Category and type must be correct union types:
+      const safeCategory = CATEGORY_VALUES.includes(listing.category) ? listing.category as typeof CATEGORY_VALUES[number] : "other";
+      const safeType = TYPE_VALUES.includes(listing.type) ? listing.type as typeof TYPE_VALUES[number] : "classified";
       form.reset({
-        title: listing.title,
-        description: listing.description,
-        category: listing.category,
-        type: listing.type,
-        price: listing.price,
-        condition: listing.condition,
-        location: listing.location,
-        allowBestOffer: listing.allowBestOffer,
-        duration: "30", // Fallback: actual exp date may not match exactly
+        title: listing.title ?? "",
+        description: listing.description ?? "",
+        category: safeCategory,
+        type: safeType,
+        price: Number(listing.price ?? 0),
+        condition: listing.condition ?? "",
+        location: listing.location ?? "",
+        allowBestOffer: typeof listing.allowBestOffer === "boolean"
+          ? listing.allowBestOffer
+          : !!listing.allowBestOffer,
+        duration: "30", // fallback, not used in edit
       });
-      setImageUrls(listing.images || []);
+      setImageUrls(Array.isArray(listing.images) ? listing.images : []);
     }
-  // Do not add `form` to deps to avoid infinite effect
-  // eslint-disable-next-line
+    // eslint-disable-next-line
   }, [listing]);
 
   // Submission handler for updating listing
@@ -83,8 +91,7 @@ const EditListingPage = () => {
       navigate("/login");
       return;
     }
-    // Do not force images required if unchanged
-    if (images.length === 0 && (imageUrls.length === 0)) {
+    if (images.length === 0 && imageUrls.length === 0) {
       toast({
         title: "Images required",
         description: "Please add at least one image to your listing",
@@ -92,11 +99,18 @@ const EditListingPage = () => {
       });
       return;
     }
-    // Prepare update payload (preserve images if user didn't change them)
+    // Ensure all fields required for ListingFormData are present and correct type
     const listingFormData: ListingFormData = {
-      ...values,
+      title: values.title,
+      description: values.description,
+      category: values.category,
+      type: values.type,
+      price: values.price,
+      condition: values.condition,
+      location: values.location,
       images: images.length > 0 ? images : [],
-      // images original urls handled in editListing hook
+      allowBestOffer: values.allowBestOffer,
+      duration: values.duration, // Optional
     };
     const result = await updateListing(listingFormData, imageUrls);
 
