@@ -27,6 +27,8 @@ export interface Listing {
   currentBid?: number | null;
   highestBidderId?: string | null;
   bidCount?: number; // Added missing bidCount property
+  // Reserve price for auctions:
+  reservePrice?: number | null;
 }
 
 export interface Offer {
