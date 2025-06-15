@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -75,7 +74,8 @@ export const UserListingsTab = ({ userId }: UserListingsTabProps) => {
 
   // Handlers for each action
   const handleEdit = (listing: any) => {
-    navigate(`/listings/${listing.id}/edit`);
+    // FIXED: use correct edit route!
+    window.location.href = `/listings/${listing.id}/edit`;
   };
   const handleReviewOffers = (listing: any) => {
     navigate(`/listings/${listing.id}/offers`);

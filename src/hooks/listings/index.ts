@@ -1,4 +1,3 @@
-
 export { useListing } from "./useListing";
 export { useListings } from "./useListings";
 export { useListingsPage } from "./useListingsPage";
@@ -8,3 +7,4 @@ export { useRelistListing } from "./useRelistListing";
 export { useBids } from "./bids/useBids";
 export { useOffers } from "./offers/useOffers";
 export { useListingBids } from "./useListingBids";
+export { useEditListing } from "./useEditListing";

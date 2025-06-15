@@ -11,9 +11,14 @@ import {
 interface CreateListingSubmitProps {
   isSubmitting: boolean;
   hasImages: boolean;
+  mode?: "create" | "edit"; // NEW: add mode prop
 }
 
-export const CreateListingSubmit = ({ isSubmitting, hasImages }: CreateListingSubmitProps) => {
+export const CreateListingSubmit = ({
+  isSubmitting,
+  hasImages,
+  mode = "create"
+}: CreateListingSubmitProps) => {
   const navigate = useNavigate();
   
   return (
@@ -33,7 +38,10 @@ export const CreateListingSubmit = ({ isSubmitting, hasImages }: CreateListingSu
                 type="submit" 
                 disabled={isSubmitting || !hasImages}
               >
-                {isSubmitting ? "Creating..." : "Create Listing"}
+                {isSubmitting
+                  ? (mode === "edit" ? "Saving..." : "Creating...")
+                  : (mode === "edit" ? "Save Changes" : "Create Listing")
+                }
               </Button>
             </div>
           </TooltipTrigger>

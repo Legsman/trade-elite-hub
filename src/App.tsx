@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -13,6 +12,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import ListingsPage from "./pages/listings/index";
 import ListingDetails from "./pages/listings/[id]";
 import CreateListingPage from "./pages/listings/CreateListing";
+import EditListingPage from "./pages/listings/EditListing";
 import MessagesPage from "./pages/messages/index";
 import UserSettingsPage from "./pages/settings/index";
 import { AuthProvider } from "./hooks/auth";
@@ -42,6 +42,12 @@ const App = () => (
             <Route path="/listings/create" element={
               <ProtectedRoute>
                 <CreateListingPage />
+              </ProtectedRoute>
+            } />
+            {/* NEW: Edit listing route */}
+            <Route path="/listings/:id/edit" element={
+              <ProtectedRoute>
+                <EditListingPage />
               </ProtectedRoute>
             } />
             <Route path="/messages" element={
