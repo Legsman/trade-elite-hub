@@ -1,13 +1,21 @@
 
-import { User, Shield, Star, ThumbsUp } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import { User, Shield, Star, ThumbsUp } from "lucide-react";
 import { NavigateFunction } from "react-router-dom";
 
 interface SellerInfoCardProps {
-  seller: any;
+  seller: {
+    id: string;
+    avatarUrl?: string;
+    joinDate: Date;
+    rating: number;
+    salesCount: number;
+    verified: boolean;
+    username?: string | null;
+  };
   navigate: NavigateFunction;
 }
 
@@ -31,7 +39,7 @@ export const SellerInfoCard = ({ seller, navigate }: SellerInfoCardProps) => {
             {seller.avatarUrl ? (
               <img 
                 src={seller.avatarUrl} 
-                alt={seller.username || seller.name}
+                alt={seller.username || "unknown"}
                 className="h-12 w-12 rounded-full object-cover"
               />
             ) : (
@@ -40,7 +48,11 @@ export const SellerInfoCard = ({ seller, navigate }: SellerInfoCardProps) => {
           </div>
           <div>
             <div className="font-medium flex items-center">
-              @{seller.username || "unknown"}
+              {seller.username ? (
+                <span className="text-foreground">@{seller.username}</span>
+              ) : (
+                <span className="text-foreground">@unknown</span>
+              )}
               {seller.verified && (
                 <TooltipProvider>
                   <Tooltip>
@@ -93,3 +105,4 @@ export const SellerInfoCard = ({ seller, navigate }: SellerInfoCardProps) => {
     </Card>
   );
 };
+

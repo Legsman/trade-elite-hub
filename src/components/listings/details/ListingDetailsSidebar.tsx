@@ -11,6 +11,7 @@ import { User as UserType } from "@/types";
 import { NavigateFunction } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import { ShippingInfoCard } from "./sidebar/ShippingInfoCard";
+import { SellerInfoCard } from "./sidebar/SellerInfoCard";
 
 interface ListingDetailsSidebarProps {
   listing: Listing;
@@ -264,85 +265,7 @@ export const ListingDetailsSidebar = ({
       
       {/* Seller information */}
       {seller && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Seller Information</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center">
-              <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mr-3">
-                {seller.avatarUrl ? (
-                  <img 
-                    src={seller.avatarUrl} 
-                    alt={seller.username || "unknown"}
-                    className="h-12 w-12 rounded-full object-cover"
-                  />
-                ) : (
-                  <User className="h-6 w-6 text-muted-foreground" />
-                )}
-              </div>
-              <div>
-                <div className="font-medium flex items-center">
-                  {/* Only show @username, not full name */}
-                  {seller.username ? (
-                    <span className="text-foreground">@{seller.username}</span>
-                  ) : (
-                    <span className="text-foreground">@unknown</span>
-                  )}
-                  {seller.verified && (
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Shield className="ml-1 h-4 w-4 text-green-500" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Verified Seller</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  )}
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  Member since {formatDate(seller.joinDate)}
-                </div>
-              </div>
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <Star className="h-4 w-4 text-yellow-400 fill-yellow-400 mr-1" />
-                <span className="font-medium">{seller.rating}</span>
-                <span className="text-sm text-muted-foreground ml-1">
-                  ({seller.salesCount} sales)
-                </span>
-              </div>
-              <Button variant="link" size="sm" className="p-0" onClick={() => navigate(`/profile/${seller.id}`)}>
-                View Profile
-              </Button>
-            </div>
-            
-            <Separator />
-            
-            <div className="p-3 border rounded-md bg-muted/20 text-sm">
-              <div className="flex items-start">
-                <Shield className="h-4 w-4 text-amber-500 mt-0.5 mr-2 flex-shrink-0" />
-                <p>
-                  Always communicate through our platform and never share personal contact details. 
-                  Report suspicious activity immediately.
-                </p>
-              </div>
-            </div>
-            
-            <Button 
-              className="w-full" 
-              variant="outline" 
-              onClick={() => navigate(`/feedback/new?user=${seller.id}`)}
-            >
-              <ThumbsUp className="mr-2 h-4 w-4" />
-              Leave Feedback
-            </Button>
-          </CardContent>
-        </Card>
+        <SellerInfoCard seller={seller} navigate={navigate} />
       )}
       
       {/* Safety tips */}
