@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Loading } from "@/components/ui/loading";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { LeaveFeedbackModal } from "@/components/feedback/LeaveFeedbackModal";
+import { useAuth } from "@/hooks/auth";
 
 interface PurchaseHistoryTabProps {
   userId: string;
@@ -13,7 +15,9 @@ export const PurchaseHistoryTab = ({ userId }: PurchaseHistoryTabProps) => {
   const navigate = useNavigate();
   const [purchases, setPurchases] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  
+  const [feedbackModal, setFeedbackModal] = useState<null | { purchase: any }>(null);
+  const { user } = useAuth();
+
   useEffect(() => {
     const fetchPurchases = async () => {
       setIsLoading(true);
@@ -85,56 +89,79 @@ export const PurchaseHistoryTab = ({ userId }: PurchaseHistoryTabProps) => {
         Your Purchase History
       </h2>
       <div className="grid grid-cols-1 gap-4">
-        {purchases.map(purchase => (
-          <Card key={purchase.id} className="overflow-hidden">
-            <div className="flex flex-col sm:flex-row">
-              <div className="w-full sm:w-1/4 md:w-1/5">
-                <img 
-                  src={purchase.images[0]} 
-                  alt={purchase.title} 
-                  className="w-full h-40 object-cover"
-                />
-              </div>
-              <div className="p-4 flex-1">
-                <h3 className="font-semibold text-lg mb-1">{purchase.title}</h3>
-                <div className="text-sm text-muted-foreground mb-2">
-                  {purchase.purchaseDate
-                    ? new Intl.DateTimeFormat('en-GB', {
-                        day: 'numeric',
-                        month: 'short',
-                        year: 'numeric'
-                      }).format(purchase.purchaseDate)
-                    : ""}
+        {purchases.map(purchase => {
+          // Placeholder for hasFeedback flag (when we have feedback tracking)
+          const hasFeedback = purchase.seller_feedback_left;
+          return (
+            <Card key={purchase.id} className="overflow-hidden">
+              <div className="flex flex-col sm:flex-row">
+                <div className="w-full sm:w-1/4 md:w-1/5">
+                  <img
+                    src={purchase.images[0]}
+                    alt={purchase.title}
+                    className="w-full h-40 object-cover"
+                  />
                 </div>
-                <div className="mb-2">
-                  <span className="font-medium">Purchase price:</span>{' '}
-                  <span className="text-green-600 font-bold">
-                    £{purchase.purchaseAmount ? Number(purchase.purchaseAmount).toLocaleString() : "-"}
-                  </span>
-                </div>
-                <div className="text-sm mb-4">
-                  <span className="bg-gray-100 text-gray-800 rounded-full px-3 py-1 text-xs">
-                    Sale
-                  </span>
-                </div>
-                {purchase.seller && (
-                  <div className="mb-2 text-sm">
-                    <span className="font-medium">Seller:</span>{' '}
-                    <span>{purchase.seller.name ?? "Unknown"}</span>
+                <div className="p-4 flex-1">
+                  <h3 className="font-semibold text-lg mb-1">{purchase.title}</h3>
+                  <div className="text-sm text-muted-foreground mb-2">
+                    {purchase.purchaseDate
+                      ? new Intl.DateTimeFormat('en-GB', {
+                          day: 'numeric',
+                          month: 'short',
+                          year: 'numeric'
+                        }).format(purchase.purchaseDate)
+                      : ""}
                   </div>
-                )}
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => navigate(`/listings/${purchase.id}`)}
-                >
-                  View Details
-                </Button>
+                  <div className="mb-2">
+                    <span className="font-medium">Purchase price:</span>{" "}
+                    <span className="text-green-600 font-bold">
+                      £{purchase.purchaseAmount ? Number(purchase.purchaseAmount).toLocaleString() : "-"}
+                    </span>
+                  </div>
+                  <div className="text-sm mb-4">
+                    <span className="bg-gray-100 text-gray-800 rounded-full px-3 py-1 text-xs">
+                      Sale
+                    </span>
+                  </div>
+                  {purchase.seller && (
+                    <div className="mb-2 text-sm">
+                      <span className="font-medium">Seller:</span>{" "}
+                      <span>{purchase.seller.name ?? "Unknown"}</span>
+                    </div>
+                  )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => navigate(`/listings/${purchase.id}`)}
+                  >
+                    View Details
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="ml-2"
+                    disabled={hasFeedback}
+                    onClick={() => setFeedbackModal({ purchase })}
+                  >
+                    {hasFeedback ? "Feedback Submitted" : "Leave Feedback"}
+                  </Button>
+                </div>
               </div>
-            </div>
-          </Card>
-        ))}
+            </Card>
+          );
+        })}
       </div>
+      {feedbackModal && user && (
+        <LeaveFeedbackModal
+          open={!!feedbackModal}
+          onOpenChange={() => setFeedbackModal(null)}
+          fromUserId={user.id}
+          toUserId={feedbackModal.purchase.seller?.id || ""}
+          listingId={feedbackModal.purchase.id}
+          onSubmitted={() => setFeedbackModal(null)}
+        />
+      )}
     </div>
   );
 };
