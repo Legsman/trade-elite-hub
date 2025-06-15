@@ -8,6 +8,7 @@ import { Gavel, Check } from "lucide-react";
 import { memo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { getBidCountText } from "@/lib/utils";
+import { useEffect } from "react";
 
 interface ListingCardProps {
   listing: Listing;
@@ -86,8 +87,45 @@ export const ListingCard = memo(({ listing, onClick, highestBid, bidCount = 0 }:
     return listing.status === "active" && now < expiresAt;
   };
 
+  useEffect(() => {
+    // Use Intersection Observer to only count view when card is actually visible, and only once
+    let hasTracked = false;
+    const card = document.getElementById(`listing-card-${listing.id}`);
+
+    if (!card) return;
+
+    const track = async () => {
+      if (hasTracked) return;
+      hasTracked = true;
+      await fetch("/functions/v1/track-listing-view", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ listingId: listing.id }),
+      });
+    };
+
+    const observer = new window.IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            track();
+            observer.disconnect();
+          }
+        });
+      },
+      { threshold: 0.4 }
+    );
+
+    observer.observe(card);
+
+    return () => observer.disconnect();
+  }, [listing.id]);
+
   return (
     <Card
+      id={`listing-card-${listing.id}`}
       className={`overflow-hidden cursor-pointer transition-all hover:shadow-md ${
         listing.status === "sold" ? "border-green-500" : ""
       }`}

@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/hooks/auth";
 import { supabase } from "@/integrations/supabase/client";
@@ -57,13 +56,18 @@ export const useListing = (id?: string) => {
 
       setListing(mappedListing);
 
-      // Increment view count
-      if (data.seller_id !== user?.id) {
-        await supabase
-          .from("listings")
-          .update({ views: data.views + 1 })
-          .eq("id", id);
-      }
+      // Track view using edge function (deduplicated)
+      await fetch("/functions/v1/track-listing-view", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(user?.access_token ? { Authorization: `Bearer ${user.access_token}` } : {}),
+        },
+        body: JSON.stringify({ listingId: id }),
+      });
+
+      // Optionally, refetch views after increment (for immediate UI update if needed)
+      // You could poll or trigger a re-fetch here if needed
     } catch (err) {
       console.error("Error fetching listing:", err);
       setError("Failed to fetch listing. Please try again.");
@@ -75,7 +79,7 @@ export const useListing = (id?: string) => {
     } finally {
       setIsLoading(false);
     }
-  }, [id, user?.id]);
+  }, [id, user?.access_token]);
 
   useEffect(() => {
     fetchListing();
