@@ -177,35 +177,40 @@ export const useListings = (options: UseListingsOptions = {}) => {
             schema: 'public',
             table: 'listings',
           },
-          (payload) => {
-            // For UPDATED/INSERT/DELETE - handle real-time status changes and smart cache invalidation
-            const newStatus = payload.new?.status;
-            const oldStatus = payload.old?.status;
-            const newExpiresAt = payload.new?.expires_at;
-            const oldExpiresAt = payload.old?.expires_at;
-            const affectedId = payload.new?.id || payload.old?.id;
+          (payload: any) => {
+            // --- FIX: Add type checks for payload.new and payload.old ---
+            const newRow = payload.new && typeof payload.new === 'object' && 'status' in payload.new ? payload.new : null;
+            const oldRow = payload.old && typeof payload.old === 'object' && 'status' in payload.old ? payload.old : null;
+
+            const newStatus = newRow ? newRow.status : undefined;
+            const oldStatus = oldRow ? oldRow.status : undefined;
+            const newExpiresAt = newRow ? newRow.expires_at : undefined;
+            const oldExpiresAt = oldRow ? oldRow.expires_at : undefined;
+            const affectedId =
+              (newRow && newRow.id) ||
+              (oldRow && oldRow.id) ||
+              undefined;
+
             // For debug
             console.log("[Realtime listings] DB event:", payload);
+
             // If updated status, expires_at, or a row is deleted, invalidate
             if (
               payload.eventType === "UPDATE" &&
+              affectedId &&
               (newStatus !== oldStatus || newExpiresAt !== oldExpiresAt)
             ) {
-              if (affectedId) {
-                invalidateListingCaches(affectedId);
-                // Force reload from server, skip cache
-                fetchListings(false);
-                return;
-              }
+              invalidateListingCaches(affectedId);
+              // Force reload from server, skip cache
+              fetchListings(false);
+              return;
             } else if (
-              payload.eventType === "INSERT" ||
-              payload.eventType === "DELETE"
+              (payload.eventType === "INSERT" || payload.eventType === "DELETE") &&
+              affectedId
             ) {
-              if (affectedId) {
-                invalidateListingCaches(affectedId);
-                fetchListings(false);
-                return;
-              }
+              invalidateListingCaches(affectedId);
+              fetchListings(false);
+              return;
             }
             // For any other event, default to full refetch
             fetchListings(false);
