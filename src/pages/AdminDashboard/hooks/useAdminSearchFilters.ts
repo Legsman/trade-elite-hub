@@ -3,6 +3,30 @@ import { useState, useMemo } from "react";
 import { UserAdmin, ListingAdmin } from "../types";
 import { getEffectiveListingStatus } from "@/utils/listingStatus";
 
+// Adapter function to convert ListingAdmin to minimal Listing shape needed for status helpers
+function asListing(listing: ListingAdmin): any {
+  // Only provide the fields used by getEffectiveListingStatus and related helpers
+  // Defaults ensure correct behavior for admin logic
+  return {
+    ...listing,
+    sellerId: listing.seller_id || "",
+    description: "",
+    type: "",
+    location: "",
+    images: [],
+    allowBestOffer: false,
+    expiresAt: listing.created_at, // fallback; effective expiry checks not used for admin
+    createdAt: listing.created_at,
+    updatedAt: listing.created_at,
+    status: listing.status,
+    // Extra fields for compatibility; fill with dummy values if not present
+    currentBid: undefined,
+    highestBidderId: undefined,
+    bidCount: undefined,
+    reservePrice: undefined,
+  };
+}
+
 export function useAdminSearchFilters(users: UserAdmin[], listings: ListingAdmin[]) {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [userFilter, setUserFilter] = useState<string>("all");
@@ -33,7 +57,7 @@ export function useAdminSearchFilters(users: UserAdmin[], listings: ListingAdmin
         !searchQuery ||
         listing.title?.toLowerCase().includes(searchQuery.toLowerCase());
 
-      const effectiveStatus = getEffectiveListingStatus(listing);
+      const effectiveStatus = getEffectiveListingStatus(asListing(listing)); // ADAPT
 
       // Admin UI: Show by "effective status" for filtering
       const matchesFilter =
@@ -55,4 +79,3 @@ export function useAdminSearchFilters(users: UserAdmin[], listings: ListingAdmin
     filteredListings,
   };
 }
-

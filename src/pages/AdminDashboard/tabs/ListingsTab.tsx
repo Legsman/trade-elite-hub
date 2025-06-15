@@ -22,6 +22,27 @@ import { useNavigate } from "react-router-dom";
 import { useAdminDashboardContext } from "../context/AdminDashboardContext";
 import { getEffectiveListingStatus, getStatusBadgeVariant } from "@/utils/listingStatus";
 
+// Adapter function to convert ListingAdmin to minimal Listing shape needed for status helpers
+function asListing(listing) {
+  return {
+    ...listing,
+    sellerId: listing.seller_id || "",
+    description: "",
+    type: "",
+    location: "",
+    images: [],
+    allowBestOffer: false,
+    expiresAt: listing.created_at, // fallback
+    createdAt: listing.created_at,
+    updatedAt: listing.created_at,
+    status: listing.status,
+    currentBid: undefined,
+    highestBidderId: undefined,
+    bidCount: undefined,
+    reservePrice: undefined,
+  };
+}
+
 const ListingsTab: React.FC = () => {
   const navigate = useNavigate();
   const {
@@ -82,10 +103,9 @@ const ListingsTab: React.FC = () => {
               </TableRow>
             ) : (
               filteredListings.map((listing) => {
-                // Use effective status logic for admin display
-                const effectiveStatus = getEffectiveListingStatus(listing);
-                const badge = getStatusBadgeVariant(listing);
-
+                // Use the adapter for status utilities
+                const effectiveStatus = getEffectiveListingStatus(asListing(listing));
+                const badge = getStatusBadgeVariant(asListing(listing));
                 return (
                   <TableRow key={listing.id}>
                     <TableCell className="font-medium">{listing.title}</TableCell>
