@@ -28,12 +28,14 @@ export const adaptBidTypes = {
         createdAt: bid.createdAt || new Date(bid.created_at),
         maximumBid: bid.maximum_bid ? Number(bid.maximum_bid) : (bid.maximumBid || 0),
         bidIncrement: bid.bid_increment ? Number(bid.bid_increment) : (bid.bidIncrement || 0),
-        // The Bid type on the component expects a .user property with fullName, avatarUrl, username fields.
+        // Map to .user for the global Bid type
         user: {
           fullName: bid.user_profile?.full_name || null,
           avatarUrl: bid.user_profile?.avatar_url || null,
-          username: bid.user_profile?.username || null,
-        }
+          username: (bid.user_profile && "username" in bid.user_profile) ? bid.user_profile.username : null,
+        },
+        // Only in GlobalBid: also include user_profile for compatibility if needed elsewhere
+        user_profile: bid.user_profile // Optional: pass-through for any fallback needs
       }));
     } catch (error) {
       console.error('[bidTypeAdapter] Error converting bids:', error);
@@ -53,7 +55,7 @@ export const adaptBidTypes = {
       maximum_bid: bid.maximumBid || 0,
       bid_increment: bid.bidIncrement || 0,
       status: bid.status,
-      created_at: bid.createdAt?.toISOString() || new Date().toISOString(),
+      created_at: bid.createdAt instanceof Date ? bid.createdAt.toISOString() : new Date(bid.createdAt).toISOString(),
       user_profile: {
         full_name: bid.user?.fullName || null,
         avatar_url: bid.user?.avatarUrl || null,
@@ -63,7 +65,7 @@ export const adaptBidTypes = {
       listingId: bid.listingId,
       maximumBid: bid.maximumBid || 0,
       bidIncrement: bid.bidIncrement || 0,
-      createdAt: bid.createdAt
+      createdAt: bid.createdAt instanceof Date ? bid.createdAt : new Date(bid.createdAt)
     };
   }
 };
