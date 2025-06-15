@@ -1,19 +1,18 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
-import { Listing, Bid, Offer } from "@/types";
+import { Listing } from "@/types";
 import { ListingCard } from "./ListingCard";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
 interface UserBidsOffersTabsProps {
   userId: string;
-  initialTab?: string; // Make this optional with a string type
+  initialTab?: string; 
+  showOnly?: "my-bids" | "my-offers"; // NEW: only show one mode if provided
 }
 
-export const UserBidsOffersTabs: React.FC<UserBidsOffersTabsProps> = ({ userId, initialTab = "my-bids" }) => {
+export const UserBidsOffersTabs: React.FC<UserBidsOffersTabsProps> = ({ userId, initialTab = "my-bids", showOnly }) => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState(initialTab);
   const [bidListings, setBidListings] = useState<Listing[]>([]);
@@ -155,64 +154,67 @@ export const UserBidsOffersTabs: React.FC<UserBidsOffersTabsProps> = ({ userId, 
     }
   }, [userId]);
   
+  // Render just the appropriate section, with NO Tabs if showOnly is present
+  if (showOnly === "my-bids") {
+    return (
+      <div className="space-y-4">
+        {bidListings.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            <h3 className="text-lg font-medium mb-2">No bids yet</h3>
+            <p className="text-sm">You haven't placed any bids on auction listings.</p>
+            <Button variant="link" className="mt-4" onClick={() => navigate("/listings?type=auction")}>
+              Browse Auctions
+            </Button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {bidListings.map((listing) => (
+              <ListingCard 
+                key={listing.id} 
+                listing={listing}
+                highestBid={highestBids[listing.id] || null}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (showOnly === "my-offers") {
+    return (
+      <div className="space-y-4">
+        {offerListings.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            <h3 className="text-lg font-medium mb-2">No offers yet</h3>
+            <p className="text-sm">You haven't made any offers on listings.</p>
+            <Button variant="link" className="mt-4" onClick={() => navigate("/listings?allowBestOffer=true")}>
+              Browse Listings with Best Offer
+            </Button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {offerListings.map((listing) => (
+              <div key={listing.id} className="relative">
+                <Badge className="absolute top-2 right-2 z-10">Offer Made</Badge>
+                <ListingCard 
+                  listing={listing}
+                  highestBid={null}
+                />
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // fallback if showOnly is NOT set (for legacy or reuse elsewhere)
   return (
     <div className="space-y-4">
       <h2 className="text-2xl font-semibold tracking-tight">
         Your Bids & Offers
       </h2>
-      
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="my-bids">My Bids</TabsTrigger>
-          <TabsTrigger value="my-offers">My Offers</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="my-bids">
-          {bidListings.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <h3 className="text-lg font-medium mb-2">No bids yet</h3>
-              <p className="text-sm">You haven't placed any bids on auction listings.</p>
-              <Button variant="link" className="mt-4" onClick={() => navigate("/listings?type=auction")}>
-                Browse Auctions
-              </Button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {bidListings.map((listing) => (
-                <ListingCard 
-                  key={listing.id} 
-                  listing={listing}
-                  highestBid={highestBids[listing.id] || null}
-                />
-              ))}
-            </div>
-          )}
-        </TabsContent>
-        
-        <TabsContent value="my-offers">
-          {offerListings.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <h3 className="text-lg font-medium mb-2">No offers yet</h3>
-              <p className="text-sm">You haven't made any offers on listings.</p>
-              <Button variant="link" className="mt-4" onClick={() => navigate("/listings?allowBestOffer=true")}>
-                Browse Listings with Best Offer
-              </Button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {offerListings.map((listing) => (
-                <div key={listing.id} className="relative">
-                  <Badge className="absolute top-2 right-2 z-10">Offer Made</Badge>
-                  <ListingCard 
-                    listing={listing}
-                    highestBid={null}
-                  />
-                </div>
-              ))}
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
     </div>
   );
 };

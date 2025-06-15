@@ -68,8 +68,6 @@ const Dashboard = () => {
     { value: "purchases", label: "Purchase History" }
   ];
 
-  // Removes sellingTabs, since only My Listings & Sold Items should appear as sub-sections of UserListingsTab
-
   // Handler for feedback (account sidebar)
   const handleFeedbackClick = () => {
     // Scroll to (or navigate to) feedback details if there are any
@@ -150,7 +148,6 @@ const Dashboard = () => {
                 value={viewMode}
                 onValueChange={(value) => {
                   setViewMode(value as "buying" | "selling");
-                  // Reset tab to default per mode
                   setActiveTab(value === "buying" ? "watch" : "listings");
                 }}
               >
@@ -161,22 +158,10 @@ const Dashboard = () => {
               </Tabs>
             </div>
 
-            {/* BUYING SECTION - new button bar */}
+            {/* BUYING SECTION */}
             {viewMode === "buying" ? (
               <div className="space-y-6">
-                <div className="flex gap-2 mb-4">
-                  {buyingTabs.map((tab) => (
-                    <Button
-                      key={tab.value}
-                      variant={activeTab === tab.value ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setActiveTab(tab.value)}
-                    >
-                      {tab.label}
-                    </Button>
-                  ))}
-                </div>
-
+                {/* Section Heading */}
                 {activeTab === "watch" && (
                   <div className="space-y-4">
                     <div className="flex justify-between items-center">
@@ -191,6 +176,41 @@ const Dashboard = () => {
                         Browse Listings
                       </Button>
                     </div>
+                  </div>
+                )}
+                {activeTab === "bids" && (
+                  <h2 className="text-2xl font-semibold tracking-tight">
+                    Your Bids
+                  </h2>
+                )}
+                {activeTab === "offers" && (
+                  <h2 className="text-2xl font-semibold tracking-tight">
+                    Your Offers
+                  </h2>
+                )}
+                {activeTab === "purchases" && (
+                  <h2 className="text-2xl font-semibold tracking-tight">
+                    Purchase History
+                  </h2>
+                )}
+
+                {/* Move the child buttons below the section header above */}
+                <div className="flex gap-2 mb-4">
+                  {buyingTabs.map((tab) => (
+                    <Button
+                      key={tab.value}
+                      variant={activeTab === tab.value ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setActiveTab(tab.value)}
+                    >
+                      {tab.label}
+                    </Button>
+                  ))}
+                </div>
+
+                {/* Render content for each tab with NO extra child tabs inside component */}
+                {activeTab === "watch" && (
+                  <>
                     {savedListings.length === 0 ? (
                       <div className="text-center py-8 text-muted-foreground">
                         <h3 className="text-lg font-medium mb-2">No items in your Watch List yet</h3>
@@ -225,15 +245,17 @@ const Dashboard = () => {
                         ))}
                       </div>
                     )}
-                  </div>
+                  </>
                 )}
 
                 {activeTab === "bids" && (
-                  <UserBidsOffersTabs userId={user.id} initialTab="my-bids" />
+                  // Show just bids. Don't show redundant inner tabs.
+                  <UserBidsOffersTabs userId={user.id} initialTab="my-bids" showOnly="my-bids" />
                 )}
 
                 {activeTab === "offers" && (
-                  <UserBidsOffersTabs userId={user.id} initialTab="my-offers" />
+                  // Show just offers. Don't show redundant inner tabs.
+                  <UserBidsOffersTabs userId={user.id} initialTab="my-offers" showOnly="my-offers" />
                 )}
 
                 {activeTab === "purchases" && (
@@ -241,7 +263,7 @@ const Dashboard = () => {
                 )}
               </div>
             ) : (
-              // SELLING SECTION - REMOVED redundant sub-buttons, show UserListingsTab directly
+              // SELLING SECTION - show UserListingsTab directly
               <div className="space-y-6">
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
