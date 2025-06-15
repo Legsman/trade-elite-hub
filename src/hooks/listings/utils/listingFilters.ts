@@ -30,10 +30,14 @@ export const applyListingFilters = (query: any, filters: FilterOptions) => {
   let filteredQuery = query;
   
   if (showCompleted !== "true") {
-    filteredQuery = filteredQuery.eq("status", "active");
+    // Only show active and non-expired listings
+    filteredQuery = filteredQuery
+      .eq("status", "active")
+      .gt("expires_at", new Date().toISOString());
   } else {
     // If showing completed listings, include both active, completed/expired, and sold
     filteredQuery = filteredQuery.in("status", ["active", "completed", "expired", "sold"]);
+    // NO expires_at filter since user wants to see all
   }
 
   // Apply category filter
@@ -56,7 +60,6 @@ export const applyListingFilters = (query: any, filters: FilterOptions) => {
     // Convert conditions like "like_new" to "Like New" format for database comparison
     let formattedCondition = condition;
     
-    // Format condition string from filter value (like_new) to database value (Like New)
     if (condition === "like_new") {
       formattedCondition = "Like New";
     } else if (condition === "new") {
