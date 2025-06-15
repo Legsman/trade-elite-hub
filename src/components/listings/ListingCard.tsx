@@ -1,4 +1,3 @@
-
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -30,16 +29,23 @@ export const ListingCard = memo(({ listing, onClick, highestBid, bidCount = 0 }:
     }
   };
 
-  // Check if auction is ending soon (within 6 hours)
+  // Helper: Get now and expiry as Date
+  const now = new Date();
+  const expiresAt = listing.expiresAt instanceof Date ? listing.expiresAt : new Date(listing.expiresAt);
+
+  // Check if auction/listing is ending soon (active & within 24 hours & not expired)
   const isEndingSoon = () => {
-    if (listing.type !== "auction" || listing.status !== "active") return false;
-    
-    const now = new Date();
-    const hoursRemaining = (listing.expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60);
-    return hoursRemaining <= 6;
+    if (listing.status !== "active" || !expiresAt || now > expiresAt) return false;
+    const hoursRemaining = (expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60);
+    return hoursRemaining <= 24 && hoursRemaining > 0;
   };
 
-  // Get listing status badge
+  // New: Check if item has ended (time-based, not just status)
+  const isActuallyEnded = () => {
+    return now > expiresAt && listing.status === "active";
+  };
+
+  // Priority-based badge rendering: Sold > Ended > Expired/Completed > Ending Soon > Default
   const getStatusBadge = () => {
     if (listing.status === "sold") {
       return (
@@ -47,10 +53,23 @@ export const ListingCard = memo(({ listing, onClick, highestBid, bidCount = 0 }:
           Sold
         </div>
       );
+    } else if (isActuallyEnded()) {
+      // Show "Ended" if listing has expired time-wise, but status was not yet updated in DB
+      return (
+        <div className="absolute top-2 right-2 bg-gray-900 text-white text-xs font-medium rounded-full px-2 py-1">
+          Ended
+        </div>
+      );
     } else if (listing.status === "expired" || listing.status === "completed") {
       return (
         <div className="absolute top-2 right-2 bg-gray-500 text-white text-xs font-medium rounded-full px-2 py-1">
           {listing.status === "expired" ? "Expired" : "Completed"}
+        </div>
+      );
+    } else if (isEndingSoon()) {
+      return (
+        <div className="absolute top-2 right-2 bg-red-500 text-white text-xs font-medium rounded-full px-2 py-1 animate-pulse">
+          Ending Soon
         </div>
       );
     } else {
@@ -62,9 +81,9 @@ export const ListingCard = memo(({ listing, onClick, highestBid, bidCount = 0 }:
     }
   };
 
-  // Determine if we should show the countdown or sold/expired status
+  // Only active listings show countdown; ended shows "Ended"
   const showCountdown = () => {
-    return listing.status === "active";
+    return listing.status === "active" && now < expiresAt;
   };
 
   return (
@@ -84,14 +103,7 @@ export const ListingCard = memo(({ listing, onClick, highestBid, bidCount = 0 }:
           loading="lazy"
         />
         {getStatusBadge()}
-        
-        {/* Add badge for auctions ending soon */}
-        {isEndingSoon() && (
-          <div className="absolute bottom-2 left-2 bg-red-500 text-white text-xs font-medium rounded-full px-2 py-1 animate-pulse">
-            Ending Soon
-          </div>
-        )}
-        
+
         {/* Overlay SOLD indicator for better visibility */}
         {listing.status === "sold" && (
           <div className="absolute inset-0 flex items-center justify-center">
@@ -110,7 +122,6 @@ export const ListingCard = memo(({ listing, onClick, highestBid, bidCount = 0 }:
             {listing.location}
           </p>
         </div>
-        
         {listing.type === "auction" ? (
           <div className="mt-1">
             {highestBid ? (
@@ -140,19 +151,23 @@ export const ListingCard = memo(({ listing, onClick, highestBid, bidCount = 0 }:
             £{listing.price.toLocaleString()}
           </div>
         )}
-        
-        {/* Add compact countdown or status */}
+
+        {/* Countdown or ended status */}
         <div className="mt-2">
           {showCountdown() ? (
             <ListingCountdown 
-              expiryDate={listing.expiresAt} 
+              expiryDate={expiresAt} 
               isAuction={listing.type === "auction"} 
               listingStatus={listing.status}
               className="text-xs"
             />
           ) : (
             <p className="text-xs text-muted-foreground">
-              {listing.status === "sold" ? "No longer available" : "Ended"}
+              {listing.status === "sold"
+                ? "No longer available"
+                : now > expiresAt
+                  ? "Ended"
+                  : "Ended"}
             </p>
           )}
         </div>
