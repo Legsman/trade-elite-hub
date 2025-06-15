@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { SoldItemCard } from "./SoldItemCard";
 import { EmptyStateMessage } from "./EmptyStateMessage";
@@ -29,27 +30,76 @@ export const SoldItemsList: React.FC<SoldItemsListProps> = ({
     return <EmptyStateMessage />;
   }
 
+  // Debug: show loaded sold items
+  if (process.env.NODE_ENV === "development") {
+    console.log("[SoldItemsList] Sold items loaded:", soldItems);
+    if (user) {
+      console.log("[SoldItemsList] Current user:", user);
+    }
+  }
+
   return (
     <div className="space-y-4">
       <h2 className="text-2xl font-semibold tracking-tight mb-4">
         Your Sold Items
       </h2>
       <div className="grid grid-cols-1 gap-4">
-        {soldItems.map((item) => {
+        {soldItems.map((item, idx) => {
           // Show username (not name) for privacy
           const buyerId = item.buyer?.id;
           const buyerUsername = item.buyer?.username;
+
+          if (process.env.NODE_ENV === "development") {
+            console.log(`[SoldItemsList] Item[${idx}]`, {
+              id: item.id,
+              title: item.title,
+              sale_buyer_id: item.sale_buyer_id,
+              buyer: item.buyer,
+              buyerId,
+              buyerUsername,
+              currentUserId: user?.id,
+            });
+          }
+
           let FeedbackButton = null;
           if (buyerId && user) {
+            if (process.env.NODE_ENV === "development") {
+              console.log(
+                `[SoldItemsList] Rendering FeedbackChecker for item ${item.id}`,
+                {
+                  sellerId: user.id,
+                  buyerId,
+                  buyerUsername,
+                  listingId: item.id,
+                }
+              );
+            }
             FeedbackButton = (
               <FeedbackChecker
                 userId={user.id}
                 buyerId={buyerId}
                 buyerUsername={buyerUsername}
                 listingId={item.id}
-                openModal={() => setFeedbackModal({ item })}
+                openModal={() => {
+                  if (process.env.NODE_ENV === "development") {
+                    console.log(
+                      `[SoldItemsList] Opening LeaveFeedbackModal for listingId ${item.id} to buyerId ${buyerId}`
+                    );
+                  }
+                  setFeedbackModal({ item });
+                }}
               />
             );
+          } else {
+            if (process.env.NODE_ENV === "development") {
+              console.log(`[SoldItemsList] No FeedbackChecker rendered for item ${item.id}`, {
+                reason: !buyerId
+                  ? "No buyerId"
+                  : !user
+                  ? "No current user"
+                  : "Unknown",
+              });
+            }
           }
 
           return (
@@ -58,11 +108,13 @@ export const SoldItemsList: React.FC<SoldItemsListProps> = ({
                 item={{
                   ...item,
                   // Ensure component only displays buyer as username not full_name
-                  buyer: item.buyer ? {
-                    id: item.buyer.id,
-                    username: item.buyer.username,
-                    avatar: item.buyer.avatar,
-                  } : null
+                  buyer: item.buyer
+                    ? {
+                        id: item.buyer.id,
+                        username: item.buyer.username,
+                        avatar: item.buyer.avatar,
+                      }
+                    : null,
                 }}
                 onRelistClick={onRelistClick}
               />
@@ -78,11 +130,24 @@ export const SoldItemsList: React.FC<SoldItemsListProps> = ({
       {feedbackModal && user && (
         <LeaveFeedbackModal
           open={!!feedbackModal}
-          onOpenChange={() => setFeedbackModal(null)}
+          onOpenChange={(open) => {
+            if (process.env.NODE_ENV === "development") {
+              console.log(
+                "[SoldItemsList] Modal open change triggered",
+                { open, feedbackModal }
+              );
+            }
+            setFeedbackModal(open ? feedbackModal : null);
+          }}
           fromUserId={user.id}
           toUserId={feedbackModal.item.buyer?.id || ""}
           listingId={feedbackModal.item.id}
-          onSubmitted={() => setFeedbackModal(null)}
+          onSubmitted={() => {
+            if (process.env.NODE_ENV === "development") {
+              console.log("[SoldItemsList] Feedback submitted, closing modal");
+            }
+            setFeedbackModal(null);
+          }}
         />
       )}
     </div>
@@ -149,3 +214,4 @@ function FeedbackChecker({
     </Button>
   );
 }
+
