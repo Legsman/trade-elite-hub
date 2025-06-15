@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/auth";
 import { useSavedListings, useListingBids } from "@/hooks/listings";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ListingCard } from "@/components/listings/ListingCard";
 import MainLayout from "@/components/layout/MainLayout";
 import { Loading } from "@/components/ui/loading";
@@ -23,7 +23,7 @@ const Dashboard = () => {
     fetchSavedListings 
   } = useSavedListings();
   
-  const [activeTab, setActiveTab] = useState("saved");
+  const [activeTab, setActiveTab] = useState("watch");
   const [viewMode, setViewMode] = useState<"buying" | "selling">("buying");
   
   useEffect(() => {
@@ -32,7 +32,6 @@ const Dashboard = () => {
     }
   }, [user, fetchSavedListings]);
   
-  // Add this to get the highest bids and bid counts for saved listings
   const { highestBids, bidCounts } = useListingBids(
     savedListings?.filter(listing => listing.type === "auction").map(listing => listing.id) || []
   );
@@ -61,18 +60,22 @@ const Dashboard = () => {
     );
   }
 
-  // NOTE: For the buying and selling sub-tabs, we'll use button-based selection instead of TabsList/TabsTrigger
+  // Define the new final set of tabs only for buying
   const buyingTabs = [
-    { value: "saved", label: "Saved Listings" },
+    { value: "watch", label: "Watch List" },
     { value: "bids", label: "My Bids" },
     { value: "offers", label: "My Offers" },
-    { value: "purchases", label: "Purchase History" },
+    { value: "purchases", label: "Purchase History" }
   ];
-  const sellingTabs = [
-    { value: "listings", label: "My Listings" },
-    { value: "sold", label: "Sold Items" },
-    { value: "feedback", label: "Feedback" },
-  ];
+
+  // Removes sellingTabs, since only My Listings & Sold Items should appear as sub-sections of UserListingsTab
+
+  // Handler for feedback (account sidebar)
+  const handleFeedbackClick = () => {
+    // Scroll to (or navigate to) feedback details if there are any
+    // If a page is ever implemented, update this route
+    navigate("/dashboard?showFeedback=1");
+  };
 
   return (
     <MainLayout>
@@ -97,12 +100,17 @@ const Dashboard = () => {
                     <p className="text-muted-foreground">{user.email}</p>
                   </div>
                   <div>
-                    <h3 className="text-sm font-medium">Feedback</h3>
-                    <div className="flex items-center">
-                      <Star className="h-4 w-4 text-yellow-400 fill-yellow-400 mr-1" />
+                    <h3 className="text-sm font-medium mb-1">Feedback</h3>
+                    <Button 
+                      variant="ghost"
+                      className="p-0 flex items-center gap-1 hover:bg-transparent text-yellow-500 hover:text-yellow-600"
+                      onClick={handleFeedbackClick}
+                    >
+                      <Star className="h-4 w-4 fill-yellow-400 mr-1" />
                       <span className="text-sm font-medium">5.0</span>
                       <span className="text-xs text-muted-foreground ml-1">(10 sales)</span>
-                    </div>
+                      <span className="ml-2 underline text-primary text-xs">View Feedback</span>
+                    </Button>
                   </div>
                   <Button 
                     className="w-full" 
@@ -136,11 +144,15 @@ const Dashboard = () => {
 
           {/* Main content */}
           <div className="md:col-span-2">
-            {/* Parent Buying/Selling Mode Toggle */}
+            {/* Buying/Selling Mode Toggle */}
             <div className="mb-6">
               <Tabs
                 value={viewMode}
-                onValueChange={(value) => setViewMode(value as "buying" | "selling")}
+                onValueChange={(value) => {
+                  setViewMode(value as "buying" | "selling");
+                  // Reset tab to default per mode
+                  setActiveTab(value === "buying" ? "watch" : "listings");
+                }}
               >
                 <TabsList className="w-full border-b rounded-none justify-start">
                   <TabsTrigger value="buying">Buying</TabsTrigger>
@@ -149,10 +161,9 @@ const Dashboard = () => {
               </Tabs>
             </div>
 
-            {/* BUYING SECTION */}
+            {/* BUYING SECTION - new button bar */}
             {viewMode === "buying" ? (
               <div className="space-y-6">
-                {/* New button-style tab bar for buying */}
                 <div className="flex gap-2 mb-4">
                   {buyingTabs.map((tab) => (
                     <Button
@@ -166,11 +177,11 @@ const Dashboard = () => {
                   ))}
                 </div>
 
-                {activeTab === "saved" && (
+                {activeTab === "watch" && (
                   <div className="space-y-4">
                     <div className="flex justify-between items-center">
                       <h2 className="text-2xl font-semibold tracking-tight">
-                        Your Saved Listings
+                        Your Watch List
                       </h2>
                       <Button
                         variant="outline"
@@ -182,9 +193,9 @@ const Dashboard = () => {
                     </div>
                     {savedListings.length === 0 ? (
                       <div className="text-center py-8 text-muted-foreground">
-                        <h3 className="text-lg font-medium mb-2">No saved listings yet</h3>
+                        <h3 className="text-lg font-medium mb-2">No items in your Watch List yet</h3>
                         <p className="text-sm">
-                          Save listings to your dashboard to keep track of them.
+                          Save listings to your Watch List to keep track of them.
                         </p>
                         <Button
                           variant="link"
@@ -230,62 +241,24 @@ const Dashboard = () => {
                 )}
               </div>
             ) : (
-              // SELLING SECTION
+              // SELLING SECTION - REMOVED redundant sub-buttons, show UserListingsTab directly
               <div className="space-y-6">
-                {/* Button-style tab bar for selling */}
-                <div className="flex gap-2 mb-4">
-                  {sellingTabs.map((tab) => (
-                    <Button
-                      key={tab.value}
-                      variant={activeTab === tab.value ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setActiveTab(tab.value)}
-                    >
-                      {tab.label}
-                    </Button>
-                  ))}
-                </div>
-
-                {activeTab === "listings" && (
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <h2 className="text-2xl font-semibold tracking-tight">
-                        Your Listings
-                      </h2>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => navigate("/listings/create")}
-                      >
-                        <PlusCircle className="mr-2 h-4 w-4" />
-                        Create Listing
-                      </Button>
-                    </div>
-                    <UserListingsTab userId={user.id} />
-                  </div>
-                )}
-
-                {activeTab === "sold" && (
-                  <ImportedSoldItemsTab userId={user.id} />
-                )}
-
-                {activeTab === "feedback" && (
-                  <div className="space-y-4">
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
                     <h2 className="text-2xl font-semibold tracking-tight">
-                      Your Feedback
+                      My Listings
                     </h2>
-                    <div className="flex items-center mb-4">
-                      <Star className="h-5 w-5 text-yellow-400 fill-yellow-400 mr-1" />
-                      <span className="font-medium">5.0</span>
-                      <span className="text-sm text-muted-foreground ml-1">
-                        (10 sales)
-                      </span>
-                    </div>
-                    <div className="text-center py-8 text-muted-foreground">
-                      <p>You haven't received any feedback yet.</p>
-                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => navigate("/listings/create")}
+                    >
+                      <PlusCircle className="mr-2 h-4 w-4" />
+                      Create Listing
+                    </Button>
                   </div>
-                )}
+                  <UserListingsTab userId={user.id} />
+                </div>
               </div>
             )}
           </div>
