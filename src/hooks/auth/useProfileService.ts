@@ -26,6 +26,7 @@ export const useProfileService = (setUser: (user: User | null) => void) => {
             "id",
             "full_name",
             "avatar_url",
+            "username", // <-- ensure username is selected!
             "address_line1",
             "address_line2",
             "city",
@@ -65,6 +66,7 @@ export const useProfileService = (setUser: (user: User | null) => void) => {
       if (isValidProfile(data)) {
         const profileUser: User = {
           id: data.id,
+          username: data.username, // <-- fix: include username!
           name: data.full_name || "",
           email: data.email || "",
           role: "unverified", // default, role checking done elsewhere

@@ -35,6 +35,7 @@ export const useUserProfile = (userId?: string) => {
 
       setProfile({
         id: data.id,
+        username: data.username, // added username here
         fullName: data.full_name || "",
         email: data.email || "",
         avatarUrl: data.avatar_url,
