@@ -249,18 +249,16 @@ export const useSellerProfile = (sellerId?: string) => {
 
       if (listingsError) throw listingsError;
 
-      // Instead of showing real full name, show obfuscated username (for privacy, matches bid history)
-      const safeObfuscated = obfuscateText(profileData.full_name || "", 2);
-
+      // Use actual username stored in full_name field for both name and username
       setSeller({
         id: profileData.id,
-        name: safeObfuscated || "Unknown Seller",
+        name: profileData.full_name || "Unknown Seller",
         avatarUrl: profileData.avatar_url,
         joinDate: new Date(profileData.created_at),
         rating: profileData.feedback_rating || 0,
         salesCount: listingsCount || 0,
         verified: true, // For now, assume all sellers are verified
-        username: safeObfuscated,
+        username: profileData.full_name || "Unknown Seller",
       });
     } catch (err) {
       console.error("Error fetching seller profile:", err);
