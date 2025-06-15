@@ -47,17 +47,26 @@ export const adaptBidTypes = {
    * Convert a global Bid to internal Bid format
    */
   toInternalBid: (bid: GlobalBid): Bid => {
-    // Defensive extraction: GlobalBid has .user, but fallback to user_profile if needed.
-    const user =
-      "user" in bid && bid.user
-        ? bid.user
-        : bid.user_profile
-        ? {
-            fullName: (bid.user_profile as any).full_name || null,
-            avatarUrl: (bid.user_profile as any).avatar_url || null,
-            username: (bid.user_profile as any).username || null,
-          }
-        : { fullName: null, avatarUrl: null, username: null };
+    // Explicitly type user variable
+    type UserShape = { fullName: string | null, avatarUrl: string | null, username: string | null };
+
+    let user: UserShape;
+
+    if ("user" in bid && bid.user) {
+      user = {
+        fullName: bid.user.fullName ?? null,
+        avatarUrl: bid.user.avatarUrl ?? null,
+        username: typeof bid.user.username === "string" ? bid.user.username : null,
+      };
+    } else if (bid.user_profile) {
+      user = {
+        fullName: (bid.user_profile as any).full_name ?? null,
+        avatarUrl: (bid.user_profile as any).avatar_url ?? null,
+        username: (bid.user_profile as any).username ?? null,
+      };
+    } else {
+      user = { fullName: null, avatarUrl: null, username: null };
+    }
 
     return {
       id: bid.id,
@@ -72,9 +81,9 @@ export const adaptBidTypes = {
           ? bid.createdAt.toISOString()
           : new Date(bid.createdAt).toISOString(),
       user_profile: {
-        full_name: user.fullName || null,
-        avatar_url: user.avatarUrl || null,
-        username: user.username || null,
+        full_name: user.fullName,
+        avatar_url: user.avatarUrl,
+        username: user.username,
       },
       userId: bid.userId,
       listingId: bid.listingId,
