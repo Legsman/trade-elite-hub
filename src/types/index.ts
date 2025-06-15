@@ -53,10 +53,10 @@ export interface Bid {
   createdAt: Date;
   maximumBid: number;
   bidIncrement: number;
-  user?: {
-    fullName: string | null;
-    avatarUrl: string | null;
-    username: string | null;
+  // Correct user_profile interface for Bid, only full_name and avatar_url reflect actual data
+  user_profile?: {
+    full_name: string | null;
+    avatar_url: string | null;
   };
 }
 

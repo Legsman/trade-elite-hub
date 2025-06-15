@@ -57,7 +57,7 @@ export const useBidDataFetcher = () => {
             return map;
           }, {} as Record<string, any>);
           
-          // Transform the data to match the Bid interface
+          // Fix returned Bid type: for user_profile (always return full_name from profile)
           const formattedBids: Bid[] = data.map(bid => {
             // Look up the profile for this bid's user_id
             const userProfile = profilesMap[bid.user_id];
@@ -79,7 +79,6 @@ export const useBidDataFetcher = () => {
               user_profile: {
                 full_name: userProfile ? userProfile.full_name : null,
                 avatar_url: userProfile ? userProfile.avatar_url : null,
-                username: userProfile ? userProfile.full_name : null // Fallback to full_name since username column doesn't exist
               },
               // Add mapped properties for types/index.ts compatibility
               userId: bid.user_id,
@@ -108,7 +107,6 @@ export const useBidDataFetcher = () => {
         user_profile: {
           full_name: null,
           avatar_url: null,
-          username: null
         },
         userId: bid.user_id,
         listingId: bid.listing_id,

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { ChevronDown, ChevronUp, Loader2, User, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -95,7 +94,7 @@ export const BidHistory = ({
               <Alert className="mb-4 bg-amber-50 border-amber-200">
                 <AlertTriangle className="h-4 w-4 text-amber-500" />
                 <AlertDescription className="text-xs text-amber-700">
-                  Debug: Found {bids.length} bids. User profiles available: {bids.some(b => b.user?.username) ? 'Yes' : 'No'}
+                  Debug: Found {bids.length} bids. User profiles available: {bids.some(b => b.user_profile?.full_name) ? 'Yes' : 'No'}
                 </AlertDescription>
               </Alert>
             )}
@@ -104,9 +103,9 @@ export const BidHistory = ({
                 <div key={bid.id} className="flex justify-between items-center">
                   <div className="flex items-center gap-2">
                     <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
-                      {bid.user?.avatarUrl ? (
+                      {bid.user_profile?.avatar_url ? (
                         <img 
-                          src={bid.user.avatarUrl} 
+                          src={bid.user_profile.avatar_url} 
                           alt="User avatar" 
                           className="h-8 w-8 rounded-full object-cover"
                         />
@@ -118,8 +117,8 @@ export const BidHistory = ({
                       <div className="font-medium flex items-center">
                         {bid.userId === currentUserId 
                           ? "You" 
-                          : obfuscateText(bid.user?.username || "User", 2)}
-                        
+                          : obfuscateText((bid.user_profile?.full_name ?? "User"), 2)
+                        }
                         {bid.userId === currentUserId && (
                           <Badge variant="outline" className="ml-2 text-xs">You</Badge>
                         )}
@@ -134,14 +133,11 @@ export const BidHistory = ({
                   </div>
                   <div>
                     <div className="font-medium">
-                      {/* Show max bid only for bidder themselves, otherwise show public visible amount */}
                       {bid.userId === currentUserId
                         ? <>£{bid.maximumBid.toLocaleString()} <span className="text-xs text-muted-foreground">(Your max bid)</span></>
                         : <>£{bid.amount.toLocaleString()}</>
                       }
                     </div>
-                    {/* For the highest bidder, if their current visible bid is less than their max, show "Current: £X".
-                        But do NOT expose the maximumBid if this isn't your bid! */}
                     {bid.userId === highestBidderId && bid.userId !== currentUserId && bid.amount !== bid.maximumBid && (
                       <div className="text-xs text-muted-foreground text-right">
                         Top bidder's current: £{bid.amount.toLocaleString()}
