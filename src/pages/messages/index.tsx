@@ -1,9 +1,11 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
 import { useAuth } from "@/hooks/auth";
 import { useMessages } from "@/hooks/useMessages";
-import { useConversation, type Conversation } from "@/hooks/useConversation";
+import { useConversation } from "@/hooks/useConversation";
+import { type Conversation } from "@/hooks/messageTypes";
 import { useUserProfile } from "@/hooks/use-user-profile";
 import { useAnalytics } from "@/hooks/use-analytics";
 import { Button } from "@/components/ui/button";
