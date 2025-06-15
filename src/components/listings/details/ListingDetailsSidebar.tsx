@@ -1,4 +1,3 @@
-
 import { Loader2, Heart, Share2, MessageSquare, MapPin, Shield, User, Star, ThumbsUp, Gavel } from "lucide-react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,7 +10,7 @@ import { Listing } from "@/types";
 import { User as UserType } from "@/types";
 import { NavigateFunction } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
-import { ShippingInfoCard } from "./sidebar/ShippingInfoCard"; // <-- ADD THIS IMPORT
+import { ShippingInfoCard } from "./sidebar/ShippingInfoCard";
 
 interface ListingDetailsSidebarProps {
   listing: Listing;
@@ -275,7 +274,7 @@ export const ListingDetailsSidebar = ({
                 {seller.avatarUrl ? (
                   <img 
                     src={seller.avatarUrl} 
-                    alt={seller.name}
+                    alt={seller.username || "unknown"}
                     className="h-12 w-12 rounded-full object-cover"
                   />
                 ) : (
@@ -284,7 +283,12 @@ export const ListingDetailsSidebar = ({
               </div>
               <div>
                 <div className="font-medium flex items-center">
-                  {seller.name}
+                  {/* Show @username instead of name */}
+                  {seller.username ? (
+                    <span className="text-foreground">@{seller.username}</span>
+                  ) : (
+                    <span className="text-foreground">@unknown</span>
+                  )}
                   {seller.verified && (
                     <TooltipProvider>
                       <Tooltip>
