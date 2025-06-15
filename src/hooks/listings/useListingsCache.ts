@@ -20,16 +20,16 @@ export const useListingsCache = () => {
   const getCachedData = <T>(cacheKey: string): T | null => {
     const cached = memoryCache.get(cacheKey);
     if (!cached) return null;
-    
+
     const now = Date.now();
     if (now - cached.timestamp > CACHE_EXPIRY) {
       memoryCache.delete(cacheKey);
       return null;
     }
-    
+
     return cached.data;
   };
-  
+
   // Set data in cache
   const setCachedData = <T>(cacheKey: string, data: T) => {
     memoryCache.set(cacheKey, {
@@ -38,7 +38,7 @@ export const useListingsCache = () => {
       cacheKey
     });
   };
-  
+
   // Clear entire cache or specific key
   const clearCache = (cacheKey?: string) => {
     if (cacheKey) {
@@ -47,14 +47,23 @@ export const useListingsCache = () => {
       memoryCache.clear();
     }
   };
-  
+
+  // --- NEW: Invalidate all listing caches containing listingId (for realtime updates) ---
+  const invalidateListingCaches = (listingId: string) => {
+    for (const key of Array.from(memoryCache.keys())) {
+      if (key.includes(listingId)) {
+        memoryCache.delete(key);
+      }
+    }
+  };
+
   // Track active subscriptions
   const registerSubscription = (channelKey: string) => {
     const count = activeSubscriptions.get(channelKey) || 0;
     activeSubscriptions.set(channelKey, count + 1);
     return count === 0; // Return true if this is the first subscription
   };
-  
+
   const unregisterSubscription = (channelKey: string) => {
     const count = activeSubscriptions.get(channelKey) || 0;
     if (count <= 1) {
@@ -65,12 +74,13 @@ export const useListingsCache = () => {
       return false;
     }
   };
-  
+
   return {
     getCachedData,
     setCachedData,
     clearCache,
     registerSubscription,
-    unregisterSubscription
+    unregisterSubscription,
+    invalidateListingCaches // export for external use
   };
 };

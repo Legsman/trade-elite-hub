@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -25,7 +24,7 @@ export const useListings = (options: UseListingsOptions = {}) => {
   const [totalCount, setTotalCount] = useState(0);
   const abortControllerRef = useRef<AbortController | null>(null);
   const optionsRef = useRef<string>("");
-  const { getCachedData, setCachedData, registerSubscription, unregisterSubscription } = useListingsCache();
+  const { getCachedData, setCachedData, registerSubscription, unregisterSubscription, invalidateListingCaches } = useListingsCache();
   
   // For error rate limiting
   const errorRef = useRef({
@@ -158,17 +157,16 @@ export const useListings = (options: UseListingsOptions = {}) => {
     }
   }, [options, listings.length, isLoading, getCacheKey, getCachedData, setCachedData]);
 
-  // Set up realtime subscription
+  // --- ENHANCED: Realtime subscription for per-row status updates ---
   useEffect(() => {
     // Fetch on mount and when options change
     fetchListings();
     
-    // Set up realtime subscription
     const channelKey = 'listings-changes';
     const shouldSubscribe = registerSubscription(channelKey);
-    
+
     let channel: any = null;
-    
+
     if (shouldSubscribe) {
       channel = supabase
         .channel(channelKey)
@@ -179,8 +177,37 @@ export const useListings = (options: UseListingsOptions = {}) => {
             schema: 'public',
             table: 'listings',
           },
-          () => {
-            // When database changes, refetch data but skip cache
+          (payload) => {
+            // For UPDATED/INSERT/DELETE - handle real-time status changes and smart cache invalidation
+            const newStatus = payload.new?.status;
+            const oldStatus = payload.old?.status;
+            const newExpiresAt = payload.new?.expires_at;
+            const oldExpiresAt = payload.old?.expires_at;
+            const affectedId = payload.new?.id || payload.old?.id;
+            // For debug
+            console.log("[Realtime listings] DB event:", payload);
+            // If updated status, expires_at, or a row is deleted, invalidate
+            if (
+              payload.eventType === "UPDATE" &&
+              (newStatus !== oldStatus || newExpiresAt !== oldExpiresAt)
+            ) {
+              if (affectedId) {
+                invalidateListingCaches(affectedId);
+                // Force reload from server, skip cache
+                fetchListings(false);
+                return;
+              }
+            } else if (
+              payload.eventType === "INSERT" ||
+              payload.eventType === "DELETE"
+            ) {
+              if (affectedId) {
+                invalidateListingCaches(affectedId);
+                fetchListings(false);
+                return;
+              }
+            }
+            // For any other event, default to full refetch
             fetchListings(false);
           }
         )
