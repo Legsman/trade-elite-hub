@@ -9,14 +9,17 @@ export function useFeedback({ userId, as = "seller", listingId }) {
       // Select username, not full_name, to avoid privacy breach
       let query = supabase.from("feedback").select(`
         *,
-        from_user:from_user_id (username, avatar_url)
+        from_user:from_user_id (username, avatar_url),
+        listings!inner (seller_id)
       `);
 
       if (userId) {
         if (as === "seller") {
-          query = query.eq("to_user_id", userId);
+          // Feedback received when user was the seller
+          query = query.eq("to_user_id", userId).eq("listings.seller_id", userId);
         } else if (as === "buyer") {
-          query = query.eq("from_user_id", userId);
+          // Feedback received when user was the buyer (not the seller)
+          query = query.eq("to_user_id", userId).neq("listings.seller_id", userId);
         } else if (as === "giver") {
           // Explicitly feedbacks given BY this user
           query = query.eq("from_user_id", userId);
