@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/auth";
 import { useSavedListings, useListingBids } from "@/hooks/listings";
+import { useFeedback } from "@/hooks/feedback";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ListingCard } from "@/components/listings/ListingCard";
@@ -35,6 +36,21 @@ const Dashboard = () => {
   const { highestBids, bidCounts } = useListingBids(
     savedListings?.filter(listing => listing.type === "auction").map(listing => listing.id) || []
   );
+  
+  // Fetch user's feedback as seller to show real ratings
+  const { data: userFeedback, isLoading: feedbackLoading } = useFeedback({
+    userId: user?.id,
+    as: "seller",
+    listingId: null
+  });
+  
+  // Calculate feedback statistics
+  const feedbackStats = userFeedback ? {
+    averageRating: userFeedback.length > 0 
+      ? (userFeedback.reduce((sum, fb) => sum + fb.rating, 0) / userFeedback.length).toFixed(1)
+      : null,
+    count: userFeedback.length
+  } : { averageRating: null, count: 0 };
   
   const isLoading = authLoading || savedLoading;
 
@@ -99,16 +115,24 @@ const Dashboard = () => {
                   </div>
                   <div>
                     <h3 className="text-sm font-medium mb-1">Feedback</h3>
-                    <Button 
-                      variant="ghost"
-                      className="p-0 flex items-center gap-1 hover:bg-transparent text-yellow-500 hover:text-yellow-600"
-                      onClick={handleFeedbackClick}
-                    >
-                      <Star className="h-4 w-4 fill-yellow-400 mr-1" />
-                      <span className="text-sm font-medium">5.0</span>
-                      <span className="text-xs text-muted-foreground ml-1">(10 sales)</span>
-                      <span className="ml-2 underline text-primary text-xs">View Feedback</span>
-                    </Button>
+                     {feedbackLoading ? (
+                       <div className="text-sm text-muted-foreground">Loading feedback...</div>
+                     ) : (
+                       <Button 
+                         variant="ghost"
+                         className="p-0 flex items-center gap-1 hover:bg-transparent text-yellow-500 hover:text-yellow-600"
+                         onClick={handleFeedbackClick}
+                       >
+                         <Star className="h-4 w-4 fill-yellow-400 mr-1" />
+                         <span className="text-sm font-medium">
+                           {feedbackStats.averageRating || "No rating"}
+                         </span>
+                         <span className="text-xs text-muted-foreground ml-1">
+                           ({feedbackStats.count} {feedbackStats.count === 1 ? 'review' : 'reviews'})
+                         </span>
+                         <span className="ml-2 underline text-primary text-xs">View Feedback</span>
+                       </Button>
+                     )}
                   </div>
                   <Button 
                     className="w-full" 
