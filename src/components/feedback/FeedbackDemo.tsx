@@ -52,7 +52,9 @@ export const FeedbackDemo: React.FC = () => {
       <div className="max-w-2xl mx-auto">
         <FeedbackSection 
           userId="user-1"
-          feedbackItems={mockFeedbackItems}
+          allFeedback={mockFeedbackItems}
+          sellerFeedback={mockFeedbackItems.filter(item => item.transactionType === "Purchase")}
+          buyerFeedback={mockFeedbackItems.filter(item => item.transactionType === "Sale")}
           isLoading={false}
         />
       </div>

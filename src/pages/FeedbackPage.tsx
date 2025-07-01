@@ -11,20 +11,20 @@ const FeedbackPage = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   
-  // Fetch feedback received as seller
+  // Fetch feedback received as seller (feedback from buyers)
   const { 
-    data: receivedFeedback, 
-    isLoading: receivedLoading 
+    data: sellerFeedback, 
+    isLoading: sellerLoading 
   } = useFeedback({
     userId: user?.id,
     as: "seller",
     listingId: null
   });
 
-  // Fetch feedback given as buyer
+  // Fetch feedback received as buyer (feedback from sellers)
   const { 
-    data: givenFeedback, 
-    isLoading: givenLoading 
+    data: buyerFeedback, 
+    isLoading: buyerLoading 
   } = useFeedback({
     userId: user?.id,
     as: "buyer", 
@@ -53,22 +53,40 @@ const FeedbackPage = () => {
     );
   }
 
-  const isLoading = receivedLoading || givenLoading;
+  const isLoading = sellerLoading || buyerLoading;
 
-  // Transform Supabase data to match FeedbackItem interface
-  const transformedFeedback = (receivedFeedback || []).map(item => ({
+  // Transform feedback data
+  const transformSellerFeedback = (sellerFeedback || []).map(item => ({
     id: item.id,
     userId: item.from_user_id,
     rating: item.rating,
     comment: item.comment || '',
     createdAt: item.created_at,
-    transactionType: 'sale', // Default for received feedback
+    transactionType: 'seller',
     user: {
       id: item.from_user_id,
       username: (item.from_user as any)?.username || 'Unknown User',
       avatarUrl: (item.from_user as any)?.avatar_url || null,
     }
   }));
+
+  const transformBuyerFeedback = (buyerFeedback || []).map(item => ({
+    id: item.id,
+    userId: item.from_user_id,
+    rating: item.rating,
+    comment: item.comment || '',
+    createdAt: item.created_at,
+    transactionType: 'buyer',
+    user: {
+      id: item.from_user_id,
+      username: (item.from_user as any)?.username || 'Unknown User',
+      avatarUrl: (item.from_user as any)?.avatar_url || null,
+    }
+  }));
+
+  // Combine all feedback for the "All" tab
+  const allFeedback = [...transformSellerFeedback, ...transformBuyerFeedback]
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   return (
     <MainLayout>
@@ -90,7 +108,9 @@ const FeedbackPage = () => {
 
         <FeedbackSection
           userId={user.id}
-          feedbackItems={transformedFeedback}
+          allFeedback={allFeedback}
+          sellerFeedback={transformSellerFeedback}
+          buyerFeedback={transformBuyerFeedback}
           isLoading={isLoading}
         />
       </div>
