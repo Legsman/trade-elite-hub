@@ -70,9 +70,9 @@ const Dashboard = () => {
 
   // Handler for feedback (account sidebar)
   const handleFeedbackClick = () => {
-    // Scroll to (or navigate to) feedback details if there are any
-    // If a page is ever implemented, update this route
-    navigate("/dashboard?showFeedback=1");
+    // Navigate to the selling view to show sold items where feedback can be given
+    setViewMode("selling");
+    setActiveTab("sold");
   };
 
   return (

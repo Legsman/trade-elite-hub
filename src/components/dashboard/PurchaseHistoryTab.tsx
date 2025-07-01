@@ -177,10 +177,10 @@ function FeedbackChecker({
   listingId: string;
   openModal: () => void;
 }) {
-  // as="seller" means feedback about this seller (to_user_id=sellerId, from_user_id=buyerId)
+  // Use "giver" to get feedback given BY this buyer
   const { data: feedback, isLoading } = useFeedback({
     userId: buyerId,
-    as: "seller",
+    as: "giver",
     listingId,
   });
 

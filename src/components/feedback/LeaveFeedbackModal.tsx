@@ -31,6 +31,8 @@ export const LeaveFeedbackModal: React.FC<LeaveFeedbackModalProps> = ({
     setErrorMsg("");
     try {
       await submitFeedback({ fromUserId, toUserId, listingId, rating, comment });
+      setRating(5);
+      setComment("");
       onOpenChange(false);
       if (onSubmitted) onSubmitted();
     } catch (err: any) {
