@@ -50,7 +50,7 @@ export const AccountSidebar = ({ user, onFeedbackClick }: AccountSidebarProps) =
               <Button 
                 variant="ghost"
                 className="p-0 flex items-center gap-1 hover:bg-transparent text-yellow-500 hover:text-yellow-600"
-                onClick={onFeedbackClick}
+                onClick={() => navigate("/feedback")}
               >
                 <Star className="h-4 w-4 fill-yellow-400 mr-1" />
                 <span className="text-sm font-medium">

@@ -58,11 +58,7 @@ const Dashboard = () => {
     );
   }
 
-  // Handler for feedback (account sidebar)
-  const handleFeedbackClick = () => {
-    // Navigate to the selling view to show sold items where feedback can be given
-    setViewMode("selling");
-  };
+  // Handler for feedback (account sidebar) - no longer needed as it navigates to dedicated page
 
   const handleViewModeChange = (mode: "buying" | "selling") => {
     setViewMode(mode);
@@ -78,7 +74,7 @@ const Dashboard = () => {
           <div className="space-y-6">
             <AccountSidebar 
               user={user}
-              onFeedbackClick={handleFeedbackClick}
+              onFeedbackClick={() => {}} // No longer used, navigation handled in AccountSidebar
             />
             <QuickLinksCard />
           </div>
