@@ -37,7 +37,7 @@ export const ListingDetailsMainContent = ({
 
   // UseBids for auction listings (for Bid History) - show even if sold
   const { bids, isLoading } = useBids && isAuction
-    ? useBids({ listingId: listing.id })
+    ? useBids({ listingId: listing.id, listingStatus: listing.status })
     : { bids: [], isLoading: false };
 
   return (

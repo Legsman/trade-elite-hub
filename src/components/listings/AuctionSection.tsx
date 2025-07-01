@@ -16,6 +16,8 @@ interface AuctionSectionProps {
   refetchListing?: () => Promise<void>;
   /** True winner of this auction, by user ID */
   highestBidderId?: string;
+  /** Status of the listing to determine which bids to show */
+  listingStatus?: string;
 }
 
 export const AuctionSection = ({ 
@@ -24,7 +26,8 @@ export const AuctionSection = ({
   currentPrice,
   userId,
   refetchListing,
-  highestBidderId: propHighestBidderId // Rename to avoid confusion
+  highestBidderId: propHighestBidderId, // Rename to avoid confusion
+  listingStatus
 }: AuctionSectionProps) => {
   const { 
     bids, 
@@ -36,7 +39,7 @@ export const AuctionSection = ({
     highestBid,
     highestBidderId, // Use the highestBidderId from useBids
     getUserBidStatus
-  } = useBids({ listingId });
+  } = useBids({ listingId, listingStatus });
   
   // Initial fetch of bids
   useEffect(() => {

@@ -4,13 +4,13 @@ import type { Bid } from "./types";
 
 export const useBidDataFetcher = () => {
   // Fetch all bids for a listing
-  const fetchBidsForListing = useCallback(async (listingId: string): Promise<Bid[]> => {
+  const fetchBidsForListing = useCallback(async (listingId: string, listingStatus?: string): Promise<Bid[]> => {
     console.log(`[useBidDataFetcher] Fetching bids for listing: ${listingId}`);
     
     try {
       // Use an explicit join query instead of relying on the nested selection
       // This provides better control and visibility when debugging
-      const { data, error } = await supabase
+      let query = supabase
         .from('bids')
         .select(`
           id,
@@ -22,9 +22,18 @@ export const useBidDataFetcher = () => {
           maximum_bid,
           bid_increment
         `)
-        .eq('listing_id', listingId)
-        .eq('status', 'active')
-        .order('created_at', { ascending: false });
+        .eq('listing_id', listingId);
+      
+      // Filter by status based on listing state
+      if (listingStatus === 'sold' || listingStatus === 'expired' || listingStatus === 'ended') {
+        // For completed listings, show both active and won bids to display full history
+        query = query.in('status', ['active', 'won']);
+      } else {
+        // For active listings, only show active bids
+        query = query.eq('status', 'active');
+      }
+      
+      const { data, error } = await query.order('created_at', { ascending: false });
       
       if (error) {
         console.error('[useBidDataFetcher] Error fetching bids:', error);

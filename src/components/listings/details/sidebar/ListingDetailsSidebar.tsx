@@ -49,7 +49,7 @@ export const ListingDetailsSidebar = ({
 }: ListingDetailsSidebarProps) => {
   const isAuction = listing.type === "auction";
   const isSold = listing.status === "sold";
-  const { highestBid, bids, placeBid, getUserBidStatus } = useBids({ listingId: listing.id });
+  const { highestBid, bids, placeBid, getUserBidStatus } = useBids({ listingId: listing.id, listingStatus: listing.status });
   
   const displayPrice = isAuction 
     ? listing.currentBid || highestBid || listing.price 

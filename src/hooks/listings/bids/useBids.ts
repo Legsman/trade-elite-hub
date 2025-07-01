@@ -12,9 +12,10 @@ import { toast } from "@/hooks/use-toast";
 
 interface UseBidsProps {
   listingId: string;
+  listingStatus?: string;
 }
 
-export const useBids = ({ listingId }: UseBidsProps) => {
+export const useBids = ({ listingId, listingStatus }: UseBidsProps) => {
   const { user } = useAuth();
   const { fetchBidsForListing, fetchHighestBid } = useBidDataFetcher();
   const { createBid, updateBid } = useBidActions();
@@ -43,7 +44,7 @@ export const useBids = ({ listingId }: UseBidsProps) => {
       setHighestBidderId(highestBidData.highestBidderId);
       
       // Fetch all bids for the listing
-      let fetchedBids = await fetchBidsForListing(listingId);
+      let fetchedBids = await fetchBidsForListing(listingId, listingStatus);
       console.log("[useBids] Fetched bids:", fetchedBids);
 
       // Belt-and-suspenders: override the winning bid's visible amount
@@ -112,7 +113,7 @@ export const useBids = ({ listingId }: UseBidsProps) => {
       setIsLoading(false);
       return false; // Return failure indicator
     }
-  }, [listingId, fetchBidsForListing, fetchHighestBid]);
+  }, [listingId, listingStatus, fetchBidsForListing, fetchHighestBid]);
   
   // Set up realtime subscription for bid updates
   useEffect(() => {
