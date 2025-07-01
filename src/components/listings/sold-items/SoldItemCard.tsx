@@ -42,7 +42,7 @@ export const SoldItemCard: React.FC<SoldItemCardProps> = ({ item, onRelistClick 
           {item.buyer && (
             <div className="mb-4 text-sm">
               <span className="font-medium">Buyer:</span>{' '}
-              <span>{item.buyer.name}</span>
+              <span>{item.buyer.username}</span>
             </div>
           )}
           <div className="flex gap-2">

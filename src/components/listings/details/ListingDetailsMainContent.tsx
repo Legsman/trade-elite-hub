@@ -35,7 +35,7 @@ export const ListingDetailsMainContent = ({
     }).format(date);
   }, []);
 
-  // UseBids only for auction listings (for Bid History)
+  // UseBids for auction listings (for Bid History) - show even if sold
   const { bids, isLoading } = useBids && isAuction
     ? useBids({ listingId: listing.id })
     : { bids: [], isLoading: false };

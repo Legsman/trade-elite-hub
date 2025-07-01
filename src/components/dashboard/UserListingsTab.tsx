@@ -65,7 +65,7 @@ export const UserListingsTab = ({ userId }: UserListingsTabProps) => {
           // Ended/expired and not sold
           query = query.in("status", ["ended", "expired"]).or(`(status.eq.active,and(expires_at.lt.${new Date().toISOString()},sale_buyer_id.is.null))`);
         }
-        if (tab === "sold") {
+        if (tab === ("sold" as TabType)) {
           query = query.eq("status", "sold");
         }
         // "all" shows all
