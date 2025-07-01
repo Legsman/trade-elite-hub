@@ -1,6 +1,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useFeedback } from "@/hooks/feedback";
 
 export const useSellerProfile = (sellerId?: string) => {
   const [seller, setSeller] = useState<{ 
@@ -12,9 +13,17 @@ export const useSellerProfile = (sellerId?: string) => {
     salesCount: number;
     verified: boolean;
     username?: string | null;
+    feedbackCount: number;
   } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Fetch seller's feedback data
+  const { data: sellerFeedback, isLoading: feedbackLoading } = useFeedback({
+    userId: sellerId,
+    as: "seller",
+    listingId: null
+  });
 
   const fetchSellerProfile = useCallback(async () => {
     if (!sellerId) {
@@ -42,22 +51,29 @@ export const useSellerProfile = (sellerId?: string) => {
 
       if (listingsError) throw listingsError;
 
+      // Calculate real feedback statistics
+      const feedbackCount = sellerFeedback?.length || 0;
+      const realRating = feedbackCount > 0 
+        ? sellerFeedback.reduce((sum, fb) => sum + fb.rating, 0) / feedbackCount
+        : 0;
+
       setSeller({
         id: profileData.id,
         name: profileData.full_name || "Unknown Seller",
         avatarUrl: profileData.avatar_url,
         joinDate: new Date(profileData.created_at),
-        rating: profileData.feedback_rating || 0,
+        rating: realRating,
         salesCount: listingsCount || 0,
         verified: true,
         username: profileData.username || null,
+        feedbackCount,
       });
     } catch (err) {
       setError("Failed to fetch seller information. Please try again.");
     } finally {
       setIsLoading(false);
     }
-  }, [sellerId]);
+  }, [sellerId, sellerFeedback]);
 
   useEffect(() => {
     fetchSellerProfile();
@@ -65,8 +81,9 @@ export const useSellerProfile = (sellerId?: string) => {
 
   return {
     seller,
-    isLoading,
+    isLoading: isLoading || feedbackLoading,
     error,
     refetch: fetchSellerProfile,
+    feedback: sellerFeedback,
   };
 };

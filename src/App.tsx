@@ -16,6 +16,7 @@ import EditListingPage from "./pages/listings/EditListing";
 import MessagesPage from "./pages/messages/index";
 import UserSettingsPage from "./pages/settings/index";
 import FeedbackPage from "./pages/FeedbackPage";
+import SellerFeedbackPage from "./pages/SellerFeedbackPage";
 import { AuthProvider } from "./hooks/auth";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import AdminRoute from "./components/auth/AdminRoute";
@@ -66,6 +67,7 @@ const App = () => (
                 <FeedbackPage />
               </ProtectedRoute>
             } />
+            <Route path="/sellers/:sellerId/feedback" element={<SellerFeedbackPage />} />
             <Route path="/admin" element={
               <AdminRoute>
                 <AdminDashboard />

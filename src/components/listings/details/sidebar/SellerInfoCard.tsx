@@ -15,6 +15,7 @@ interface SellerInfoCardProps {
     salesCount: number;
     verified: boolean;
     username?: string | null;
+    feedbackCount: number;
   };
   navigate: NavigateFunction;
 }
@@ -74,13 +75,15 @@ export const SellerInfoCard = ({ seller, navigate }: SellerInfoCardProps) => {
         <div className="flex items-center justify-between">
           <div className="flex items-center">
             <Star className="h-4 w-4 text-yellow-400 fill-yellow-400 mr-1" />
-            <span className="font-medium">{seller.rating}</span>
+            <span className="font-medium">
+              {seller.feedbackCount > 0 ? seller.rating.toFixed(1) : "No rating"}
+            </span>
             <span className="text-sm text-muted-foreground ml-1">
-              ({seller.salesCount} sales)
+              ({seller.feedbackCount} {seller.feedbackCount === 1 ? 'review' : 'reviews'})
             </span>
           </div>
-          <Button variant="link" size="sm" className="p-0" onClick={() => navigate(`/profile/${seller.id}`)}>
-            View Profile
+          <Button variant="link" size="sm" className="p-0" onClick={() => navigate(`/sellers/${seller.id}/feedback`)}>
+            View Feedback
           </Button>
         </div>
         <Separator />
