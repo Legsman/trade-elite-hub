@@ -110,7 +110,7 @@ export const ListingDetailsSidebar = ({
       />
       {/* Seller information */}
       {seller && (
-        <SellerInfoCard seller={seller} navigate={navigate} />
+        <SellerInfoCard seller={seller} navigate={navigate} listing={listing} user={user} />
       )}
       <SafetyTipsCard />
       {/* NEW: Shipping Information Card */}
