@@ -61,6 +61,7 @@ export const FeedbackSection: React.FC<FeedbackSectionProps> = ({
             <FeedbackSummary 
               averageRating={averageRating} 
               totalFeedback={totalFeedback} 
+              feedbackItems={allFeedback}
               isLoading={isLoading}
             />
             <FeedbackList 

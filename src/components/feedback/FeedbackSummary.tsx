@@ -10,22 +10,22 @@ import { StarRating } from "./StarRating";
 interface FeedbackSummaryProps {
   averageRating: number;
   totalFeedback: number;
+  feedbackItems: Array<{ rating: number }>;
   isLoading?: boolean;
 }
 
 export const FeedbackSummary: React.FC<FeedbackSummaryProps> = ({ 
   averageRating, 
   totalFeedback, 
+  feedbackItems,
   isLoading = false 
 }) => {
-  // Calculate distribution of ratings (mock data for now, could be passed as props)
-  const ratingDistribution = [
-    { stars: 5, count: Math.floor(totalFeedback * 0.6), percentage: 60 },
-    { stars: 4, count: Math.floor(totalFeedback * 0.25), percentage: 25 },
-    { stars: 3, count: Math.floor(totalFeedback * 0.1), percentage: 10 },
-    { stars: 2, count: Math.floor(totalFeedback * 0.03), percentage: 3 },
-    { stars: 1, count: Math.floor(totalFeedback * 0.02), percentage: 2 },
-  ];
+  // Calculate real distribution of ratings from feedback items
+  const ratingDistribution = [5, 4, 3, 2, 1].map(stars => {
+    const count = feedbackItems.filter(item => item.rating === stars).length;
+    const percentage = totalFeedback > 0 ? Math.round((count / totalFeedback) * 100) : 0;
+    return { stars, count, percentage };
+  });
 
   if (isLoading) {
     return (
