@@ -29,6 +29,10 @@ export interface Listing {
   bidCount?: number; // Added missing bidCount property
   // Reserve price for auctions:
   reservePrice?: number | null;
+  // Sale information for sold items:
+  saleAmount?: number | null;
+  saleBuyerId?: string | null;
+  saleDate?: string | null;
 }
 
 export interface Offer {
