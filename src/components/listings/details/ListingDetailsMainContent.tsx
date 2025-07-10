@@ -43,6 +43,9 @@ export const ListingDetailsMainContent = ({
     ? useBids({ listingId: listing.id, listingStatus: listing.status })
     : { bids: [], isLoading: false };
 
+  // For auction listings, only allow offers if there are no bids
+  const canMakeOffers = allowsOffers && !isSold && (isClassified || (isAuction && bids.length === 0));
+
   return (
     <>
       <ListingImageGallery 
@@ -55,7 +58,7 @@ export const ListingDetailsMainContent = ({
           <TabsTrigger value="description">Description</TabsTrigger>
           <TabsTrigger value="details">Details</TabsTrigger>
           {isAuction && <TabsTrigger value="bid-history">Bid History</TabsTrigger>}
-          {isClassified && allowsOffers && <TabsTrigger value="offers">Make Offer</TabsTrigger>}
+          {canMakeOffers && <TabsTrigger value="offers">Make Offer</TabsTrigger>}
         </TabsList>
         {/* Description tab */}
         <TabsContent value="description" className="space-y-4">
@@ -115,8 +118,8 @@ export const ListingDetailsMainContent = ({
             />
           </TabsContent>
         )}
-        {/* Offers tab, only for classified listings that allow offers */}
-        {isClassified && allowsOffers && (
+        {/* Offers tab, for listings that allow offers and meet bid requirements */}
+        {canMakeOffers && (
           <TabsContent value="offers" className="space-y-4">
             <OfferSection
               listingId={listing.id}

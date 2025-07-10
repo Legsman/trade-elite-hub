@@ -176,8 +176,8 @@ export const PriceCard = ({
           </TooltipProvider>
         </div>
       )}
-      {/* "Make an offer" logic */}
-      {!isAuction && listing.allowBestOffer && !isSold && listing.sellerId !== user?.id && user && (
+      {/* "Make an offer" logic - allow for auctions only if no bids */}
+      {listing.allowBestOffer && !isSold && listing.sellerId !== user?.id && user && (!isAuction || bids.length === 0) && (
         <Button 
           variant="outline" 
           className="w-full"
