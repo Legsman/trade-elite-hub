@@ -47,6 +47,7 @@ export interface Offer {
   user?: {
     fullName: string | null;
     avatarUrl: string | null;
+    username: string | null;
   };
 }
 

@@ -147,7 +147,7 @@ export const OfferManagement = ({
                         </div>
                         <div>
                           <div className="font-medium flex items-center">
-                            {offer.user?.fullName || "Anonymous"}
+                            {offer.user?.username || "Anonymous"}
                           </div>
                           <div className="flex items-center text-xs text-muted-foreground">
                             <Clock className="h-3 w-3 mr-1" />
@@ -245,7 +245,7 @@ export const OfferManagement = ({
                                 <User className="h-3 w-3 text-muted-foreground" />
                               )}
                             </div>
-                            <span>{offer.user?.fullName || "Anonymous"}</span>
+                            <span>{offer.user?.username || "Anonymous"}</span>
                           </div>
                           
                           {offer.message && (

@@ -40,12 +40,12 @@ export const useOfferDataFetcher = (listingId?: string) => {
       const userIds = [...new Set(offersData.map(offer => offer.user_id))];
       
       // Get profiles for these users if there are any offers
-      let profilesMap: Record<string, { full_name: string | null, avatar_url: string | null }> = {};
+      let profilesMap: Record<string, { full_name: string | null, avatar_url: string | null, username: string | null }> = {};
       
       if (userIds.length > 0) {
         const { data: profilesData, error: profilesError } = await supabase
           .from("profiles")
-          .select("id, full_name, avatar_url")
+          .select("id, full_name, avatar_url, username")
           .in("id", userIds);
         
         if (profilesError) {
@@ -56,10 +56,11 @@ export const useOfferDataFetcher = (listingId?: string) => {
         profilesMap = profilesData.reduce((map, profile) => {
           map[profile.id] = { 
             full_name: profile.full_name, 
-            avatar_url: profile.avatar_url 
+            avatar_url: profile.avatar_url,
+            username: profile.username
           };
           return map;
-        }, {} as Record<string, { full_name: string | null, avatar_url: string | null }>);
+        }, {} as Record<string, { full_name: string | null, avatar_url: string | null, username: string | null }>);
       }
 
       // Map offers with profile data
@@ -78,6 +79,7 @@ export const useOfferDataFetcher = (listingId?: string) => {
           user: profile ? {
             fullName: profile.full_name,
             avatarUrl: profile.avatar_url,
+            username: profile.username,
           } : undefined
         };
       });
