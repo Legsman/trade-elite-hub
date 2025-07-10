@@ -95,6 +95,7 @@ async function processExpiredAuctions() {
         status: "sold",
         sale_buyer_id: winningBid.user_id,
         sale_amount: winningBid.amount,
+        current_bid: winningBid.amount, // Set current_bid to match the actual winning amount
         sale_date: new Date().toISOString(),
         updated_at: new Date().toISOString()
       })
