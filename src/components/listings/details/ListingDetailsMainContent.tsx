@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ListingImageGallery } from "@/components/listings";
 import { useBids } from "@/hooks/listings";
 import { BidHistory } from "@/components/listings/BidHistory";
+import { OfferSection } from "@/components/listings/OfferSection";
 import { Listing } from "@/types";
 
 interface ListingDetailsMainContentProps {
@@ -25,6 +26,8 @@ export const ListingDetailsMainContent = ({
 }: ListingDetailsMainContentProps) => {
   const isAuction = listing.type === "auction";
   const isSold = listing.status === "sold";
+  const isClassified = listing.type === "classified";
+  const allowsOffers = listing.allowBestOffer;
 
   // Memoize formatDate for performance, same as in ListingDetailsTabs
   const formatDate = useMemo(() => (date: Date) => {
@@ -52,6 +55,7 @@ export const ListingDetailsMainContent = ({
           <TabsTrigger value="description">Description</TabsTrigger>
           <TabsTrigger value="details">Details</TabsTrigger>
           {isAuction && <TabsTrigger value="bid-history">Bid History</TabsTrigger>}
+          {isClassified && allowsOffers && <TabsTrigger value="offers">Make Offer</TabsTrigger>}
         </TabsList>
         {/* Description tab */}
         <TabsContent value="description" className="space-y-4">
@@ -108,6 +112,18 @@ export const ListingDetailsMainContent = ({
               // onRefresh can be provided to refresh from parent or via useBids
               onRefresh={refetchListing}
               highestBidderId={listing.highestBidderId}
+            />
+          </TabsContent>
+        )}
+        {/* Offers tab, only for classified listings that allow offers */}
+        {isClassified && allowsOffers && (
+          <TabsContent value="offers" className="space-y-4">
+            <OfferSection
+              listingId={listing.id}
+              listingTitle={listing.title}
+              sellerId={listing.sellerId}
+              currentPrice={listing.price}
+              userId={userId}
             />
           </TabsContent>
         )}
