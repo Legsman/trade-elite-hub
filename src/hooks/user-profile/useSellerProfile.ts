@@ -18,10 +18,17 @@ export const useSellerProfile = (sellerId?: string) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch seller's feedback data
-  const { data: sellerFeedback, isLoading: feedbackLoading } = useFeedback({
+  // Fetch seller's feedback data (as seller)
+  const { data: sellerFeedback, isLoading: sellerFeedbackLoading } = useFeedback({
     userId: sellerId,
     as: "seller",
+    listingId: null
+  });
+
+  // Fetch buyer's feedback data (as buyer)
+  const { data: buyerFeedback, isLoading: buyerFeedbackLoading } = useFeedback({
+    userId: sellerId,
+    as: "buyer",
     listingId: null
   });
 
@@ -51,10 +58,11 @@ export const useSellerProfile = (sellerId?: string) => {
 
       if (listingsError) throw listingsError;
 
-      // Calculate real feedback statistics
-      const feedbackCount = sellerFeedback?.length || 0;
+      // Calculate combined feedback statistics (seller + buyer)
+      const combinedFeedback = [...(sellerFeedback || []), ...(buyerFeedback || [])];
+      const feedbackCount = combinedFeedback.length;
       const realRating = feedbackCount > 0 
-        ? sellerFeedback.reduce((sum, fb) => sum + fb.rating, 0) / feedbackCount
+        ? combinedFeedback.reduce((sum, fb) => sum + fb.rating, 0) / feedbackCount
         : 0;
 
       setSeller({
@@ -73,7 +81,7 @@ export const useSellerProfile = (sellerId?: string) => {
     } finally {
       setIsLoading(false);
     }
-  }, [sellerId, sellerFeedback]);
+  }, [sellerId, sellerFeedback, buyerFeedback]);
 
   useEffect(() => {
     fetchSellerProfile();
@@ -81,9 +89,10 @@ export const useSellerProfile = (sellerId?: string) => {
 
   return {
     seller,
-    isLoading: isLoading || feedbackLoading,
+    isLoading: isLoading || sellerFeedbackLoading || buyerFeedbackLoading,
     error,
     refetch: fetchSellerProfile,
     feedback: sellerFeedback,
+    combinedFeedback: [...(sellerFeedback || []), ...(buyerFeedback || [])],
   };
 };
