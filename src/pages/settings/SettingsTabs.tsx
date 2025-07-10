@@ -2,11 +2,12 @@
 import {
   Tabs, TabsContent, TabsList, TabsTrigger
 } from "@/components/ui/tabs";
-import { User, CreditCard, Shield } from "lucide-react";
+import { User, CreditCard, Shield, Bell } from "lucide-react";
 import { Loading } from "@/components/ui/loading";
 import ProfileTab from "./components/ProfileTab";
 import SubscriptionTab from "./components/SubscriptionTab";
 import SecurityTab from "./components/SecurityTab";
+import NotificationSettings from "@/components/notifications/NotificationSettings";
 
 const SettingsTabs = ({
   activeTab, setActiveTab, isLoading,
@@ -21,10 +22,14 @@ const SettingsTabs = ({
         <p className="text-muted-foreground">Manage your account settings and preferences</p>
       </div>
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="profile">
             <User className="h-4 w-4 mr-2" />
             Profile
+          </TabsTrigger>
+          <TabsTrigger value="notifications">
+            <Bell className="h-4 w-4 mr-2" />
+            Notifications
           </TabsTrigger>
           <TabsTrigger value="subscription">
             <CreditCard className="h-4 w-4 mr-2" />
@@ -53,6 +58,9 @@ const SettingsTabs = ({
                 handleAvatarChange={handleAvatarChange}
                 subscription_tier={subscription_tier}
               />
+            </TabsContent>
+            <TabsContent value="notifications" className="space-y-6">
+              <NotificationSettings />
             </TabsContent>
             <TabsContent value="subscription" className="space-y-6">
               <SubscriptionTab

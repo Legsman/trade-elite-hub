@@ -3,6 +3,7 @@ import { useCallback } from "react";
 import { useAuth } from "@/hooks/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { useBrowserNotifications } from "@/hooks/useBrowserNotifications";
 
 export const useOfferActions = (
   listingId?: string,
@@ -10,6 +11,7 @@ export const useOfferActions = (
   fetchOffers?: () => Promise<void>
 ) => {
   const { user } = useAuth();
+  const { showNotification } = useBrowserNotifications();
 
   const makeOffer = useCallback(async (amount: number, message?: string) => {
     if (!user) {
@@ -77,6 +79,7 @@ export const useOfferActions = (
             message: `New offer of £${amount.toLocaleString()} on your listing "${listingData.title}"`,
             metadata: {
               listing_id: listingId,
+              listing_title: listingData.title,
               offer_amount: amount,
               offerer_id: user.id
             }
@@ -189,6 +192,7 @@ export const useOfferActions = (
               message: `Your offer on "${offerData.listings.title}" was declined because another offer was accepted.`,
               metadata: {
                 listing_id: offerData.listing_id,
+                listing_title: offerData.listings.title,
                 status: "declined",
                 reason: "another_offer_accepted"
               }
@@ -209,6 +213,7 @@ export const useOfferActions = (
             message: `Your offer of £${Number(offerData.amount).toLocaleString()} for "${offerData.listings.title}" was ${status}.`,
             metadata: {
               listing_id: offerData.listing_id,
+              listing_title: offerData.listings.title,
               offer_id: offerId,
               offer_amount: offerData.amount,
               status
