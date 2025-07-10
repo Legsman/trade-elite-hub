@@ -51,7 +51,10 @@ export const useListing = (id?: string) => {
         views: data.views,
         saves: data.saves,
         currentBid: data.current_bid ? Number(data.current_bid) : null,
-        highestBidderId: data.highest_bidder_id || null
+        highestBidderId: data.highest_bidder_id || null,
+        saleAmount: data.sale_amount ? Number(data.sale_amount) : null,
+        saleBuyerId: data.sale_buyer_id || null,
+        saleDate: data.sale_date ? data.sale_date : null
       };
 
       setListing(mappedListing);
