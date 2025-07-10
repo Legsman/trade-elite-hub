@@ -91,7 +91,7 @@ export const SellerInfoCard = ({ seller, navigate, listing, user }: SellerInfoCa
               {seller.feedbackCount > 0 ? seller.rating.toFixed(1) : "No rating"}
             </span>
             <span className="text-sm text-muted-foreground ml-1">
-              ({seller.feedbackCount} {seller.feedbackCount === 1 ? 'review' : 'reviews'})
+              ({seller.feedbackCount} feedback)
             </span>
           </div>
           <Button variant="link" size="sm" className="p-0" onClick={() => navigate(`/sellers/${seller.id}/feedback`)}>

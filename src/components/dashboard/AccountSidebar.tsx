@@ -57,7 +57,7 @@ export const AccountSidebar = ({ user, onFeedbackClick }: AccountSidebarProps) =
                   {feedbackStats.averageRating || "No rating"}
                 </span>
                 <span className="text-xs text-muted-foreground ml-1">
-                  ({feedbackStats.count} {feedbackStats.count === 1 ? 'review' : 'reviews'})
+                  ({feedbackStats.count} feedback)
                 </span>
                 <span className="ml-2 underline text-primary text-xs">View Feedback</span>
               </Button>

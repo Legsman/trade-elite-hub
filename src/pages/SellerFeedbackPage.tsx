@@ -114,7 +114,7 @@ const SellerFeedbackPage = () => {
                       {seller.feedbackCount > 0 ? seller.rating.toFixed(1) : "No rating"}
                     </span>
                     <span className="text-sm text-muted-foreground ml-1">
-                      ({seller.feedbackCount} {seller.feedbackCount === 1 ? 'review' : 'reviews'})
+                      ({seller.feedbackCount} feedback)
                     </span>
                   </div>
                 </div>
@@ -122,7 +122,7 @@ const SellerFeedbackPage = () => {
             </CardContent>
           </Card>
           
-          <h1 className="text-3xl font-bold">Feedback & Reviews</h1>
+          <h1 className="text-3xl font-bold">Feedback</h1>
           <p className="text-muted-foreground mt-2">See what others are saying about this user.</p>
         </div>
 

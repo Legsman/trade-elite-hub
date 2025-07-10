@@ -69,7 +69,7 @@ export const FeedbackSummary: React.FC<FeedbackSummaryProps> = ({
           <StarRating rating={averageRating} size={24} />
         </div>
         <p className="text-sm text-muted-foreground mt-2">
-          Based on {totalFeedback} {totalFeedback === 1 ? "review" : "reviews"}
+          Based on {totalFeedback} feedback
         </p>
       </div>
 

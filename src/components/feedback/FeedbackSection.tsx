@@ -80,7 +80,7 @@ export const FeedbackSection: React.FC<FeedbackSectionProps> = ({
                   <Star className="h-4 w-4 fill-yellow-400 text-yellow-400 mr-1" />
                   <span className="font-medium">{sellerStats.averageRating.toFixed(1)}</span>
                 </div>
-                <span className="text-muted-foreground">({sellerStats.count} reviews)</span>
+                <span className="text-muted-foreground">({sellerStats.count} feedback)</span>
               </div>
             </div>
             <FeedbackList 
@@ -99,7 +99,7 @@ export const FeedbackSection: React.FC<FeedbackSectionProps> = ({
                   <Star className="h-4 w-4 fill-yellow-400 text-yellow-400 mr-1" />
                   <span className="font-medium">{buyerStats.averageRating.toFixed(1)}</span>
                 </div>
-                <span className="text-muted-foreground">({buyerStats.count} reviews)</span>
+                <span className="text-muted-foreground">({buyerStats.count} feedback)</span>
               </div>
             </div>
             <FeedbackList 
