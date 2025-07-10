@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { 
@@ -16,6 +16,9 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { usePermissionCheck } from "@/hooks/auth";
+import { VerificationRequiredModal } from "@/components/auth/VerificationRequiredModal";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface BidFormProps {
   listingId: string;
@@ -38,6 +41,8 @@ export const BidForm = ({
   userBidStatus
 }: BidFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showVerificationModal, setShowVerificationModal] = useState(false);
+  const { canPlaceBids, verificationLevel, getVerificationMessage } = usePermissionCheck();
   
   // Calculate minimum bid - either the highest bid + £5 or the starting price
   const minimumBid = highestBid ? highestBid + 5 : currentPrice;
@@ -58,6 +63,11 @@ export const BidForm = ({
   });
 
   const handleSubmit = async (values: z.infer<typeof FormSchema>) => {
+    if (!canPlaceBids) {
+      setShowVerificationModal(true);
+      return;
+    }
+
     console.log("BidForm: Placing bid with amount:", values.maximumBid);
     setIsSubmitting(true);
     
@@ -113,6 +123,15 @@ export const BidForm = ({
           </div>
         )}
 
+        {!canPlaceBids && (
+          <Alert className="mb-4">
+            <Shield className="h-4 w-4" />
+            <AlertDescription>
+              {getVerificationMessage("place bids")}
+            </AlertDescription>
+          </Alert>
+        )}
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)}>
             <FormField
@@ -141,7 +160,7 @@ export const BidForm = ({
             <Button 
               type="submit" 
               className="w-full mt-4" 
-              disabled={isSubmitting}
+              disabled={isSubmitting || !canPlaceBids}
             >
               {isSubmitting ? (
                 <>
@@ -149,7 +168,7 @@ export const BidForm = ({
                   Placing Bid...
                 </>
               ) : (
-                "Place Bid"
+                canPlaceBids ? "Place Bid" : "Verification Required"
               )}
             </Button>
           </form>
@@ -161,6 +180,14 @@ export const BidForm = ({
         <p className="mb-1">• Your bid will be automatically increased up to your maximum</p>
         <p>• The highest bid at auction end will win</p>
       </CardFooter>
+
+      <VerificationRequiredModal
+        open={showVerificationModal}
+        onOpenChange={setShowVerificationModal}
+        action="place bids"
+        currentLevel={verificationLevel}
+        requiredLevel="verified"
+      />
     </Card>
   );
 };

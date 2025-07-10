@@ -4,10 +4,13 @@ import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { Shield } from "lucide-react";
 import MainLayout from "@/components/layout/MainLayout";
-import { useAuth } from "@/hooks/auth";
+import { useAuth, usePermissionCheck } from "@/hooks/auth";
 import { toast } from "@/hooks/use-toast";
 import { Form } from "@/components/ui/form";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import { useCreateListing } from "@/hooks/listings";
 import { ListingFormData } from "@/types";
 import { CreateListingAlert } from "@/components/listings/CreateListingAlert";
@@ -39,6 +42,7 @@ type FormValues = z.infer<typeof formSchema>;
 const CreateListingPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { canCreateListings, verificationLevel, getVerificationMessage } = usePermissionCheck();
   const [images, setImages] = useState<File[]>([]);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const { createListing, isSubmitting, error } = useCreateListing();
@@ -112,6 +116,37 @@ const CreateListingPage = () => {
     return (
       <MainLayout>
         <CreateListingAlert />
+      </MainLayout>
+    );
+  }
+
+  if (!canCreateListings) {
+    return (
+      <MainLayout>
+        <div className="container mx-auto px-4 py-8 max-w-2xl">
+          <Alert className="mb-6">
+            <Shield className="h-4 w-4" />
+            <AlertDescription className="space-y-2">
+              <p className="font-medium">Verification Required to Create Listings</p>
+              <p>{getVerificationMessage("create listings")}</p>
+            </AlertDescription>
+          </Alert>
+          
+          <div className="text-center space-y-4">
+            <h1 className="text-3xl font-bold">Create a Listing</h1>
+            <p className="text-muted-foreground">
+              You need to be verified to create listings on our platform.
+            </p>
+            <div className="space-y-2">
+              <Button onClick={() => navigate("/dashboard")}>
+                Return to Dashboard
+              </Button>
+              <Button variant="outline" onClick={() => navigate("/listings")}>
+                Browse Listings
+              </Button>
+            </div>
+          </div>
+        </div>
       </MainLayout>
     );
   }

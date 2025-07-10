@@ -1,12 +1,15 @@
-import { AlertCircle, Loader2 } from "lucide-react";
+import { AlertCircle, Loader2, Shield } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useState } from "react";
 import { useStartConversation } from "@/hooks/useStartConversation";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import { useAnalytics } from "@/hooks/use-analytics";
+import { usePermissionCheck } from "@/hooks/auth";
+import { VerificationRequiredModal } from "@/components/auth/VerificationRequiredModal";
 import { Listing } from "@/types";
 
 interface ListingDetailsContactDialogProps {
@@ -28,8 +31,15 @@ export const ListingDetailsContactDialog = ({
   const { startConversation } = useStartConversation();
   const { trackEvent } = useAnalytics();
   const [sendingMessage, setSendingMessage] = useState(false);
+  const [showVerificationModal, setShowVerificationModal] = useState(false);
+  const { canSendMessages, verificationLevel, getVerificationMessage } = usePermissionCheck();
   
   const handleSendMessage = async () => {
+    if (!canSendMessages) {
+      setShowVerificationModal(true);
+      return;
+    }
+
     if (!message.trim()) {
       toast({
         title: "Message required",
@@ -93,6 +103,16 @@ export const ListingDetailsContactDialog = ({
               <p className="text-sm text-muted-foreground">£{displayPrice.toLocaleString()}</p>
             </div>
           </div>
+          
+          {!canSendMessages && (
+            <Alert>
+              <Shield className="h-4 w-4" />
+              <AlertDescription>
+                {getVerificationMessage("send messages")}
+              </AlertDescription>
+            </Alert>
+          )}
+          
           <Textarea
             placeholder="Write your message to the seller here..."
             className="min-h-[120px]"
@@ -116,7 +136,7 @@ export const ListingDetailsContactDialog = ({
           </Button>
           <Button 
             type="button"
-            disabled={sendingMessage || !message.trim()}
+            disabled={sendingMessage || !message.trim() || !canSendMessages}
             onClick={handleSendMessage}
           >
             {sendingMessage ? (
@@ -125,11 +145,19 @@ export const ListingDetailsContactDialog = ({
                 Sending...
               </>
             ) : (
-              "Send Message"
+              canSendMessages ? "Send Message" : "Verification Required"
             )}
           </Button>
         </DialogFooter>
       </DialogContent>
+      
+      <VerificationRequiredModal
+        open={showVerificationModal}
+        onOpenChange={setShowVerificationModal}
+        action="send messages"
+        currentLevel={verificationLevel}
+        requiredLevel="verified"
+      />
     </Dialog>
   );
 };

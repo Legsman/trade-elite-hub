@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -18,6 +18,9 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { usePermissionCheck } from "@/hooks/auth";
+import { VerificationRequiredModal } from "@/components/auth/VerificationRequiredModal";
 import { Offer } from "@/types";
 
 interface OfferFormProps {
@@ -39,6 +42,8 @@ export const OfferForm = ({
   userOfferStatus
 }: OfferFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showVerificationModal, setShowVerificationModal] = useState(false);
+  const { canMakeOffers, verificationLevel, getVerificationMessage } = usePermissionCheck();
   
   // Calculate suggested offer (10% less than asking price)
   const suggestedOffer = Math.floor(currentPrice * 0.9);
@@ -61,6 +66,11 @@ export const OfferForm = ({
   });
 
   const handleSubmit = async (values: z.infer<typeof FormSchema>) => {
+    if (!canMakeOffers) {
+      setShowVerificationModal(true);
+      return;
+    }
+
     setIsSubmitting(true);
     const result = await onMakeOffer(values.amount, values.message);
     setIsSubmitting(false);
@@ -128,6 +138,15 @@ export const OfferForm = ({
         </CardDescription>
       </CardHeader>
       <CardContent>
+        {!canMakeOffers && (
+          <Alert className="mb-4">
+            <Shield className="h-4 w-4" />
+            <AlertDescription>
+              {getVerificationMessage("make offers")}
+            </AlertDescription>
+          </Alert>
+        )}
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
             <FormField
@@ -178,7 +197,7 @@ export const OfferForm = ({
             <Button 
               type="submit" 
               className="w-full" 
-              disabled={isSubmitting}
+              disabled={isSubmitting || !canMakeOffers}
             >
               {isSubmitting ? (
                 <>
@@ -186,7 +205,7 @@ export const OfferForm = ({
                   Submitting Offer...
                 </>
               ) : (
-                "Submit Offer"
+                canMakeOffers ? "Submit Offer" : "Verification Required"
               )}
             </Button>
           </form>
@@ -197,6 +216,14 @@ export const OfferForm = ({
         <p className="mb-1">• The seller can accept, decline, or counter your offer</p>
         <p>• You'll be notified when the seller responds</p>
       </CardFooter>
+
+      <VerificationRequiredModal
+        open={showVerificationModal}
+        onOpenChange={setShowVerificationModal}
+        action="make offers"
+        currentLevel={verificationLevel}
+        requiredLevel="verified"
+      />
     </Card>
   );
 };

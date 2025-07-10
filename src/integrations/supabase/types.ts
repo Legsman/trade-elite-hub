@@ -625,7 +625,12 @@ export type Database = {
           user_id: string
           is_admin: boolean
           is_verified: boolean
+          is_trader: boolean
         }[]
+      }
+      get_user_verification_level: {
+        Args: { _user_id: string }
+        Returns: string
       }
       has_role: {
         Args: {
@@ -671,7 +676,7 @@ export type Database = {
       }
     }
     Enums: {
-      user_role_type: "unverified" | "verified" | "admin"
+      user_role_type: "unverified" | "verified" | "admin" | "trader"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -799,7 +804,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      user_role_type: ["unverified", "verified", "admin"],
+      user_role_type: ["unverified", "verified", "admin", "trader"],
     },
   },
 } as const
