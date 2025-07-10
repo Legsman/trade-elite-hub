@@ -56,7 +56,13 @@ export const PriceCard = ({
       {isSold ? (
         <div className="flex items-baseline">
           <span className="text-lg font-medium text-muted-foreground mr-2">Sold for:</span>
-          <span className="text-3xl font-bold text-green-600">£{(listing.saleAmount || currentPrice).toLocaleString()}</span>
+          <span className="text-3xl font-bold text-green-600">
+            £{(listing.saleAmount || listing.currentBid || listing.price).toLocaleString()}
+          </span>
+          {/* Debug info - remove this later */}
+          <span className="text-xs text-gray-500 ml-2">
+            (saleAmount: {listing.saleAmount}, currentBid: {listing.currentBid}, price: {listing.price})
+          </span>
         </div>
       ) : isAuction ? (
         listing.sellerId !== user?.id && user && !isSold ? (
