@@ -5,6 +5,8 @@ import { Separator } from "@/components/ui/separator";
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { User, Shield, Star, ThumbsUp } from "lucide-react";
 import { NavigateFunction } from "react-router-dom";
+import { Listing, User as UserType } from "@/types";
+import { isListingEnded } from "@/utils/listingStatus";
 
 interface SellerInfoCardProps {
   seller: {
@@ -18,9 +20,11 @@ interface SellerInfoCardProps {
     feedbackCount: number;
   };
   navigate: NavigateFunction;
+  listing: Listing;
+  user?: UserType;
 }
 
-export const SellerInfoCard = ({ seller, navigate }: SellerInfoCardProps) => {
+export const SellerInfoCard = ({ seller, navigate, listing, user }: SellerInfoCardProps) => {
   const formatDate = (date: Date) => {
     return new Intl.DateTimeFormat('en-GB', {
       day: 'numeric',
@@ -28,6 +32,14 @@ export const SellerInfoCard = ({ seller, navigate }: SellerInfoCardProps) => {
       year: 'numeric'
     }).format(date);
   };
+
+  // Show the Leave Feedback button only if:
+  // 1. The listing has ended
+  // 2. The current user is the winner (saleBuyerId)
+  // 3. The user is authenticated
+  const shouldShowFeedbackButton = user && 
+    isListingEnded(listing) && 
+    listing.saleBuyerId === user.id;
 
   return (
     <Card>
@@ -96,14 +108,16 @@ export const SellerInfoCard = ({ seller, navigate }: SellerInfoCardProps) => {
             </p>
           </div>
         </div>
-        <Button 
-          className="w-full" 
-          variant="outline" 
-          onClick={() => navigate(`/feedback/new?user=${seller.id}`)}
-        >
-          <ThumbsUp className="mr-2 h-4 w-4" />
-          Leave Feedback
-        </Button>
+        {shouldShowFeedbackButton && (
+          <Button 
+            className="w-full" 
+            variant="outline" 
+            onClick={() => navigate(`/feedback/new?user=${seller.id}`)}
+          >
+            <ThumbsUp className="mr-2 h-4 w-4" />
+            Leave Feedback
+          </Button>
+        )}
       </CardContent>
     </Card>
   );
