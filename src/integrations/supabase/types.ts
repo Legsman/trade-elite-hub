@@ -608,6 +608,57 @@ export type Database = {
           },
         ]
       }
+      verification_requests: {
+        Row: {
+          admin_notes: string | null
+          business_name: string | null
+          business_registration: string | null
+          created_at: string
+          id: string
+          message: string | null
+          request_type: string
+          requested_at: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          trading_experience: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          business_name?: string | null
+          business_registration?: string | null
+          created_at?: string
+          id?: string
+          message?: string | null
+          request_type: string
+          requested_at?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          trading_experience?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_notes?: string | null
+          business_name?: string | null
+          business_registration?: string | null
+          created_at?: string
+          id?: string
+          message?: string | null
+          request_type?: string
+          requested_at?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          trading_experience?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

@@ -7,6 +7,7 @@ import UsersTab from "./tabs/UsersTab";
 import ListingsTab from "./tabs/ListingsTab";
 import ReportsTab from "./tabs/ReportsTab";
 import AdminsTab from "./tabs/AdminsTab";
+import { VerificationRequestsTab } from "./tabs/VerificationRequestsTab";
 import { AdminDashboardProvider } from "./context/AdminDashboardContext";
 
 interface AdminTabsLayoutProps {
@@ -109,11 +110,12 @@ const AdminTabsLayout: React.FC<AdminTabsLayoutProps> = ({
   return (
     <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="space-y-4">
       <TabsList className="w-full border-b pb-0">
-        <TabsTrigger value="overview">Overview</TabsTrigger>
-        <TabsTrigger value="users">Users</TabsTrigger>
-        <TabsTrigger value="listings">Listings</TabsTrigger>
-        <TabsTrigger value="reports">Reports</TabsTrigger>
-        <TabsTrigger value="admins">Admins</TabsTrigger>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="users">Users</TabsTrigger>
+          <TabsTrigger value="listings">Listings</TabsTrigger>
+          <TabsTrigger value="reports">Reports</TabsTrigger>
+          <TabsTrigger value="verification">Verification</TabsTrigger>
+          <TabsTrigger value="admins">Admins</TabsTrigger>
       </TabsList>
       
       <AdminDashboardProvider {...contextValue}>
@@ -131,6 +133,10 @@ const AdminTabsLayout: React.FC<AdminTabsLayoutProps> = ({
         
         <TabsContent value="reports" className="py-2">
           <ReportsTab />
+        </TabsContent>
+        
+        <TabsContent value="verification" className="py-2">
+          <VerificationRequestsTab />
         </TabsContent>
         
         <TabsContent value="admins" className="py-2">
