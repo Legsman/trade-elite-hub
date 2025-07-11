@@ -582,6 +582,36 @@ export type Database = {
         }
         Relationships: []
       }
+      system_settings: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          setting_key: string
+          setting_type: string
+          setting_value: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          setting_key: string
+          setting_type: string
+          setting_value: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          setting_key?: string
+          setting_type?: string
+          setting_value?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
@@ -601,6 +631,47 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "fk_user_roles_user"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_usage_tracking: {
+        Row: {
+          created_at: string
+          id: string
+          month_year: string
+          monthly_listings_count: number
+          updated_at: string
+          user_id: string
+          year: number
+          yearly_value_total: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          month_year: string
+          monthly_listings_count?: number
+          updated_at?: string
+          user_id: string
+          year: number
+          yearly_value_total?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          month_year?: string
+          monthly_listings_count?: number
+          updated_at?: string
+          user_id?: string
+          year?: number
+          yearly_value_total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_usage_tracking_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"

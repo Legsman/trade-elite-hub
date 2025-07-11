@@ -10,7 +10,8 @@ import {
   QuickLinksCard,
   BuyingSection,
   SellingSection,
-  ViewModeToggle
+  ViewModeToggle,
+  UserTierCard
 } from "@/components/dashboard";
 
 const Dashboard = () => {
@@ -75,6 +76,7 @@ const Dashboard = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Left sidebar */}
           <div className="space-y-6">
+            <UserTierCard />
             <AccountSidebar 
               user={user}
               onFeedbackClick={() => {}} // No longer used, navigation handled in AccountSidebar
