@@ -42,6 +42,51 @@ export function useVerificationManagement(
       
       console.log(`Sending verification toggle request: ${action} verified role for user ${userId}`);
       
+      // First check if verification requires payment
+      if (newStatus === "verified" || newStatus === "trader") {
+        const { data: feeData } = await supabase
+          .from('system_settings')
+          .select('setting_value')
+          .eq('setting_key', `verification_fee_${newStatus}`)
+          .single();
+
+        const feeAmount = (feeData?.setting_value as any)?.amount || 0;
+        const feeEnabled = (feeData?.setting_value as any)?.enabled || false;
+
+        if (feeEnabled && feeAmount > 0) {
+          // Check if user has an active verification request with completed payment
+          const { data: verificationData } = await supabase
+            .from('verification_requests')
+            .select('id, payment_status')
+            .eq('user_id', userId)
+            .eq('request_type', newStatus)
+            .eq('payment_status', 'completed')
+            .order('created_at', { ascending: false })
+            .limit(1);
+
+          if (!verificationData || verificationData.length === 0) {
+            // Revert optimistic update
+            setUsers(prev => 
+              prev.map(user => {
+                if (user.id === userId) {
+                  const currentUser = prev.find(u => u.id === userId);
+                  return { ...user, verified_status: currentUser?.verified_status || "unverified" };
+                }
+                return user;
+              })
+            );
+
+            return { 
+              success: false, 
+              requiresPayment: true,
+              feeAmount: feeAmount,
+              tierType: newStatus,
+              message: `Payment of £${feeAmount} required for ${newStatus} verification`
+            };
+          }
+        }
+      }
+      
       // Call the Supabase Edge Function
       const { data, error } = await supabase.functions.invoke("admin-role-management", {
         body: {
@@ -120,6 +165,47 @@ export function useVerificationManagement(
       );
       
       console.log(`Sending trader toggle request: ${action} trader role for user ${userId}`);
+      
+      // Check if trader upgrade requires payment
+      if (newStatus === "trader") {
+        const { data: feeData } = await supabase
+          .from('system_settings')
+          .select('setting_value')
+          .eq('setting_key', 'verification_fee_trader')
+          .single();
+
+        const feeAmount = (feeData?.setting_value as any)?.amount || 0;
+        const feeEnabled = (feeData?.setting_value as any)?.enabled || false;
+
+        if (feeEnabled && feeAmount > 0) {
+          // Check if user has an active verification request with completed payment
+          const { data: verificationData } = await supabase
+            .from('verification_requests')
+            .select('id, payment_status')
+            .eq('user_id', userId)
+            .eq('request_type', 'trader')
+            .eq('payment_status', 'completed')
+            .order('created_at', { ascending: false })
+            .limit(1);
+
+          if (!verificationData || verificationData.length === 0) {
+            // Revert optimistic update
+            setUsers(prev => 
+              prev.map(user => 
+                user.id === userId ? { ...user, verified_status: currentStatus } : user
+              )
+            );
+
+            return { 
+              success: false, 
+              requiresPayment: true,
+              feeAmount: feeAmount,
+              tierType: 'trader',
+              message: `Payment of £${feeAmount} required for trader verification`
+            };
+          }
+        }
+      }
       
       // Call the Supabase Edge Function
       const { data, error } = await supabase.functions.invoke("admin-role-management", {
