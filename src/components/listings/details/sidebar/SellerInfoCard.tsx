@@ -7,6 +7,8 @@ import { User, Shield, Star, ThumbsUp } from "lucide-react";
 import { NavigateFunction } from "react-router-dom";
 import { Listing, User as UserType } from "@/types";
 import { isListingEnded } from "@/utils/listingStatus";
+import { VerificationBadge } from "@/components/auth/VerificationBadge";
+import { VerificationLevel } from "@/hooks/auth/useUserVerification";
 
 interface SellerInfoCardProps {
   seller: {
@@ -18,6 +20,7 @@ interface SellerInfoCardProps {
     verified: boolean;
     username?: string | null;
     feedbackCount: number;
+    verificationLevel?: VerificationLevel;
   };
   navigate: NavigateFunction;
   listing: Listing;
@@ -66,18 +69,12 @@ export const SellerInfoCard = ({ seller, navigate, listing, user }: SellerInfoCa
               ) : (
                 <span className="text-foreground">@unknown</span>
               )}
-              {seller.verified && (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Shield className="ml-1 h-4 w-4 text-green-500" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Verified Seller</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              )}
+              <div className="ml-2">
+                <VerificationBadge 
+                  level={seller.verificationLevel || (seller.verified ? "verified" : "unverified")}
+                  size="sm"
+                />
+              </div>
             </div>
             <div className="text-sm text-muted-foreground">
               Member since {formatDate(seller.joinDate)}

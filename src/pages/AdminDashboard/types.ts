@@ -5,7 +5,7 @@ export interface UserAdmin {
   full_name: string;
   created_at: string;
   role: "user" | "admin";
-  verified_status: "unverified" | "verified";
+  verified_status: "unverified" | "verified" | "trader";
   strike_count: number;
   last_visited: string;
   listings_count: number;

@@ -28,6 +28,7 @@ const MessagesPage = () => {
   const [activeConversation, setActiveConversation] = useState<string | null>(null);
   const [activeListingId, setActiveListingId] = useState<string | null>(null);
   const [messageInput, setMessageInput] = useState("");
+  const [showVerificationModal, setShowVerificationModal] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [showMessages, setShowMessages] = useState(!isMobile);
 
@@ -148,6 +149,8 @@ const MessagesPage = () => {
                 handleSendMessage={handleSendMessage}
                 userId={user?.id}
                 navigate={navigate}
+                showVerificationModal={showVerificationModal}
+                setShowVerificationModal={setShowVerificationModal}
               />
             ) : (
               <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">

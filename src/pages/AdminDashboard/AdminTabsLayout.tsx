@@ -30,7 +30,8 @@ interface AdminTabsLayoutProps {
   handleUnsuspendUser: (userId: string) => void;
   promoteAdmin: (userId: string) => void;
   demoteAdmin: (userId: string) => void;
-  toggleVerifiedStatus: (userId: string, currentStatus: "verified" | "unverified") => void;
+  toggleVerifiedStatus: (userId: string, currentStatus: "verified" | "unverified" | "trader") => void;
+  toggleTraderStatus: (userId: string, currentStatus: "verified" | "trader") => void;
   currentUserId: string;
   isPendingForUser: (id: string) => boolean;
   isRefetching: boolean;
@@ -63,6 +64,7 @@ const AdminTabsLayout: React.FC<AdminTabsLayoutProps> = ({
   promoteAdmin,
   demoteAdmin,
   toggleVerifiedStatus,
+  toggleTraderStatus,
   currentUserId,
   isPendingForUser,
   isRefetching,
@@ -97,6 +99,7 @@ const AdminTabsLayout: React.FC<AdminTabsLayoutProps> = ({
     promoteAdmin,
     demoteAdmin,
     toggleVerifiedStatus,
+    toggleTraderStatus,
     currentUserId,
     isPendingForUser,
     isRefetching,

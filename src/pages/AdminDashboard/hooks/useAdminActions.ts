@@ -63,7 +63,7 @@ export function useAdminActions(
   );
   
   // Verification management
-  const { toggleVerifiedStatus } = useVerificationManagement(
+  const { toggleVerifiedStatus, toggleTraderStatus } = useVerificationManagement(
     setUsers,
     startOp,
     finishOp
@@ -84,6 +84,7 @@ export function useAdminActions(
     
     // User verification
     toggleVerifiedStatus,
+    toggleTraderStatus,
     
     // Content moderation
     handleApproveItem,

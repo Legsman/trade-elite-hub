@@ -34,6 +34,7 @@ const UsersTab: React.FC = () => {
     handleSuspendUser = () => {},
     handleUnsuspendUser = () => {},
     toggleVerifiedStatus = () => {},
+    toggleTraderStatus = () => {},
     isPendingForUser = () => false,
     isRefetching = false,
     onRefresh = () => {},
@@ -65,6 +66,7 @@ const UsersTab: React.FC = () => {
             <SelectItem value="admin">Admins</SelectItem>
             <SelectItem value="verified">Verified</SelectItem>
             <SelectItem value="unverified">Unverified</SelectItem>
+            <SelectItem value="trader">Trader</SelectItem>
           </SelectContent>
         </Select>
         
@@ -98,7 +100,7 @@ const UsersTab: React.FC = () => {
               <TableHead>Name</TableHead>
               <TableHead>Email</TableHead>
               <TableHead>Role</TableHead>
-              <TableHead>Verified</TableHead>
+              <TableHead>Verification Level</TableHead>
               <TableHead>Joined</TableHead>
               <TableHead>Last Visited</TableHead>
               <TableHead>Listings</TableHead>
@@ -127,25 +129,38 @@ const UsersTab: React.FC = () => {
                     </TableCell>
                     <TableCell>
                       {user.role === 'admin' ? (
-                        <Badge variant="default">Always Verified</Badge>
+                        <Badge variant="default">Admin</Badge>
                       ) : (
-                        <div className="flex items-center space-x-2">
-                          <Switch
-                            id={`verify-${user.id}`}
-                            checked={user.verified_status === "verified"}
-                            onCheckedChange={() => toggleVerifiedStatus(user.id, user.verified_status)}
-                            disabled={isLoading || isRefetching}
-                          />
-                          <Label htmlFor={`verify-${user.id}`}>
-                            {isLoading ? (
-                              <span className="flex items-center">
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Updating...
-                              </span>
-                            ) : (
-                              user.verified_status === "verified" ? "Verified" : "Unverified"
-                            )}
-                          </Label>
+                        <div className="flex items-center space-x-4">
+                          <div className="flex items-center space-x-2">
+                            <Switch
+                              id={`verify-${user.id}`}
+                              checked={user.verified_status === "verified" || user.verified_status === "trader"}
+                              onCheckedChange={() => toggleVerifiedStatus(user.id, user.verified_status)}
+                              disabled={isLoading || isRefetching}
+                            />
+                            <Label htmlFor={`verify-${user.id}`} className="text-sm">
+                              {isLoading ? (
+                                <span className="flex items-center">
+                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                  Updating...
+                                </span>
+                              ) : (
+                                user.verified_status === "trader" ? "Trader" : 
+                                user.verified_status === "verified" ? "Verified" : "Unverified"
+                              )}
+                            </Label>
+                          </div>
+                          {(user.verified_status === "verified" || user.verified_status === "trader") && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => toggleTraderStatus(user.id, user.verified_status as "verified" | "trader")}
+                              disabled={isLoading || isRefetching}
+                            >
+                              {user.verified_status === "trader" ? "Remove Trader" : "Make Trader"}
+                            </Button>
+                          )}
                         </div>
                       )}
                     </TableCell>

@@ -12,6 +12,7 @@ import {
   ListingCardFooter,
   useListingCardAnalytics,
 } from "./card";
+import { SellerVerificationBadge } from "./card/SellerVerificationBadge";
 
 interface ListingCardProps {
   listing: Listing;
@@ -52,6 +53,10 @@ export const ListingCard = memo(({ listing, onClick, highestBid, bidCount = 0 }:
         <div className="mb-2">
           <div className="flex justify-between items-start">
             <h3 className="font-semibold line-clamp-1">{listing.title}</h3>
+            <SellerVerificationBadge 
+              sellerId={listing.sellerId} 
+              className="ml-2 flex-shrink-0"
+            />
           </div>
           <p className="text-sm text-muted-foreground line-clamp-1">
             {listing.location}

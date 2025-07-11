@@ -8,8 +8,8 @@ export function useVerificationManagement(
   startOperation: (type: string, id: string) => string,
   finishOperation: (key: string) => void
 ) {
-  const toggleVerifiedStatus = useCallback(async (userId: string, currentStatus: "verified" | "unverified") => {
-    const newStatus = currentStatus === "verified" ? "unverified" : "verified";
+  const toggleVerifiedStatus = useCallback(async (userId: string, currentStatus: "verified" | "unverified" | "trader") => {
+    const newStatus = (currentStatus === "verified" || currentStatus === "trader") ? "unverified" : "verified";
     const action = newStatus === "verified" ? "add" : "remove";
     const operationKey = startOperation("verify", userId);
 
@@ -82,7 +82,81 @@ export function useVerificationManagement(
     }
   }, [setUsers, startOperation, finishOperation]);
 
+  const toggleTraderStatus = useCallback(async (userId: string, currentStatus: "verified" | "trader") => {
+    const newStatus = currentStatus === "trader" ? "verified" : "trader";
+    const action = newStatus === "trader" ? "add" : "remove";
+    const operationKey = startOperation("trader", userId);
+
+    try {
+      // Optimistic update
+      setUsers(prev => 
+        prev.map(user => 
+          user.id === userId 
+            ? { ...user, verified_status: newStatus } 
+            : user
+        )
+      );
+      
+      console.log(`Sending trader toggle request: ${action} trader role for user ${userId}`);
+      
+      // Call the Supabase Edge Function
+      const { data, error } = await supabase.functions.invoke("admin-role-management", {
+        body: {
+          action: action,
+          role: "trader",
+          targetUserId: userId
+        }
+      });
+      
+      console.log(`Trader toggle full response:`, { data, error, rawData: JSON.stringify(data) });
+      
+      if (error) {
+        throw new Error(`Failed to toggle trader status: ${error.message}`);
+      }
+      
+      const isSuccess = !error && (data === null || data === undefined || data.success !== false);
+      const alreadyDone = data?.message?.includes("already") || data?.message?.includes("not found");
+      
+      if (alreadyDone) {
+        console.log(`User ${userId} status was already ${newStatus} - considering operation successful`);
+        return { 
+          success: true, 
+          message: data?.message || `User ${newStatus === "trader" ? "promoted to trader" : "demoted to verified"} successfully`,
+          alreadyDone: true
+        };
+      }
+      
+      if (!isSuccess) {
+        throw new Error(data?.message || "Failed to toggle trader status");
+      }
+      
+      return { 
+        success: true, 
+        message: data?.message || `User ${newStatus === "trader" ? "promoted to trader" : "demoted to verified"} successfully`,
+        alreadyDone: false
+      };
+      
+    } catch (error) {
+      console.error("Error toggling trader status:", error);
+      
+      // Revert the optimistic update
+      setUsers(prev => 
+        prev.map(user => 
+          user.id === userId ? { ...user, verified_status: currentStatus } : user
+        )
+      );
+      
+      return { 
+        success: false, 
+        error: error instanceof Error ? error : new Error("Failed to toggle trader status") 
+      };
+    } finally {
+      finishOperation(operationKey);
+    }
+  }, [setUsers, startOperation, finishOperation]);
+
   return {
-    toggleVerifiedStatus
+    toggleVerifiedStatus,
+    toggleTraderStatus
   };
 }

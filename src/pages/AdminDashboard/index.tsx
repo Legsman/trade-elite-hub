@@ -38,6 +38,7 @@ const AdminDashboard = () => {
     promoteAdmin,
     demoteAdmin,
     toggleVerifiedStatus,
+    toggleTraderStatus,
     currentUserId,
     refetchData,
     isPendingForUser,
@@ -141,7 +142,8 @@ const AdminDashboard = () => {
           handleUnsuspendUser={handleUnsuspendUser}
           promoteAdmin={promoteAdmin}
           demoteAdmin={demoteAdmin}
-          toggleVerifiedStatus={toggleVerifiedStatus}
+        toggleVerifiedStatus={toggleVerifiedStatus}
+        toggleTraderStatus={toggleTraderStatus}
           currentUserId={currentUserId}
           isPendingForUser={isPendingForUser}
           isRefetching={isRefetching}

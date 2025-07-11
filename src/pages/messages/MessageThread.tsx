@@ -9,6 +9,9 @@ import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Loading } from "@/components/ui/loading";
 import NoMessages from "./NoMessages";
 import { formatDate, formatTime, groupMessagesByDate } from "./utils/messageHelpers";
+import { usePermissions } from "@/hooks/auth/usePermissions";
+import { useUserVerification } from "@/hooks/auth/useUserVerification";
+import { VerificationRequiredModal } from "@/components/auth/VerificationRequiredModal";
 
 type Props = {
   isMobile: boolean;
@@ -23,6 +26,8 @@ type Props = {
   handleSendMessage: () => void;
   userId?: string;
   navigate: (url: string) => void;
+  showVerificationModal: boolean;
+  setShowVerificationModal: (show: boolean) => void;
 };
 
 const MessageThread = ({
@@ -38,7 +43,21 @@ const MessageThread = ({
   handleSendMessage,
   userId,
   navigate,
-}: Props) => (
+  showVerificationModal,
+  setShowVerificationModal,
+}: Props) => {
+  const { canSendMessages } = usePermissions();
+  const { level } = useUserVerification();
+
+  const handleSendClick = () => {
+    if (!canSendMessages) {
+      setShowVerificationModal(true);
+      return;
+    }
+    handleSendMessage();
+  };
+
+  return (
   <div className={`${isMobile ? 'w-full' : 'w-2/3'} flex flex-col bg-background`}>
     {/* Conversation header */}
     <div className="p-3 border-b flex items-center justify-between">
@@ -178,7 +197,7 @@ const MessageThread = ({
         <Button 
           size="icon" 
           type="button" 
-          onClick={handleSendMessage}
+          onClick={handleSendClick}
           disabled={!messageInput.trim()}
         >
           <Send className="h-4 w-4" />
@@ -188,8 +207,16 @@ const MessageThread = ({
         <AlertCircle className="h-3 w-3 mr-1" />
         We recommend not sharing contact details until necessary
       </div>
+      <VerificationRequiredModal 
+        open={showVerificationModal}
+        onOpenChange={setShowVerificationModal}
+        action="send messages"
+        currentLevel={level}
+        requiredLevel="verified"
+      />
     </div>
   </div>
-);
+  );
+};
 
 export default MessageThread;

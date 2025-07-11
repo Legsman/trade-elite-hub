@@ -63,8 +63,19 @@ export function useUsersAdminData() {
       const usersWithRoles: UserAdmin[] = profilesData.map(profile => {
         const roleInfo = rolesData.find(r => r.user_id === profile.id) || {
           is_admin: false,
-          is_verified: false
+          is_verified: false,
+          is_trader: false
         };
+
+        // Determine verification status based on role hierarchy
+        let verificationStatus: "unverified" | "verified" | "trader" = "unverified";
+        if (roleInfo.is_admin) {
+          verificationStatus = "verified"; // Admins are always verified
+        } else if (roleInfo.is_trader) {
+          verificationStatus = "trader";
+        } else if (roleInfo.is_verified) {
+          verificationStatus = "verified";
+        }
 
         return {
           id: profile.id,
@@ -72,7 +83,7 @@ export function useUsersAdminData() {
           full_name: profile.full_name || "Unknown User",
           created_at: profile.created_at,
           role: roleInfo.is_admin ? "admin" : "user",
-          verified_status: roleInfo.is_admin || roleInfo.is_verified ? "verified" : "unverified",
+          verified_status: verificationStatus,
           strike_count: profile.strike_count || 0,
           last_visited: profile.updated_at,
           listings_count: 0

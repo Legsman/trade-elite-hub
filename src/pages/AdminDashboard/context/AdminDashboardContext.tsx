@@ -29,7 +29,8 @@ interface AdminDashboardContextType {
   filteredUsers?: UserAdmin[];
   handleSuspendUser?: (userId: string) => void;
   handleUnsuspendUser?: (userId: string) => void;
-  toggleVerifiedStatus?: (userId: string, currentStatus: "verified" | "unverified") => void;
+  toggleVerifiedStatus?: (userId: string, currentStatus: "verified" | "unverified" | "trader") => void;
+  toggleTraderStatus?: (userId: string, currentStatus: "verified" | "trader") => void;
   onRefresh?: () => void;
   
   // Additional properties for ListingsTab
