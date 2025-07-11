@@ -681,12 +681,18 @@ export type Database = {
       }
       verification_requests: {
         Row: {
+          address_proof_url: string | null
           admin_notes: string | null
           business_name: string | null
           business_registration: string | null
           created_at: string
+          document_verification_status: string | null
           id: string
+          id_document_url: string | null
+          insurance_document_url: string | null
           message: string | null
+          payment_reference: string | null
+          payment_status: string | null
           request_type: string
           requested_at: string
           reviewed_at: string | null
@@ -697,12 +703,18 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          address_proof_url?: string | null
           admin_notes?: string | null
           business_name?: string | null
           business_registration?: string | null
           created_at?: string
+          document_verification_status?: string | null
           id?: string
+          id_document_url?: string | null
+          insurance_document_url?: string | null
           message?: string | null
+          payment_reference?: string | null
+          payment_status?: string | null
           request_type: string
           requested_at?: string
           reviewed_at?: string | null
@@ -713,12 +725,18 @@ export type Database = {
           user_id: string
         }
         Update: {
+          address_proof_url?: string | null
           admin_notes?: string | null
           business_name?: string | null
           business_registration?: string | null
           created_at?: string
+          document_verification_status?: string | null
           id?: string
+          id_document_url?: string | null
+          insurance_document_url?: string | null
           message?: string | null
+          payment_reference?: string | null
+          payment_status?: string | null
           request_type?: string
           requested_at?: string
           reviewed_at?: string | null

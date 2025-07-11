@@ -11,8 +11,10 @@ import {
   BuyingSection,
   SellingSection,
   ViewModeToggle,
-  UserTierCard
+  UserTierCard,
+  UpgradePathCard
 } from "@/components/dashboard";
+import EnhancedVerificationModal from "@/components/auth/EnhancedVerificationModal";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -25,6 +27,8 @@ const Dashboard = () => {
   } = useSavedListings();
   
   const [viewMode, setViewMode] = useState<"buying" | "selling">("buying");
+  const [verificationModalOpen, setVerificationModalOpen] = useState(false);
+  const [verificationRequestType, setVerificationRequestType] = useState<'verified' | 'trader'>('verified');
   
   useEffect(() => {
     if (user) {
@@ -66,6 +70,11 @@ const Dashboard = () => {
     setViewMode(mode);
   };
 
+  const handleUpgradeClick = (targetTier: 'verified' | 'trader') => {
+    setVerificationRequestType(targetTier);
+    setVerificationModalOpen(true);
+  };
+
   return (
     <MainLayout>
       <div className="container py-8">
@@ -77,6 +86,7 @@ const Dashboard = () => {
           {/* Left sidebar */}
           <div className="space-y-6">
             <UserTierCard />
+            <UpgradePathCard onUpgradeClick={handleUpgradeClick} />
             <AccountSidebar 
               user={user}
               onFeedbackClick={() => {}} // No longer used, navigation handled in AccountSidebar
@@ -103,6 +113,12 @@ const Dashboard = () => {
             )}
           </div>
         </div>
+
+        <EnhancedVerificationModal
+          isOpen={verificationModalOpen}
+          onClose={() => setVerificationModalOpen(false)}
+          requestType={verificationRequestType}
+        />
       </div>
     </MainLayout>
   );
