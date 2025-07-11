@@ -8,11 +8,19 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { CheckCircle, Clock, XCircle } from "lucide-react";
 
 interface VerificationRequestModalProps {
-  children: React.ReactNode;
+  children?: React.ReactNode;
+  isOpen?: boolean;
+  onClose?: () => void;
 }
 
-export function VerificationRequestModal({ children }: VerificationRequestModalProps) {
-  const [isOpen, setIsOpen] = useState(false);
+export function VerificationRequestModal({ children, isOpen: externalIsOpen, onClose }: VerificationRequestModalProps) {
+  const [internalIsOpen, setInternalIsOpen] = useState(false);
+  
+  // Use external state if provided, otherwise use internal state
+  const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen;
+  const setIsOpen = onClose !== undefined 
+    ? (open: boolean) => { if (!open) onClose(); }
+    : setInternalIsOpen;
   const { hasActiveRequest, latestRequest } = useVerificationRequests();
 
   const getStatusIcon = (status: string) => {
@@ -30,9 +38,11 @@ export function VerificationRequestModal({ children }: VerificationRequestModalP
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        {children}
-      </DialogTrigger>
+      {children && (
+        <DialogTrigger asChild>
+          {children}
+        </DialogTrigger>
+      )}
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">

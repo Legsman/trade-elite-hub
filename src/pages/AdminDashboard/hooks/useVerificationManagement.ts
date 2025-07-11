@@ -8,9 +8,26 @@ export function useVerificationManagement(
   startOperation: (type: string, id: string) => string,
   finishOperation: (key: string) => void
 ) {
-  const toggleVerifiedStatus = useCallback(async (userId: string, currentStatus: "verified" | "unverified" | "trader") => {
-    const newStatus = (currentStatus === "verified" || currentStatus === "trader") ? "unverified" : "verified";
-    const action = newStatus === "verified" ? "add" : "remove";
+  const toggleVerifiedStatus = useCallback(async (userId: string, targetStatus: "verified" | "unverified" | "trader") => {
+    // Determine the action based on target status
+    let newStatus: "verified" | "unverified" | "trader";
+    let action: string;
+    let role: string;
+    
+    if (targetStatus === "unverified") {
+      newStatus = "unverified";
+      action = "remove";
+      role = "verified";
+    } else if (targetStatus === "verified") {
+      newStatus = "verified";
+      action = "add";
+      role = "verified";
+    } else {
+      // targetStatus === "trader"
+      newStatus = "trader";
+      action = "add";
+      role = "trader";
+    }
     const operationKey = startOperation("verify", userId);
 
     try {
@@ -29,7 +46,7 @@ export function useVerificationManagement(
       const { data, error } = await supabase.functions.invoke("admin-role-management", {
         body: {
           action: action,
-          role: "verified",
+          role: role,
           targetUserId: userId
         }
       });
@@ -66,11 +83,16 @@ export function useVerificationManagement(
     } catch (error) {
       console.error("Error toggling verification status:", error);
       
-      // Revert the optimistic update
+      // Revert the optimistic update - we need to get the current status from the user
       setUsers(prev => 
-        prev.map(user => 
-          user.id === userId ? { ...user, verified_status: currentStatus } : user
-        )
+        prev.map(user => {
+          if (user.id === userId) {
+            // Find the current status from the previous state
+            const currentUser = prev.find(u => u.id === userId);
+            return { ...user, verified_status: currentUser?.verified_status || "unverified" };
+          }
+          return user;
+        })
       );
       
       return { 

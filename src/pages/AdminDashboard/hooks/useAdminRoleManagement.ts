@@ -12,11 +12,11 @@ export function useAdminRoleManagement(
     const operationKey = startOperation("promote", userId);
     
     try {
-      // Optimistic update
+      // Optimistic update - admin automatically becomes trader
       setUsers(prev => 
         prev.map(user => 
           user.id === userId 
-            ? { ...user, role: "admin", verified_status: "verified" } 
+            ? { ...user, role: "admin", verified_status: "trader" } 
             : user
         )
       );

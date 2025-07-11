@@ -19,8 +19,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Search, Loader2, RefreshCw } from "lucide-react";
-import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useAdminDashboardContext } from "../context/AdminDashboardContext";
 
 const UsersTab: React.FC = () => {
@@ -131,35 +131,45 @@ const UsersTab: React.FC = () => {
                       {user.role === 'admin' ? (
                         <Badge variant="default">Admin</Badge>
                       ) : (
-                        <div className="flex items-center space-x-4">
+                        <div className="flex items-center space-x-6">
                           <div className="flex items-center space-x-2">
-                            <Switch
-                              id={`verify-${user.id}`}
-                              checked={user.verified_status === "verified" || user.verified_status === "trader"}
-                              onCheckedChange={() => toggleVerifiedStatus(user.id, user.verified_status)}
+                            <Checkbox
+                              id={`unverified-${user.id}`}
+                              checked={user.verified_status === "unverified"}
+                              onCheckedChange={() => toggleVerifiedStatus(user.id, "unverified")}
                               disabled={isLoading || isRefetching}
                             />
-                            <Label htmlFor={`verify-${user.id}`} className="text-sm">
-                              {isLoading ? (
-                                <span className="flex items-center">
-                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                  Updating...
-                                </span>
-                              ) : (
-                                user.verified_status === "trader" ? "Trader" : 
-                                user.verified_status === "verified" ? "Verified" : "Unverified"
-                              )}
+                            <Label htmlFor={`unverified-${user.id}`} className="text-sm">
+                              Unverified
                             </Label>
                           </div>
-                          {(user.verified_status === "verified" || user.verified_status === "trader") && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => toggleTraderStatus(user.id, user.verified_status as "verified" | "trader")}
+                          <div className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`verified-${user.id}`}
+                              checked={user.verified_status === "verified"}
+                              onCheckedChange={() => toggleVerifiedStatus(user.id, "verified")}
                               disabled={isLoading || isRefetching}
-                            >
-                              {user.verified_status === "trader" ? "Remove Trader" : "Make Trader"}
-                            </Button>
+                            />
+                            <Label htmlFor={`verified-${user.id}`} className="text-sm">
+                              Verified
+                            </Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`trader-${user.id}`}
+                              checked={user.verified_status === "trader"}
+                              onCheckedChange={() => toggleTraderStatus(user.id, user.verified_status as "verified" | "trader")}
+                              disabled={isLoading || isRefetching}
+                            />
+                            <Label htmlFor={`trader-${user.id}`} className="text-sm">
+                              Trader
+                            </Label>
+                          </div>
+                          {isLoading && (
+                            <div className="flex items-center">
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              <span className="ml-2 text-sm">Updating...</span>
+                            </div>
                           )}
                         </div>
                       )}
