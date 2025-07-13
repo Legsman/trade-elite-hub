@@ -122,7 +122,7 @@ serve(async (req) => {
       if (resp && !resp.error && (role === 'verified' || role === 'trader')) {
         console.log(`Setting membership for ${role} user ${targetUserId}`);
         
-        const membershipYears = role === 'trader' ? 2 : 1;
+        const membershipYears = 1; // All memberships are now 1 year
         const now = new Date();
         const membershipExpiry = new Date(now.getTime() + (membershipYears * 365 * 24 * 60 * 60 * 1000));
         
@@ -204,7 +204,7 @@ serve(async (req) => {
         } else {
           // User still has verification roles, update membership based on highest role
           const hasTrader = remainingRoles.some(r => r.role === 'trader');
-          const membershipYears = hasTrader ? 2 : 1;
+          const membershipYears = 1; // All memberships are now 1 year
           const now = new Date();
           const membershipExpiry = new Date(now.getTime() + (membershipYears * 365 * 24 * 60 * 60 * 1000));
           
