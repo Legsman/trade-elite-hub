@@ -3,3 +3,9 @@ project_id = "hwnsooioeqydhyukenfe"
 
 [functions.expire-auctions]
 verify_jwt = false
+
+[functions.send-membership-reminder]
+verify_jwt = false
+
+[functions.check-membership-expiry]
+verify_jwt = false
