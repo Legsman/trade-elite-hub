@@ -136,8 +136,12 @@ const UsersTab: React.FC = () => {
                             <Checkbox
                               id={`unverified-${user.id}`}
                               checked={user.verified_status === "unverified"}
-                              onCheckedChange={() => toggleVerifiedStatus(user.id, "unverified")}
-                              disabled={isLoading || isRefetching}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  toggleVerifiedStatus(user.id, "unverified");
+                                }
+                              }}
+                              disabled={isLoading || isRefetching || user.verified_status === "unverified"}
                             />
                             <Label htmlFor={`unverified-${user.id}`} className="text-sm">
                               Unverified
@@ -147,8 +151,12 @@ const UsersTab: React.FC = () => {
                             <Checkbox
                               id={`verified-${user.id}`}
                               checked={user.verified_status === "verified"}
-                              onCheckedChange={() => toggleVerifiedStatus(user.id, "verified")}
-                              disabled={isLoading || isRefetching}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  toggleVerifiedStatus(user.id, "verified");
+                                }
+                              }}
+                              disabled={isLoading || isRefetching || user.verified_status === "verified"}
                             />
                             <Label htmlFor={`verified-${user.id}`} className="text-sm">
                               Verified
@@ -158,8 +166,14 @@ const UsersTab: React.FC = () => {
                             <Checkbox
                               id={`trader-${user.id}`}
                               checked={user.verified_status === "trader"}
-                              onCheckedChange={() => toggleTraderStatus(user.id, user.verified_status as "verified" | "trader")}
-                              disabled={isLoading || isRefetching}
+                              onCheckedChange={(checked) => {
+                                if (checked && user.verified_status === "verified") {
+                                  toggleTraderStatus(user.id, "verified");
+                                } else if (!checked && user.verified_status === "trader") {
+                                  toggleTraderStatus(user.id, "trader");
+                                }
+                              }}
+                              disabled={isLoading || isRefetching || user.verified_status === "unverified"}
                             />
                             <Label htmlFor={`trader-${user.id}`} className="text-sm">
                               Trader

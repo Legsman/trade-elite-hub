@@ -9,22 +9,43 @@ export function useVerificationManagement(
   finishOperation: (key: string) => void
 ) {
   const toggleVerifiedStatus = useCallback(async (userId: string, targetStatus: "verified" | "unverified" | "trader") => {
+    console.log(`toggleVerifiedStatus called with userId: ${userId}, targetStatus: ${targetStatus}`);
+    
+    // Get current user status
+    const currentUser = setUsers.constructor.name === 'Function' ? 
+      null : // Can't get current state directly from setter, will be handled in optimistic update revert
+      null;
+    
     // Determine the action based on target status
-    let newStatus: "verified" | "unverified" | "trader";
+    let newStatus: "verified" | "unverified" | "trader" = targetStatus;
     let action: string;
     let role: string;
     
     if (targetStatus === "unverified") {
-      newStatus = "unverified";
-      action = "remove";
-      role = "verified";
+      // Find what role to remove - check user's current status
+      const users = await new Promise<UserAdmin[]>((resolve) => {
+        setUsers(prev => {
+          resolve(prev);
+          return prev;
+        });
+      });
+      
+      const user = users.find(u => u.id === userId);
+      if (user?.verified_status === "trader") {
+        action = "remove";
+        role = "trader";
+      } else if (user?.verified_status === "verified") {
+        action = "remove";
+        role = "verified";
+      } else {
+        // Already unverified
+        return { success: true, message: "User is already unverified", alreadyDone: true };
+      }
     } else if (targetStatus === "verified") {
-      newStatus = "verified";
       action = "add";
       role = "verified";
     } else {
       // targetStatus === "trader"
-      newStatus = "trader";
       action = "add";
       role = "trader";
     }
@@ -150,8 +171,11 @@ export function useVerificationManagement(
   }, [setUsers, startOperation, finishOperation]);
 
   const toggleTraderStatus = useCallback(async (userId: string, currentStatus: "verified" | "trader") => {
+    console.log(`toggleTraderStatus called with userId: ${userId}, currentStatus: ${currentStatus}`);
+    
     const newStatus = currentStatus === "trader" ? "verified" : "trader";
     const action = newStatus === "trader" ? "add" : "remove";
+    const role = "trader";
     const operationKey = startOperation("trader", userId);
 
     try {
@@ -211,7 +235,7 @@ export function useVerificationManagement(
       const { data, error } = await supabase.functions.invoke("admin-role-management", {
         body: {
           action: action,
-          role: "trader",
+          role: role,
           targetUserId: userId
         }
       });

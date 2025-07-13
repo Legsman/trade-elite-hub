@@ -118,6 +118,27 @@ serve(async (req) => {
         .from("user_roles")
         .insert({ user_id: targetUserId, role });
 
+      // Handle role transitions to ensure only one verification role at a time
+      if (resp && !resp.error) {
+        if (role === 'verified') {
+          // When adding verified, remove unverified role if it exists
+          console.log(`Removing unverified role for user ${targetUserId} after adding verified`);
+          await supabaseAdmin
+            .from("user_roles")
+            .delete()
+            .eq("user_id", targetUserId)
+            .eq("role", "unverified");
+        } else if (role === 'trader') {
+          // When adding trader, remove both unverified and verified roles if they exist
+          console.log(`Removing unverified and verified roles for user ${targetUserId} after adding trader`);
+          await supabaseAdmin
+            .from("user_roles")
+            .delete()
+            .eq("user_id", targetUserId)
+            .in("role", ["unverified", "verified"]);
+        }
+      }
+
       // If adding verified or trader role, also set membership information
       if (resp && !resp.error && (role === 'verified' || role === 'trader')) {
         console.log(`Setting membership for ${role} user ${targetUserId}`);
@@ -175,6 +196,39 @@ serve(async (req) => {
         .delete()
         .eq("user_id", targetUserId)
         .eq("role", role);
+
+      // Handle role transitions when removing verification roles
+      if (resp && !resp.error) {
+        if (role === 'verified') {
+          // When removing verified, add unverified role if user has no other verification roles
+          const { data: hasTrader } = await supabaseAdmin
+            .from("user_roles")
+            .select("role")
+            .eq("user_id", targetUserId)
+            .eq("role", "trader");
+          
+          if (!hasTrader || hasTrader.length === 0) {
+            console.log(`Adding unverified role for user ${targetUserId} after removing verified`);
+            await supabaseAdmin
+              .from("user_roles")
+              .insert({ user_id: targetUserId, role: 'unverified' });
+          }
+        } else if (role === 'trader') {
+          // When removing trader, check if user has verified role, otherwise add unverified
+          const { data: hasVerified } = await supabaseAdmin
+            .from("user_roles")
+            .select("role")
+            .eq("user_id", targetUserId)
+            .eq("role", "verified");
+          
+          if (!hasVerified || hasVerified.length === 0) {
+            console.log(`Adding unverified role for user ${targetUserId} after removing trader`);
+            await supabaseAdmin
+              .from("user_roles")
+              .insert({ user_id: targetUserId, role: 'unverified' });
+          }
+        }
+      }
 
       // If removing verified or trader role, handle membership status
       if (resp && !resp.error && (role === 'verified' || role === 'trader')) {
