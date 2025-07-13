@@ -63,6 +63,7 @@ serve(async (req) => {
     const verificationRequestId = session.metadata?.verification_request_id;
     const feeType = session.metadata?.fee_type;
     const tierType = session.metadata?.tier_type;
+    const paymentType = session.metadata?.type;
 
     if (session.payment_status === 'paid') {
       logStep("Payment confirmed as paid");
@@ -77,6 +78,35 @@ serve(async (req) => {
           })
           .eq('id', verificationRequestId);
         logStep("Updated verification request payment status to completed");
+      }
+
+      // Handle membership renewal payments automatically
+      if (paymentType === 'membership_renewal' && tierType) {
+        logStep("Processing automatic membership renewal", { tierType });
+        
+        // Calculate new expiry date (1-2 years based on tier)
+        const newExpiryDate = new Date();
+        if (tierType === 'verified') {
+          newExpiryDate.setFullYear(newExpiryDate.getFullYear() + 1); // 1 year
+        } else if (tierType === 'trader') {
+          newExpiryDate.setFullYear(newExpiryDate.getFullYear() + 2); // 2 years
+        }
+
+        // Update profile with new membership dates
+        await supabaseService
+          .from("profiles")
+          .update({
+            membership_expires_at: newExpiryDate.toISOString(),
+            membership_status: 'active',
+            last_payment_date: new Date().toISOString(),
+          })
+          .eq('id', user.id);
+        
+        logStep("Automatically extended membership", { 
+          userId: user.id, 
+          newExpiry: newExpiryDate.toISOString(),
+          tier: tierType 
+        });
       }
 
       // Update orders table for one-time payments

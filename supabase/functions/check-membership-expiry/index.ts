@@ -82,8 +82,9 @@ serve(async (req) => {
       }
     }
 
-    // 3. Send reminders for upcoming expiries
+    // 3. Send daily reminders for upcoming expiries (only once per day)
     const reminderDays = [30, 7, 3, 2, 1];
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
     
     for (const days of reminderDays) {
       const reminderDate = new Date();
@@ -107,34 +108,58 @@ serve(async (req) => {
       }
 
       if (usersToRemind && usersToRemind.length > 0) {
-        console.log(`Sending ${days}-day reminders to ${usersToRemind.length} users`);
+        console.log(`Found ${usersToRemind.length} users for ${days}-day reminders`);
 
-        // Send reminders
+        // Filter out users who already received today's reminder
+        const usersNeedingReminder = [];
         for (const user of usersToRemind) {
-          try {
-            const response = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/send-membership-reminder`, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`,
-              },
-              body: JSON.stringify({
-                user_id: user.id,
-                reminder_days: days,
-                membership_expires_at: user.membership_expires_at,
-                email_address: user.email,
-                full_name: user.full_name,
-              }),
-            });
-
-            if (!response.ok) {
-              console.error(`Failed to send reminder to ${user.email}:`, await response.text());
-            } else {
-              console.log(`Reminder sent to ${user.email} for ${days}-day notice`);
-            }
-          } catch (error) {
-            console.error(`Error sending reminder to ${user.email}:`, error);
+          const { data: existingReminder } = await supabase
+            .from("email_notifications_log")
+            .select("id")
+            .eq("user_id", user.id)
+            .eq("notification_type", "membership_reminder")
+            .eq("reminder_days", days)
+            .gte("sent_at", `${today}T00:00:00Z`)
+            .lt("sent_at", `${today}T23:59:59Z`)
+            .maybeSingle();
+          
+          if (!existingReminder) {
+            usersNeedingReminder.push(user);
           }
+        }
+
+        if (usersNeedingReminder.length > 0) {
+          console.log(`Sending ${days}-day reminders to ${usersNeedingReminder.length} users (filtered duplicates)`);
+
+          // Send reminders
+          for (const user of usersNeedingReminder) {
+            try {
+              const response = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/send-membership-reminder`, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "Authorization": `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`,
+                },
+                body: JSON.stringify({
+                  user_id: user.id,
+                  reminder_days: days,
+                  membership_expires_at: user.membership_expires_at,
+                  email_address: user.email,
+                  full_name: user.full_name,
+                }),
+              });
+
+              if (!response.ok) {
+                console.error(`Failed to send reminder to ${user.email}:`, await response.text());
+              } else {
+                console.log(`Reminder sent to ${user.email} for ${days}-day notice`);
+              }
+            } catch (error) {
+              console.error(`Error sending reminder to ${user.email}:`, error);
+            }
+          }
+        } else {
+          console.log(`All users for ${days}-day reminder already notified today`);
         }
       }
     }
