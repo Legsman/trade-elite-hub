@@ -26,11 +26,11 @@ serve(async (req) => {
       }), { headers: corsHeaders, status: 400 });
     }
 
-    // Validate role to make sure it's either 'admin' or 'verified'
-    if (role !== 'admin' && role !== 'verified') {
+    // Validate role to make sure it's either 'admin', 'verified', or 'trader'
+    if (role !== 'admin' && role !== 'verified' && role !== 'trader') {
       return new Response(JSON.stringify({ 
         success: false, 
-        error: "Invalid role. Only 'admin' or 'verified' allowed." 
+        error: "Invalid role. Only 'admin', 'verified', or 'trader' allowed." 
       }), { headers: corsHeaders, status: 400 });
     }
 
@@ -117,6 +117,30 @@ serve(async (req) => {
       resp = await supabaseAdmin
         .from("user_roles")
         .insert({ user_id: targetUserId, role });
+
+      // If adding verified or trader role, also set membership information
+      if (resp && !resp.error && (role === 'verified' || role === 'trader')) {
+        console.log(`Setting membership for ${role} user ${targetUserId}`);
+        
+        const membershipYears = role === 'trader' ? 2 : 1;
+        const now = new Date();
+        const membershipExpiry = new Date(now.getTime() + (membershipYears * 365 * 24 * 60 * 60 * 1000));
+        
+        const membershipResp = await supabaseAdmin
+          .from("profiles")
+          .update({
+            membership_expires_at: membershipExpiry.toISOString(),
+            membership_status: 'active',
+            last_payment_date: now.toISOString()
+          })
+          .eq('id', targetUserId);
+          
+        if (membershipResp.error) {
+          console.error(`Failed to set membership for user ${targetUserId}:`, membershipResp.error);
+        } else {
+          console.log(`Successfully set ${membershipYears}-year membership for ${role} user ${targetUserId}`);
+        }
+      }
         
     } else if (action === "remove") {
       console.log(`Removing ${role} role for user ${targetUserId}`);
@@ -151,6 +175,55 @@ serve(async (req) => {
         .delete()
         .eq("user_id", targetUserId)
         .eq("role", role);
+
+      // If removing verified or trader role, handle membership status
+      if (resp && !resp.error && (role === 'verified' || role === 'trader')) {
+        console.log(`Handling membership removal for ${role} user ${targetUserId}`);
+        
+        // Check if user still has any verification roles
+        const { data: remainingRoles } = await supabaseAdmin
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", targetUserId)
+          .in("role", ["verified", "trader"]);
+          
+        if (!remainingRoles || remainingRoles.length === 0) {
+          // User has no verification roles left, set membership to expired
+          const membershipResp = await supabaseAdmin
+            .from("profiles")
+            .update({
+              membership_status: 'expired'
+            })
+            .eq('id', targetUserId);
+            
+          if (membershipResp.error) {
+            console.error(`Failed to expire membership for user ${targetUserId}:`, membershipResp.error);
+          } else {
+            console.log(`Expired membership for unverified user ${targetUserId}`);
+          }
+        } else {
+          // User still has verification roles, update membership based on highest role
+          const hasTrader = remainingRoles.some(r => r.role === 'trader');
+          const membershipYears = hasTrader ? 2 : 1;
+          const now = new Date();
+          const membershipExpiry = new Date(now.getTime() + (membershipYears * 365 * 24 * 60 * 60 * 1000));
+          
+          const membershipResp = await supabaseAdmin
+            .from("profiles")
+            .update({
+              membership_expires_at: membershipExpiry.toISOString(),
+              membership_status: 'active',
+              last_payment_date: now.toISOString()
+            })
+            .eq('id', targetUserId);
+            
+          if (membershipResp.error) {
+            console.error(`Failed to update membership for user ${targetUserId}:`, membershipResp.error);
+          } else {
+            console.log(`Updated membership for user ${targetUserId} based on remaining roles`);
+          }
+        }
+      }
     }
 
     if (resp && resp.error) {

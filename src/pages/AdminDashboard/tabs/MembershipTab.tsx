@@ -9,7 +9,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { useMembershipManagement } from '@/hooks/useMembershipManagement';
 import { supabase } from '@/integrations/supabase/client';
-import { Calendar, Users, AlertTriangle, CheckCircle, Clock, Mail, DollarSign } from 'lucide-react';
+import { Calendar, Users, AlertTriangle, CheckCircle, Clock, Mail, DollarSign, Star, Crown } from 'lucide-react';
 
 interface MembershipStatus {
   user_id: string;
@@ -21,6 +21,7 @@ interface MembershipStatus {
   grace_period_until: string | null;
   days_until_expiry: number;
   status: 'active' | 'expiring' | 'expired' | 'grace_period';
+  verification_level: 'verified' | 'trader';
 }
 
 interface EmailNotification {
@@ -49,16 +50,54 @@ const MembershipTab: React.FC = () => {
 
   const fetchMembershipData = async () => {
     try {
+      // Get all verified users (both verified and trader roles)
+      const { data: verifiedUsers, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('user_id')
+        .in('role', ['verified', 'trader']);
+
+      if (rolesError) throw rolesError;
+
+      if (!verifiedUsers || verifiedUsers.length === 0) {
+        setMembershipData([]);
+        return;
+      }
+
+      const userIds = verifiedUsers.map(u => u.user_id);
+
+      // Get profile data for all verified users
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, full_name, email, membership_expires_at, membership_status, last_payment_date, grace_period_until')
-        .not('membership_expires_at', 'is', null);
+        .select('id, full_name, email, membership_expires_at, membership_status, last_payment_date, grace_period_until, signup_date, created_at')
+        .in('id', userIds);
 
       if (error) throw error;
 
+      // Get verification levels for each user
+      const { data: userRoles } = await supabase
+        .from('user_roles')
+        .select('user_id, role')
+        .in('user_id', userIds)
+        .in('role', ['verified', 'trader']);
+
       const membershipStatuses: MembershipStatus[] = data.map(profile => {
         const now = new Date();
-        const expiryDate = profile.membership_expires_at ? new Date(profile.membership_expires_at) : null;
+        
+        // Determine user's verification level
+        const userRole = userRoles?.find(r => r.user_id === profile.id);
+        const isTrader = userRoles?.some(r => r.user_id === profile.id && r.role === 'trader');
+        const verificationLevel = isTrader ? 'trader' : 'verified';
+        
+        // Calculate membership expiry - use existing date or calculate from signup/creation
+        let expiryDate = profile.membership_expires_at ? new Date(profile.membership_expires_at) : null;
+        
+        if (!expiryDate) {
+          // Calculate expiry based on verification level and signup date
+          const baseDate = profile.signup_date ? new Date(profile.signup_date) : new Date(profile.created_at);
+          const membershipYears = isTrader ? 2 : 1;
+          expiryDate = new Date(baseDate.getTime() + (membershipYears * 365 * 24 * 60 * 60 * 1000));
+        }
+        
         const gracePeriodUntil = profile.grace_period_until ? new Date(profile.grace_period_until) : null;
         
         let daysUntilExpiry = 0;
@@ -80,12 +119,13 @@ const MembershipTab: React.FC = () => {
           user_id: profile.id,
           full_name: profile.full_name || 'Unknown',
           email: profile.email || '',
-          membership_expires_at: profile.membership_expires_at,
-          membership_status: profile.membership_status,
+          membership_expires_at: expiryDate ? expiryDate.toISOString() : null,
+          membership_status: profile.membership_status || 'active',
           last_payment_date: profile.last_payment_date,
           grace_period_until: profile.grace_period_until,
           days_until_expiry: daysUntilExpiry,
           status,
+          verification_level: verificationLevel,
         };
       });
 
@@ -255,7 +295,17 @@ const MembershipTab: React.FC = () => {
                 {membershipData.map((member) => (
                   <div key={member.user_id} className="flex items-center justify-between p-4 border rounded-lg">
                     <div className="flex-1">
-                      <div className="font-medium">{member.full_name}</div>
+                      <div className="flex items-center gap-2">
+                        <div className="font-medium">{member.full_name}</div>
+                        <Badge variant="outline" className="flex items-center gap-1">
+                          {member.verification_level === 'trader' ? (
+                            <Crown className="h-3 w-3 text-purple-600" />
+                          ) : (
+                            <Star className="h-3 w-3 text-blue-600" />
+                          )}
+                          {member.verification_level.toUpperCase()}
+                        </Badge>
+                      </div>
                       <div className="text-sm text-muted-foreground">{member.email}</div>
                       <div className="text-xs text-muted-foreground mt-1">
                         {member.membership_expires_at ? (
