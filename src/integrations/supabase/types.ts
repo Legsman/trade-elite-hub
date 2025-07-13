@@ -806,6 +806,21 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_membership_data_for_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          user_id: string
+          full_name: string
+          email: string
+          membership_expires_at: string
+          membership_status: string
+          last_payment_date: string
+          grace_period_until: string
+          signup_date: string
+          created_at: string
+          verification_level: string
+        }[]
+      }
       get_user_roles: {
         Args: { _user_id: string }
         Returns: {

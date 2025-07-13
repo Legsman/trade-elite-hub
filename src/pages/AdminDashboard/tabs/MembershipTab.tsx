@@ -50,43 +50,26 @@ const MembershipTab: React.FC = () => {
 
   const fetchMembershipData = async () => {
     try {
-      // Get all verified users (both verified and trader roles)
-      const { data: verifiedUsers, error: rolesError } = await supabase
-        .from('user_roles')
-        .select('user_id')
-        .in('role', ['verified', 'trader']);
+      console.log('Fetching membership data...');
+      
+      // Use the optimized security definer function
+      const { data, error } = await supabase.rpc('get_membership_data_for_admin');
 
-      if (rolesError) throw rolesError;
+      if (error) {
+        console.error('Database error:', error);
+        throw error;
+      }
 
-      if (!verifiedUsers || verifiedUsers.length === 0) {
+      if (!data || data.length === 0) {
+        console.log('No membership data found');
         setMembershipData([]);
         return;
       }
 
-      const userIds = verifiedUsers.map(u => u.user_id);
-
-      // Get profile data for all verified users
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, full_name, email, membership_expires_at, membership_status, last_payment_date, grace_period_until, signup_date, created_at')
-        .in('id', userIds);
-
-      if (error) throw error;
-
-      // Get verification levels for each user
-      const { data: userRoles } = await supabase
-        .from('user_roles')
-        .select('user_id, role')
-        .in('user_id', userIds)
-        .in('role', ['verified', 'trader']);
+      console.log(`Found ${data.length} verified users`);
 
       const membershipStatuses: MembershipStatus[] = data.map(profile => {
         const now = new Date();
-        
-        // Determine user's verification level
-        const userRole = userRoles?.find(r => r.user_id === profile.id);
-        const isTrader = userRoles?.some(r => r.user_id === profile.id && r.role === 'trader');
-        const verificationLevel = isTrader ? 'trader' : 'verified';
         
         // Calculate membership expiry - use existing date or calculate from signup/creation
         let expiryDate = profile.membership_expires_at ? new Date(profile.membership_expires_at) : null;
@@ -94,7 +77,7 @@ const MembershipTab: React.FC = () => {
         if (!expiryDate) {
           // Calculate expiry based on verification level and signup date
           const baseDate = profile.signup_date ? new Date(profile.signup_date) : new Date(profile.created_at);
-          const membershipYears = isTrader ? 2 : 1;
+          const membershipYears = profile.verification_level === 'trader' ? 2 : 1;
           expiryDate = new Date(baseDate.getTime() + (membershipYears * 365 * 24 * 60 * 60 * 1000));
         }
         
@@ -116,7 +99,7 @@ const MembershipTab: React.FC = () => {
         }
 
         return {
-          user_id: profile.id,
+          user_id: profile.user_id,
           full_name: profile.full_name || 'Unknown',
           email: profile.email || '',
           membership_expires_at: expiryDate ? expiryDate.toISOString() : null,
@@ -125,16 +108,17 @@ const MembershipTab: React.FC = () => {
           grace_period_until: profile.grace_period_until,
           days_until_expiry: daysUntilExpiry,
           status,
-          verification_level: verificationLevel,
+          verification_level: profile.verification_level as 'verified' | 'trader',
         };
       });
 
+      console.log('Processed membership data:', membershipStatuses.length);
       setMembershipData(membershipStatuses);
     } catch (error) {
       console.error('Error fetching membership data:', error);
       toast({
         title: "Error",
-        description: "Failed to fetch membership data",
+        description: `Failed to fetch membership data: ${error.message}`,
         variant: "destructive",
       });
     } finally {
