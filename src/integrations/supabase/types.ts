@@ -58,6 +58,39 @@ export type Database = {
           },
         ]
       }
+      email_notifications_log: {
+        Row: {
+          created_at: string
+          email_address: string
+          id: string
+          membership_expires_at: string | null
+          notification_type: string
+          reminder_days: number | null
+          sent_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email_address: string
+          id?: string
+          membership_expires_at?: string | null
+          notification_type: string
+          reminder_days?: number | null
+          sent_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email_address?: string
+          id?: string
+          membership_expires_at?: string | null
+          notification_type?: string
+          reminder_days?: number | null
+          sent_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       feedback: {
         Row: {
           comment: string | null
@@ -403,8 +436,12 @@ export type Database = {
           email: string | null
           feedback_rating: number | null
           full_name: string | null
+          grace_period_until: string | null
           id: string
           is_two_factor_enabled: boolean | null
+          last_payment_date: string | null
+          membership_expires_at: string | null
+          membership_status: string | null
           payment_methods: Json | null
           phone_number: string | null
           postcode: string | null
@@ -430,8 +467,12 @@ export type Database = {
           email?: string | null
           feedback_rating?: number | null
           full_name?: string | null
+          grace_period_until?: string | null
           id: string
           is_two_factor_enabled?: boolean | null
+          last_payment_date?: string | null
+          membership_expires_at?: string | null
+          membership_status?: string | null
           payment_methods?: Json | null
           phone_number?: string | null
           postcode?: string | null
@@ -457,8 +498,12 @@ export type Database = {
           email?: string | null
           feedback_rating?: number | null
           full_name?: string | null
+          grace_period_until?: string | null
           id?: string
           is_two_factor_enabled?: boolean | null
+          last_payment_date?: string | null
+          membership_expires_at?: string | null
+          membership_status?: string | null
           payment_methods?: Json | null
           phone_number?: string | null
           postcode?: string | null
