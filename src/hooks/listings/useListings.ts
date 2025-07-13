@@ -22,65 +22,59 @@ export const useListings = (options: UseListingsOptions = {}) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [totalCount, setTotalCount] = useState(0);
-  const abortControllerRef = useRef<AbortController | null>(null);
-  const optionsRef = useRef<string>("");
   const { getCachedData, setCachedData, registerSubscription, unregisterSubscription, invalidateListingCaches } = useListingsCache();
   
-  // For error rate limiting
-  const errorRef = useRef({
-    count: 0,
-    lastShown: 0,
-    maxShown: 1
-  });
-  
-  // Generate a cache key based on options
+  // Simple cache key generation
   const getCacheKey = useCallback((opts: UseListingsOptions) => {
-    return `listings:${JSON.stringify(opts)}`;
+    // Sort keys to ensure consistent cache keys
+    const sortedOpts = Object.keys(opts).sort().reduce((sorted, key) => {
+      sorted[key] = opts[key as keyof UseListingsOptions];
+      return sorted;
+    }, {} as any);
+    return `listings:${JSON.stringify(sortedOpts)}`;
   }, []);
   
-  const fetchListings = useCallback(async (fromCache = true) => {
-    // Generate a string representation of options for comparison
-    const optionsString = JSON.stringify(options);
+  const fetchListings = useCallback(async (skipCache = false) => {
+    console.log("🔄 fetchListings called with options:", options, "skipCache:", skipCache);
     
-    // If options haven't changed and we're already loading, don't restart the fetch
-    if (isLoading && optionsString === optionsRef.current) {
-      return;
-    }
-    
-    // Abort any in-progress requests
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-    
-    // Create new abort controller
-    abortControllerRef.current = new AbortController();
-    
-    optionsRef.current = optionsString;
     const cacheKey = getCacheKey(options);
+    console.log("🔑 Cache key:", cacheKey);
     
-    // Try to get from cache first
-    if (fromCache) {
+    // Try cache first unless explicitly skipping
+    if (!skipCache) {
       const cachedData = getCachedData<{listings: Listing[], totalCount: number}>(cacheKey);
       if (cachedData) {
+        console.log("✅ Found cached data:", cachedData.listings.length, "listings");
         setListings(cachedData.listings);
         setTotalCount(cachedData.totalCount);
         setIsLoading(false);
         return;
       }
+      console.log("🚫 No cached data found");
     }
     
-    // Only show loading state if we don't have any listings yet or if options changed
-    if (listings.length === 0 || optionsString !== optionsRef.current) {
-      setIsLoading(true);
-    }
-    
+    setIsLoading(true);
     setError(null);
 
     try {
-      // Create base query
+      console.log("🌐 Making database query...");
+      
+      // First, let's check if there are ANY listings at all
+      const { data: totalListings, error: totalError } = await supabase
+        .from("listings")
+        .select("id, status, expires_at")
+        .limit(5);
+        
+      console.log("📋 Total listings check:", { 
+        totalCount: totalListings?.length || 0, 
+        totalError,
+        sampleListings: totalListings 
+      });
+      
+      // Create base query - start simple
       let query = supabase
         .from("listings")
-        .select("*", { count: "exact" }); // Get total count for pagination
+        .select("*", { count: "exact" });
 
       // Apply filters
       query = applyListingFilters(query, options);
@@ -95,73 +89,60 @@ export const useListings = (options: UseListingsOptions = {}) => {
         pageSize: 9 
       });
 
-      // Execute query with abort signal
-      // Note: Supabase doesn't directly support AbortController yet, but we
-      // can still use it to track active requests on our side
-      const { data, error, count } = await query;
+      console.log("📡 Executing filtered query...");
+      const { data, error: queryError, count } = await query;
+      
+      console.log("📊 Filtered query result:", { 
+        dataLength: data?.length || 0, 
+        count, 
+        error: queryError 
+      });
 
-      // Check if request was canceled
-      if (abortControllerRef.current?.signal.aborted) {
-        return;
+      if (queryError) {
+        console.error("❌ Database query error:", queryError);
+        throw queryError;
       }
 
-      if (error) throw error;
-
       // Transform the data
-      const mappedListings = transformListingData(data);
+      const mappedListings = transformListingData(data || []);
+      console.log("🔄 Transformed listings:", mappedListings.length);
       
       // Store in cache
-      setCachedData(cacheKey, {
+      const cacheData = {
         listings: mappedListings,
         totalCount: count || 0
-      });
+      };
+      setCachedData(cacheKey, cacheData);
+      console.log("💾 Stored in cache");
 
       setListings(mappedListings);
       setTotalCount(count || 0);
       setIsLoading(false);
       
-      // Reset error counter on success
-      errorRef.current.count = 0;
+      console.log("✅ Successfully set listings:", mappedListings.length);
+      
     } catch (err) {
-      console.error("Error fetching listings:", err);
-      
-      // Check if request was canceled
-      if (abortControllerRef.current?.signal.aborted) {
-        return;
-      }
-      
+      console.error("❌ Error fetching listings:", err);
       setError("Failed to load listings. Please try again later.");
+      setIsLoading(false);
       
-      // Don't clear previous listings data on error to preserve user experience
-      // Only show loading spinner if we don't have any data yet
-      if (listings.length === 0) {
-        setIsLoading(false);
-      } else {
-        setIsLoading(false);
-      }
-      
-      // Implement error rate limiting for toasts
-      const now = Date.now();
-      errorRef.current.count++;
-      
-      // Only show error toast if we haven't shown too many recently
-      if (errorRef.current.count <= errorRef.current.maxShown || 
-          now - errorRef.current.lastShown > 30000) { // 30 seconds
-        toast({
-          title: "Connection Error",
-          description: "We're having trouble connecting to our servers. We'll keep trying.",
-          variant: "destructive",
-        });
-        errorRef.current.lastShown = now;
-      }
+      toast({
+        title: "Error Loading Listings",
+        description: "Unable to load listings. Please refresh the page.",
+        variant: "destructive",
+      });
     }
-  }, [options, listings.length, isLoading, getCacheKey, getCachedData, setCachedData]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [JSON.stringify(options), getCacheKey, getCachedData, setCachedData]);
 
-  // --- ENHANCED: Realtime subscription for per-row status updates ---
+  // Fetch listings when options change
   useEffect(() => {
-    // Fetch on mount and when options change
+    console.log("🏁 useEffect triggered, fetching listings...");
     fetchListings();
-    
+  }, [fetchListings]);
+
+  // Simplified realtime subscription
+  useEffect(() => {
     const channelKey = 'listings-changes';
     const shouldSubscribe = registerSubscription(channelKey);
 
@@ -178,64 +159,26 @@ export const useListings = (options: UseListingsOptions = {}) => {
             table: 'listings',
           },
           (payload: any) => {
-            // --- FIX: Add type checks for payload.new and payload.old ---
-            const newRow = payload.new && typeof payload.new === 'object' && 'status' in payload.new ? payload.new : null;
-            const oldRow = payload.old && typeof payload.old === 'object' && 'status' in payload.old ? payload.old : null;
-
-            const newStatus = newRow ? newRow.status : undefined;
-            const oldStatus = oldRow ? oldRow.status : undefined;
-            const newExpiresAt = newRow ? newRow.expires_at : undefined;
-            const oldExpiresAt = oldRow ? oldRow.expires_at : undefined;
-            const affectedId =
-              (newRow && newRow.id) ||
-              (oldRow && oldRow.id) ||
-              undefined;
-
-            // For debug
-            console.log("[Realtime listings] DB event:", payload);
-
-            // If updated status, expires_at, or a row is deleted, invalidate
-            if (
-              payload.eventType === "UPDATE" &&
-              affectedId &&
-              (newStatus !== oldStatus || newExpiresAt !== oldExpiresAt)
-            ) {
-              invalidateListingCaches(affectedId);
-              // Force reload from server, skip cache
-              fetchListings(false);
-              return;
-            } else if (
-              (payload.eventType === "INSERT" || payload.eventType === "DELETE") &&
-              affectedId
-            ) {
-              invalidateListingCaches(affectedId);
-              fetchListings(false);
-              return;
-            }
-            // For any other event, default to full refetch
-            fetchListings(false);
+            console.log("🔄 Realtime event:", payload.eventType);
+            // On any realtime event, refresh data (skip cache)
+            fetchListings(true);
           }
         )
         .subscribe();
     }
     
     return () => {
-      // Cleanup function
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-      
       if (channel && unregisterSubscription(channelKey)) {
         supabase.removeChannel(channel);
       }
     };
-  }, [fetchListings, registerSubscription, unregisterSubscription]);
+  }, [registerSubscription, unregisterSubscription, fetchListings]);
 
   return {
     listings,
     isLoading,
     error,
     totalCount,
-    refetch: () => fetchListings(false), // Force refresh from server
+    refetch: () => fetchListings(true), // Force refresh from server, skip cache
   };
 };

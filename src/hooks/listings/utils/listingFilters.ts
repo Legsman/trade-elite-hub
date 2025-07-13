@@ -13,6 +13,8 @@ export type FilterOptions = {
 };
 
 export const applyListingFilters = (query: any, filters: FilterOptions) => {
+  console.log("🔧 Applying filters:", filters);
+  
   const {
     category,
     type,
@@ -29,27 +31,29 @@ export const applyListingFilters = (query: any, filters: FilterOptions) => {
   let filteredQuery = query;
 
   if (showCompleted !== "true") {
-    // Only show active and non-expired listings
-    filteredQuery = filteredQuery
-      .eq("status", "active")
-      .gt("expires_at", new Date().toISOString());
+    // Only show active listings (remove expires_at filter for now to debug)
+    filteredQuery = filteredQuery.eq("status", "active");
+    console.log("🔧 Filtered to active status only");
   } else {
     filteredQuery = filteredQuery.in("status", ["active", "completed", "expired", "sold"]);
-    // NO expires_at filter when showing completed
+    console.log("🔧 Showing all statuses");
   }
 
   // Apply category filter
   if (category && category !== "all_categories") {
+    console.log("🔧 Filtering by category:", category);
     filteredQuery = filteredQuery.eq("category", category);
   }
 
   // Apply type filter
   if (type && type !== "all_types") {
+    console.log("🔧 Filtering by type:", type);
     filteredQuery = filteredQuery.eq("type", type);
   }
 
   // Apply location filter
   if (location && location !== "all_locations") {
+    console.log("🔧 Filtering by location:", location);
     filteredQuery = filteredQuery.eq("location", location);
   }
 
@@ -68,27 +72,33 @@ export const applyListingFilters = (query: any, filters: FilterOptions) => {
       formattedCondition = "Fair";
     }
     
+    console.log("🔧 Filtering by condition:", formattedCondition);
     filteredQuery = filteredQuery.eq("condition", formattedCondition);
   }
 
   // Apply price range filters
-  if (minPrice) {
+  if (minPrice && minPrice !== "0") {
+    console.log("🔧 Filtering by minPrice:", minPrice);
     filteredQuery = filteredQuery.gte("price", minPrice);
   }
 
-  if (maxPrice) {
+  if (maxPrice && maxPrice !== "10000") {
+    console.log("🔧 Filtering by maxPrice:", maxPrice);
     filteredQuery = filteredQuery.lte("price", maxPrice);
   }
 
   // Apply best offer filter
   if (allowBestOffer === "true") {
+    console.log("🔧 Filtering by allowBestOffer");
     filteredQuery = filteredQuery.eq("allow_best_offer", true);
   }
 
   // Apply search term filter
   if (searchTerm) {
+    console.log("🔧 Filtering by searchTerm:", searchTerm);
     filteredQuery = filteredQuery.ilike("title", `%${searchTerm}%`);
   }
 
+  console.log("🔧 Filters applied successfully");
   return filteredQuery;
 };
