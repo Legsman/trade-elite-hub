@@ -88,13 +88,13 @@ const Dashboard = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Left sidebar */}
           <div className="space-y-6">
-            <UserTierCard />
-            <UpgradePathCard onUpgradeClick={handleUpgradeClick} />
             <AccountSidebar 
               user={user}
               onFeedbackClick={() => {}} // No longer used, navigation handled in AccountSidebar
             />
             <QuickLinksCard />
+            <UserTierCard />
+            <UpgradePathCard onUpgradeClick={handleUpgradeClick} />
           </div>
 
           {/* Main content */}
