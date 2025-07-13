@@ -9,6 +9,7 @@ import ReportsTab from "./tabs/ReportsTab";
 import AdminsTab from "./tabs/AdminsTab";
 import { VerificationRequestsTab } from "./tabs/VerificationRequestsTab";
 import FeesTab from "./tabs/FeesTab";
+import MembershipTab from "./tabs/MembershipTab";
 import { AdminDashboardProvider } from "./context/AdminDashboardContext";
 
 interface AdminTabsLayoutProps {
@@ -117,6 +118,7 @@ const AdminTabsLayout: React.FC<AdminTabsLayoutProps> = ({
           <TabsTrigger value="reports">Reports</TabsTrigger>
           <TabsTrigger value="verification">Verification</TabsTrigger>
           <TabsTrigger value="fees">Fees</TabsTrigger>
+          <TabsTrigger value="membership">Membership</TabsTrigger>
           <TabsTrigger value="admins">Admins</TabsTrigger>
       </TabsList>
       
@@ -143,6 +145,10 @@ const AdminTabsLayout: React.FC<AdminTabsLayoutProps> = ({
         
         <TabsContent value="fees" className="py-2">
           <FeesTab />
+        </TabsContent>
+        
+        <TabsContent value="membership" className="py-2">
+          <MembershipTab />
         </TabsContent>
         
         <TabsContent value="admins" className="py-2">

@@ -9,3 +9,6 @@ verify_jwt = false
 
 [functions.check-membership-expiry]
 verify_jwt = false
+
+[functions.process-membership-renewal]
+verify_jwt = true

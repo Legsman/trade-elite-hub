@@ -11,6 +11,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import MembershipRenewalCard from "@/components/membership/MembershipRenewalCard";
 
 interface SubscriptionTabProps {
   subscribed: boolean;
@@ -36,7 +37,11 @@ const SubscriptionTab = ({
   formatDate,
 }: SubscriptionTabProps) => {
   return (
-    <Card>
+    <div className="space-y-6">
+      {/* Membership Renewal Section */}
+      <MembershipRenewalCard />
+      
+      <Card>
       <CardHeader>
         <CardTitle>Subscription Management</CardTitle>
         <CardDescription>
@@ -189,6 +194,7 @@ const SubscriptionTab = ({
         )}
       </CardContent>
     </Card>
+    </div>
   );
 };
 
