@@ -16,7 +16,7 @@ export function useUsersAdminData() {
       
       console.log("Fetching admin users data...");
       
-      // Fetch profiles data first
+      // Fetch profiles data first, ordered by signup date (oldest first)
       const { data: profilesData, error: profilesError } = await supabase
         .from("profiles")
         .select(`
@@ -26,7 +26,8 @@ export function useUsersAdminData() {
           created_at,
           updated_at,
           strike_count
-        `);
+        `)
+        .order('created_at', { ascending: true });
         
       if (profilesError) {
         console.error("Error fetching profiles:", profilesError);

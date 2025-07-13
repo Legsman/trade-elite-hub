@@ -34,20 +34,27 @@ export function useAdminSearchFilters(users: UserAdmin[], listings: ListingAdmin
 
   // Filter users based on search query and selected filter
   const filteredUsers = useMemo(() => {
-    return users.filter((user) => {
-      const matchesSearch =
-        !searchQuery ||
-        user.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        user.email?.toLowerCase().includes(searchQuery.toLowerCase());
+    return users
+      .filter((user) => {
+        const matchesSearch =
+          !searchQuery ||
+          user.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          user.email?.toLowerCase().includes(searchQuery.toLowerCase());
 
-      const matchesFilter = userFilter === "all" 
-        || (userFilter === "admin" && user.role === "admin")
-        || (userFilter === "verified" && user.verified_status === "verified")
-        || (userFilter === "unverified" && user.verified_status === "unverified")
-        || (userFilter === "suspended" && user.strike_count >= 3);
+        const matchesFilter = userFilter === "all" 
+          || (userFilter === "admin" && user.role === "admin")
+          || (userFilter === "verified" && user.verified_status === "verified")
+          || (userFilter === "unverified" && user.verified_status === "unverified")
+          || (userFilter === "suspended" && user.strike_count >= 3);
 
-      return matchesSearch && matchesFilter;
-    });
+        return matchesSearch && matchesFilter;
+      })
+      .sort((a, b) => {
+        // Sort by signup date (created_at) first, then by name
+        const dateCompare = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        if (dateCompare !== 0) return dateCompare;
+        return (a.full_name || "").localeCompare(b.full_name || "");
+      });
   }, [users, searchQuery, userFilter]);
 
   // --- UPDATED: Use centralized "effectiveStatus" for admin listing filters ---
