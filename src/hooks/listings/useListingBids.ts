@@ -1,21 +1,35 @@
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 // This hook is used to get the highest bids for multiple listings
 export const useListingBids = (listingIds: string[]) => {
   const [highestBids, setHighestBids] = useState<Record<string, number>>({});
   const [bidCounts, setBidCounts] = useState<Record<string, number>>({});
+  const [loading, setLoading] = useState(false);
+  const subscriptionRef = useRef<any>(null);
+  const listingsSubscriptionRef = useRef<any>(null);
   
-  useEffect(() => {
-    if (!listingIds || listingIds.length === 0) return;
+  // Memoize and stabilize listingIds to prevent unnecessary re-subscriptions
+  const stableListingIds = useMemo(() => {
+    if (!listingIds || listingIds.length === 0) return [];
+    // Sort and deduplicate to ensure array stability
+    return [...new Set(listingIds)].sort();
+  }, [listingIds]);
+
+  // Check if listing IDs array actually changed
+  const listingIdsString = stableListingIds.join(',');
+  
+  const fetchBidsForListings = useCallback(async () => {
+    if (!stableListingIds.length) return;
     
-    const fetchBidsForListings = async () => {
-      console.log(`Fetching bids for ${listingIds.length} listings`);
-      
-      try {
-        // For each listing, fetch the highest bid amount AND check the current_bid from listings
-        const promises = listingIds.map(async (listingId) => {
+    setLoading(true);
+    console.log(`Fetching bids for ${stableListingIds.length} listings`);
+    
+    try {
+    
+      // For each listing, fetch the highest bid amount AND check the current_bid from listings
+      const promises = stableListingIds.map(async (listingId) => {
           // First check current_bid from listings
           const { data: listingData, error: listingError } = await supabase
             .from("listings")
@@ -80,22 +94,45 @@ export const useListingBids = (listingIds: string[]) => {
         setBidCounts(countsMap);
       } catch (error) {
         console.error("Error fetching bids for listings:", error);
+      } finally {
+        setLoading(false);
       }
-    };
+    }, [stableListingIds]);
+  
+  useEffect(() => {
+    if (stableListingIds.length === 0) {
+      setHighestBids({});
+      setBidCounts({});
+      setLoading(false);
+      return;
+    }
     
     // Initial fetch
     fetchBidsForListings();
     
+    // Clean up existing subscriptions before creating new ones
+    if (subscriptionRef.current) {
+      console.log("Cleaning up existing bids subscription");
+      supabase.removeChannel(subscriptionRef.current);
+      subscriptionRef.current = null;
+    }
+    
+    if (listingsSubscriptionRef.current) {
+      console.log("Cleaning up existing listings subscription");
+      supabase.removeChannel(listingsSubscriptionRef.current);
+      listingsSubscriptionRef.current = null;
+    }
+    
     // Set up realtime subscription for all auction listings
-    const channel = supabase
-      .channel('auction-bids-changes')
+    subscriptionRef.current = supabase
+      .channel(`auction-bids-changes-${listingIdsString}`)
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
           table: 'bids',
-          filter: `listing_id=in.(${listingIds.join(',')})`
+          filter: `listing_id=in.(${stableListingIds.join(',')})`
         },
         (payload) => {
           console.log("Realtime bid update received for listing:", payload);
@@ -108,15 +145,15 @@ export const useListingBids = (listingIds: string[]) => {
       });
       
     // Also subscribe to listing updates for current_bid changes
-    const listingsChannel = supabase
-      .channel('auction-listings-changes')
+    listingsSubscriptionRef.current = supabase
+      .channel(`auction-listings-changes-${listingIdsString}`)
       .on(
         'postgres_changes',
         {
           event: 'UPDATE',
           schema: 'public',
           table: 'listings',
-          filter: `id=in.(${listingIds.join(',')})` 
+          filter: `id=in.(${stableListingIds.join(',')})` 
         },
         (payload) => {
           console.log("Realtime listing update received:", payload);
@@ -127,11 +164,18 @@ export const useListingBids = (listingIds: string[]) => {
       .subscribe();
     
     return () => {
-      console.log("Cleaning up bids subscription for multiple listings");
-      supabase.removeChannel(channel);
-      supabase.removeChannel(listingsChannel);
+      if (subscriptionRef.current) {
+        console.log("Cleaning up bids subscription for multiple listings");
+        supabase.removeChannel(subscriptionRef.current);
+        subscriptionRef.current = null;
+      }
+      if (listingsSubscriptionRef.current) {
+        console.log("Cleaning up listings subscription for multiple listings");
+        supabase.removeChannel(listingsSubscriptionRef.current);
+        listingsSubscriptionRef.current = null;
+      }
     };
-  }, [listingIds]);
+  }, [listingIdsString, fetchBidsForListings]);
   
-  return { highestBids, bidCounts };
+  return { highestBids, bidCounts, loading };
 };

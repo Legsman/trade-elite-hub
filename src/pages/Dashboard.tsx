@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/auth";
 import { useSavedListings, useListingBids } from "@/hooks/listings";
@@ -36,9 +36,12 @@ const Dashboard = () => {
     }
   }, [user, fetchSavedListings]);
   
-  const { highestBids, bidCounts } = useListingBids(
-    savedListings?.filter(listing => listing.type === "auction").map(listing => listing.id) || []
-  );
+  // Memoize auction listing IDs to prevent unnecessary re-renders
+  const auctionListingIds = useMemo(() => {
+    return savedListings?.filter(listing => listing.type === "auction").map(listing => listing.id) || [];
+  }, [savedListings]);
+  
+  const { highestBids, bidCounts, loading: bidsLoading } = useListingBids(auctionListingIds);
   
   const isLoading = authLoading || savedLoading;
 

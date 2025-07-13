@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useAuth } from "@/hooks/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -70,7 +70,7 @@ export const useSavedListings = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [user]);
+  }, [user?.id]); // Only depend on user.id to prevent unnecessary re-renders
 
   useEffect(() => {
     fetchSavedListings();
