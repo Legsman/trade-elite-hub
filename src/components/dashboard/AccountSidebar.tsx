@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Star } from "lucide-react";
-import { useFeedback } from "@/hooks/feedback";
+import { useCombinedFeedback } from "@/hooks/feedback";
 
 interface AccountSidebarProps {
   user: any;
@@ -12,20 +12,8 @@ interface AccountSidebarProps {
 export const AccountSidebar = ({ user, onFeedbackClick }: AccountSidebarProps) => {
   const navigate = useNavigate();
   
-  // Fetch user's feedback as seller to show real ratings
-  const { data: userFeedback, isLoading: feedbackLoading } = useFeedback({
-    userId: user?.id,
-    as: "seller",
-    listingId: null
-  });
-  
-  // Calculate feedback statistics
-  const feedbackStats = userFeedback ? {
-    averageRating: userFeedback.length > 0 
-      ? (userFeedback.reduce((sum, fb) => sum + fb.rating, 0) / userFeedback.length).toFixed(1)
-      : null,
-    count: userFeedback.length
-  } : { averageRating: null, count: 0 };
+  // Fetch combined feedback (both as seller and buyer) to show real combined ratings
+  const { data: combinedFeedbackStats, isLoading: feedbackLoading } = useCombinedFeedback(user?.id);
 
   return (
     <Card>
@@ -54,10 +42,12 @@ export const AccountSidebar = ({ user, onFeedbackClick }: AccountSidebarProps) =
               >
                 <Star className="h-4 w-4 fill-yellow-400 mr-1" />
                 <span className="text-sm font-medium">
-                  {feedbackStats.averageRating || "No rating"}
+                  {combinedFeedbackStats?.averageRating 
+                    ? combinedFeedbackStats.averageRating.toFixed(1)
+                    : "No rating"}
                 </span>
                 <span className="text-xs text-muted-foreground ml-1">
-                  ({feedbackStats.count} feedback)
+                  ({combinedFeedbackStats?.count || 0} feedback)
                 </span>
                 <span className="ml-2 underline text-primary text-xs">View Feedback</span>
               </Button>
