@@ -20,84 +20,70 @@ export const useListingBids = (listingIds: string[]) => {
   // Check if listing IDs array actually changed
   const listingIdsString = stableListingIds.join(',');
   
+  // Debounce timer for real-time updates
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+
   const fetchBidsForListings = useCallback(async () => {
     if (!stableListingIds.length) return;
     
     setLoading(true);
-    console.log(`Fetching bids for ${stableListingIds.length} listings`);
     
     try {
+      // Simplified: Only use current_bid from listings table (which is kept updated by database triggers)
+      const { data: listingsData, error: listingsError } = await supabase
+        .from("listings")
+        .select("id, current_bid")
+        .in("id", stableListingIds);
+      
+      if (listingsError) throw listingsError;
+      
+      // Get bid counts for each listing
+      const bidCountPromises = stableListingIds.map(async (listingId) => {
+        const { count, error: countError } = await supabase
+          .from("bids")
+          .select("id", { count: "exact", head: true })
+          .eq("listing_id", listingId)
+          .eq("status", "active");
+        
+        return { listingId, count: count || 0 };
+      });
+      
+      const bidCountResults = await Promise.all(bidCountPromises);
+      
+      // Create maps for highest bids and bid counts
+      const bidsMap: Record<string, number> = {};
+      const countsMap: Record<string, number> = {};
+      
+      listingsData?.forEach((listing) => {
+        if (listing.current_bid) {
+          bidsMap[listing.id] = Number(listing.current_bid);
+        }
+      });
+      
+      bidCountResults.forEach(({ listingId, count }) => {
+        countsMap[listingId] = count;
+      });
+      
+      setHighestBids(prev => ({ ...prev, ...bidsMap }));
+      setBidCounts(prev => ({ ...prev, ...countsMap }));
+      
+    } catch (error) {
+      console.error("Error fetching bids for listings:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [stableListingIds]);
+
+  // Debounced refetch function
+  const debouncedRefetch = useCallback(() => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
     
-      // For each listing, fetch the highest bid amount AND check the current_bid from listings
-      const promises = stableListingIds.map(async (listingId) => {
-          // First check current_bid from listings
-          const { data: listingData, error: listingError } = await supabase
-            .from("listings")
-            .select("current_bid")
-            .eq("id", listingId)
-            .single();
-          
-          // Then check the highest bid from bids table
-          const { data: bidData, error: bidError } = await supabase
-            .from("bids")
-            .select("amount")
-            .eq("listing_id", listingId)
-            .eq("status", "active")
-            .order("amount", { ascending: false })
-            .limit(1);
-          
-          // Use listingData.current_bid if available, otherwise use the highest bid
-          const listingCurrentBid = listingData && listingData.current_bid 
-            ? Number(listingData.current_bid) 
-            : null;
-            
-          const highestBid = bidData && bidData.length > 0 
-            ? Number(bidData[0].amount) 
-            : null;
-          
-          // Use whichever is higher or available
-          const effectiveHighestBid = listingCurrentBid !== null
-            ? (highestBid !== null ? Math.max(listingCurrentBid, highestBid) : listingCurrentBid)
-            : highestBid;
-          
-          // Also fetch the count of bids
-          const { count, error: countError } = await supabase
-            .from("bids")
-            .select("id", { count: "exact", head: true })
-            .eq("listing_id", listingId)
-            .eq("status", "active");
-          
-          return { 
-            listingId, 
-            highestBid: effectiveHighestBid, 
-            bidCount: count || 0 
-          };
-        });
-        
-        const results = await Promise.all(promises);
-        
-        // Create maps for highest bids and bid counts
-        const bidsMap: Record<string, number> = {};
-        const countsMap: Record<string, number> = {};
-        
-        results.forEach(({ listingId, highestBid, bidCount }) => {
-          if (highestBid !== null) {
-            bidsMap[listingId] = highestBid;
-          }
-          countsMap[listingId] = bidCount;
-        });
-        
-        console.log("Highest bids fetched:", bidsMap);
-        console.log("Bid counts fetched:", countsMap);
-        
-        setHighestBids(bidsMap);
-        setBidCounts(countsMap);
-      } catch (error) {
-        console.error("Error fetching bids for listings:", error);
-      } finally {
-        setLoading(false);
-      }
-    }, [stableListingIds]);
+    debounceTimerRef.current = setTimeout(() => {
+      fetchBidsForListings();
+    }, 500); // 500ms debounce
+  }, [fetchBidsForListings]);
   
   useEffect(() => {
     if (stableListingIds.length === 0) {
@@ -134,10 +120,9 @@ export const useListingBids = (listingIds: string[]) => {
           table: 'bids',
           filter: `listing_id=in.(${stableListingIds.join(',')})`
         },
-        (payload) => {
-          console.log("Realtime bid update received for listing:", payload);
-          // Refetch bids when there's a change
-          fetchBidsForListings();
+        () => {
+          // Use debounced refetch to prevent excessive updates
+          debouncedRefetch();
         }
       )
       .subscribe((status) => {
@@ -155,22 +140,24 @@ export const useListingBids = (listingIds: string[]) => {
           table: 'listings',
           filter: `id=in.(${stableListingIds.join(',')})` 
         },
-        (payload) => {
-          console.log("Realtime listing update received:", payload);
-          // Refetch bids when there's a change to a listing
-          fetchBidsForListings();
+        () => {
+          // Use debounced refetch to prevent excessive updates
+          debouncedRefetch();
         }
       )
       .subscribe();
     
     return () => {
+      // Clear debounce timer
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+      
       if (subscriptionRef.current) {
-        console.log("Cleaning up bids subscription for multiple listings");
         supabase.removeChannel(subscriptionRef.current);
         subscriptionRef.current = null;
       }
       if (listingsSubscriptionRef.current) {
-        console.log("Cleaning up listings subscription for multiple listings");
         supabase.removeChannel(listingsSubscriptionRef.current);
         listingsSubscriptionRef.current = null;
       }

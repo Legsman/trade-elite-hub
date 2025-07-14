@@ -93,33 +93,7 @@ export const useListingsPage = () => {
     
   const { highestBids, bidCounts } = useListingBids(auctionListingIds);
   
-  // Optimize refresh logic
-  const refreshWithBackoff = useCallback(() => {
-    const backoffs = [2000, 5000, 10000]; // 2s, 5s, 10s
-    let attempt = 0;
-    
-    const attemptRefresh = () => {
-      refetch();
-      attempt++;
-      
-      if (attempt < backoffs.length) {
-        setTimeout(attemptRefresh, backoffs[attempt]);
-      }
-    };
-    
-    attemptRefresh();
-  }, [refetch]);
-  
-  // Auto-refresh on errors
-  useEffect(() => {
-    if (error) {
-      const timer = setTimeout(() => {
-        refreshWithBackoff();
-      }, 3000); // Initial delay before first retry
-      
-      return () => clearTimeout(timer);
-    }
-  }, [error, refreshWithBackoff]);
+  // Remove auto-retry mechanism to prevent infinite loops
   
   return {
     listings,
