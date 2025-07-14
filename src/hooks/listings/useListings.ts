@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Listing } from "@/types";
@@ -22,56 +22,35 @@ export const useListings = (options: UseListingsOptions = {}) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [totalCount, setTotalCount] = useState(0);
-  const { getCachedData, setCachedData, registerSubscription, unregisterSubscription, invalidateListingCaches } = useListingsCache();
+  const { getCachedData, setCachedData, registerSubscription, unregisterSubscription } = useListingsCache();
   
-  // Simple cache key generation
-  const getCacheKey = useCallback((opts: UseListingsOptions) => {
-    // Sort keys to ensure consistent cache keys
-    const sortedOpts = Object.keys(opts).sort().reduce((sorted, key) => {
-      sorted[key] = opts[key as keyof UseListingsOptions];
-      return sorted;
-    }, {} as any);
-    return `listings:${JSON.stringify(sortedOpts)}`;
-  }, []);
+  // Generate stable cache key
+  const cacheKey = useMemo(() => {
+    const keys = Object.keys(options).sort();
+    const sortedOptions: Record<string, any> = {};
+    keys.forEach(key => {
+      sortedOptions[key] = options[key as keyof UseListingsOptions];
+    });
+    return `listings:${JSON.stringify(sortedOptions)}`;
+  }, [options]);
   
   const fetchListings = useCallback(async (skipCache = false) => {
-    console.log("🔄 fetchListings called with options:", options, "skipCache:", skipCache);
-    
-    const cacheKey = getCacheKey(options);
-    console.log("🔑 Cache key:", cacheKey);
-    
     // Try cache first unless explicitly skipping
     if (!skipCache) {
       const cachedData = getCachedData<{listings: Listing[], totalCount: number}>(cacheKey);
       if (cachedData) {
-        console.log("✅ Found cached data:", cachedData.listings.length, "listings");
         setListings(cachedData.listings);
         setTotalCount(cachedData.totalCount);
         setIsLoading(false);
         return;
       }
-      console.log("🚫 No cached data found");
     }
     
     setIsLoading(true);
     setError(null);
 
     try {
-      console.log("🌐 Making database query...");
-      
-      // First, let's check if there are ANY listings at all
-      const { data: totalListings, error: totalError } = await supabase
-        .from("listings")
-        .select("id, status, expires_at")
-        .limit(5);
-        
-      console.log("📋 Total listings check:", { 
-        totalCount: totalListings?.length || 0, 
-        totalError,
-        sampleListings: totalListings 
-      });
-      
-      // Create base query - start simple
+      // Create base query
       let query = supabase
         .from("listings")
         .select("*", { count: "exact" });
@@ -89,23 +68,14 @@ export const useListings = (options: UseListingsOptions = {}) => {
         pageSize: 9 
       });
 
-      console.log("📡 Executing filtered query...");
       const { data, error: queryError, count } = await query;
-      
-      console.log("📊 Filtered query result:", { 
-        dataLength: data?.length || 0, 
-        count, 
-        error: queryError 
-      });
 
       if (queryError) {
-        console.error("❌ Database query error:", queryError);
         throw queryError;
       }
 
       // Transform the data
       const mappedListings = transformListingData(data || []);
-      console.log("🔄 Transformed listings:", mappedListings.length);
       
       // Store in cache
       const cacheData = {
@@ -113,16 +83,12 @@ export const useListings = (options: UseListingsOptions = {}) => {
         totalCount: count || 0
       };
       setCachedData(cacheKey, cacheData);
-      console.log("💾 Stored in cache");
 
       setListings(mappedListings);
       setTotalCount(count || 0);
       setIsLoading(false);
       
-      console.log("✅ Successfully set listings:", mappedListings.length);
-      
     } catch (err) {
-      console.error("❌ Error fetching listings:", err);
       setError("Failed to load listings. Please try again later.");
       setIsLoading(false);
       
@@ -132,21 +98,20 @@ export const useListings = (options: UseListingsOptions = {}) => {
         variant: "destructive",
       });
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify(options), getCacheKey, getCachedData, setCachedData]);
+  }, [options, cacheKey, getCachedData, setCachedData]);
 
   // Fetch listings when options change
   useEffect(() => {
-    console.log("🏁 useEffect triggered, fetching listings...");
     fetchListings();
   }, [fetchListings]);
 
-  // Simplified realtime subscription
+  // Debounced realtime subscription
   useEffect(() => {
     const channelKey = 'listings-changes';
     const shouldSubscribe = registerSubscription(channelKey);
 
     let channel: any = null;
+    let debounceTimer: NodeJS.Timeout;
 
     if (shouldSubscribe) {
       channel = supabase
@@ -158,16 +123,19 @@ export const useListings = (options: UseListingsOptions = {}) => {
             schema: 'public',
             table: 'listings',
           },
-          (payload: any) => {
-            console.log("🔄 Realtime event:", payload.eventType);
-            // On any realtime event, refresh data (skip cache)
-            fetchListings(true);
+          () => {
+            // Debounce real-time updates to prevent excessive refetching
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+              fetchListings(true);
+            }, 1000); // Wait 1 second before refetching
           }
         )
         .subscribe();
     }
     
     return () => {
+      clearTimeout(debounceTimer);
       if (channel && unregisterSubscription(channelKey)) {
         supabase.removeChannel(channel);
       }
