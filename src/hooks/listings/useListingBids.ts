@@ -8,6 +8,7 @@ export const useListingBids = (listingIds: string[]) => {
   const [bidCounts, setBidCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(false);
   const subscriptionRef = useRef<any>(null);
+  const isInitialFetchRef = useRef(true);
   
   // Memoize and stabilize listingIds to prevent unnecessary re-subscriptions
   const stableListingIds = useMemo(() => {
@@ -24,9 +25,12 @@ export const useListingBids = (listingIds: string[]) => {
 
   const fetchBidsForListings = useCallback(async () => {
     if (!stableListingIds.length) {
-      setHighestBids({});
-      setBidCounts({});
-      setLoading(false);
+      if (isInitialFetchRef.current) {
+        setHighestBids({});
+        setBidCounts({});
+        setLoading(false);
+        isInitialFetchRef.current = false;
+      }
       return;
     }
     
@@ -34,14 +38,20 @@ export const useListingBids = (listingIds: string[]) => {
     console.log('[useListingBids] Fetching bids for listings:', stableListingIds);
     
     try {
-      // Create fresh maps (not merging with previous state to prevent flickering)
-      const newBidsMap: Record<string, number> = {};
-      const newCountsMap: Record<string, number> = {};
+      // Create loading state maps to prevent flickering
+      const loadingBidsMap: Record<string, number> = {};
+      const loadingCountsMap: Record<string, number> = {};
       
-      // Initialize all listing IDs with 0 counts to prevent flickering
-      stableListingIds.forEach(id => {
-        newCountsMap[id] = 0;
-      });
+      // If this is first fetch, don't show 0s - keep previous state or show loading
+      if (!isInitialFetchRef.current) {
+        // Initialize with previous values to prevent flickering
+        stableListingIds.forEach(id => {
+          loadingBidsMap[id] = highestBids[id] || 0;
+          loadingCountsMap[id] = bidCounts[id] || 0;
+        });
+        setHighestBids(loadingBidsMap);
+        setBidCounts(loadingCountsMap);
+      }
 
       // Get both listings data and bid counts in parallel
       const [listingsResult, bidCountResults] = await Promise.all([
@@ -68,8 +78,12 @@ export const useListingBids = (listingIds: string[]) => {
       
       if (listingsError) {
         console.error('[useListingBids] Error fetching listings:', listingsError);
-        throw listingsError;
+        return; // Don't throw, just return to prevent error cascading
       }
+      
+      // Create fresh maps
+      const newBidsMap: Record<string, number> = {};
+      const newCountsMap: Record<string, number> = {};
       
       // Process listings data
       listingsData?.forEach((listing) => {
@@ -85,18 +99,28 @@ export const useListingBids = (listingIds: string[]) => {
       
       console.log('[useListingBids] Setting new state - Bids:', newBidsMap, 'Counts:', newCountsMap);
       
-      // Set state directly (no merging to prevent flickering)
-      setHighestBids(newBidsMap);
-      setBidCounts(newCountsMap);
+      // Only update state if we have new data and it's different
+      const hasBidsChanged = JSON.stringify(newBidsMap) !== JSON.stringify(highestBids);
+      const hasCountsChanged = JSON.stringify(newCountsMap) !== JSON.stringify(bidCounts);
+      
+      if (hasBidsChanged) {
+        setHighestBids(newBidsMap);
+      }
+      if (hasCountsChanged) {
+        setBidCounts(newCountsMap);
+      }
+      
+      isInitialFetchRef.current = false;
       
     } catch (error) {
       console.error("[useListingBids] Error fetching bids for listings:", error);
+      // Don't update state on error to prevent clearing existing data
     } finally {
       setLoading(false);
     }
-  }, [stableListingIds]);
+  }, [stableListingIds, highestBids, bidCounts]);
 
-  // Debounced refetch function
+  // Stable debounced refetch function that doesn't change on every render
   const debouncedRefetch = useCallback(() => {
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
@@ -104,7 +128,7 @@ export const useListingBids = (listingIds: string[]) => {
     
     debounceTimerRef.current = setTimeout(() => {
       fetchBidsForListings();
-    }, 500); // 500ms debounce
+    }, 300); // Reduced debounce time
   }, [fetchBidsForListings]);
   
   useEffect(() => {
@@ -171,7 +195,7 @@ export const useListingBids = (listingIds: string[]) => {
         subscriptionRef.current = null;
       }
     };
-  }, [listingIdsString, debouncedRefetch]);
+  }, [listingIdsString]); // Removed debouncedRefetch from deps to prevent infinite loop
   
   return { highestBids, bidCounts, loading };
 };
