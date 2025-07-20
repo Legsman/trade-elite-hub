@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      bid_attempt_logs: {
+        Row: {
+          attempted_amount: number | null
+          attempted_at: string | null
+          failure_reason: string | null
+          id: string
+          ip_address: string | null
+          listing_id: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          attempted_amount?: number | null
+          attempted_at?: string | null
+          failure_reason?: string | null
+          id?: string
+          ip_address?: string | null
+          listing_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          attempted_amount?: number | null
+          attempted_at?: string | null
+          failure_reason?: string | null
+          id?: string
+          ip_address?: string | null
+          listing_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       bids: {
         Row: {
           amount: number
@@ -54,6 +87,13 @@ export type Database = {
             columns: ["listing_id"]
             isOneToOne: false
             referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bids_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings_with_auto_expiry"
             referencedColumns: ["id"]
           },
         ]
@@ -132,6 +172,13 @@ export type Database = {
             columns: ["listing_id"]
             isOneToOne: false
             referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_feedback_listing"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings_with_auto_expiry"
             referencedColumns: ["id"]
           },
           {
@@ -296,6 +343,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "fk_messages_listing"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings_with_auto_expiry"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "fk_messages_receiver"
             columns: ["receiver_id"]
             isOneToOne: false
@@ -386,6 +440,13 @@ export type Database = {
             columns: ["listing_id"]
             isOneToOne: false
             referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offers_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings_with_auto_expiry"
             referencedColumns: ["id"]
           },
         ]
@@ -580,6 +641,13 @@ export type Database = {
             columns: ["listing_id"]
             isOneToOne: false
             referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_saved_listings_listing"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings_with_auto_expiry"
             referencedColumns: ["id"]
           },
           {
@@ -803,9 +871,153 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      listings_with_auto_expiry: {
+        Row: {
+          allow_best_offer: boolean | null
+          bid_increment: number | null
+          category: string | null
+          condition: string | null
+          created_at: string | null
+          current_bid: number | null
+          current_status: string | null
+          description: string | null
+          expires_at: string | null
+          highest_bidder_id: string | null
+          id: string | null
+          images: string[] | null
+          location: string | null
+          price: number | null
+          sale_amount: number | null
+          sale_buyer_id: string | null
+          sale_date: string | null
+          saves: number | null
+          seller_id: string | null
+          status: string | null
+          title: string | null
+          type: string | null
+          updated_at: string | null
+          views: number | null
+        }
+        Insert: {
+          allow_best_offer?: boolean | null
+          bid_increment?: number | null
+          category?: string | null
+          condition?: string | null
+          created_at?: string | null
+          current_bid?: number | null
+          current_status?: never
+          description?: string | null
+          expires_at?: string | null
+          highest_bidder_id?: string | null
+          id?: string | null
+          images?: string[] | null
+          location?: string | null
+          price?: number | null
+          sale_amount?: number | null
+          sale_buyer_id?: string | null
+          sale_date?: string | null
+          saves?: number | null
+          seller_id?: string | null
+          status?: string | null
+          title?: string | null
+          type?: string | null
+          updated_at?: string | null
+          views?: number | null
+        }
+        Update: {
+          allow_best_offer?: boolean | null
+          bid_increment?: number | null
+          category?: string | null
+          condition?: string | null
+          created_at?: string | null
+          current_bid?: number | null
+          current_status?: never
+          description?: string | null
+          expires_at?: string | null
+          highest_bidder_id?: string | null
+          id?: string | null
+          images?: string[] | null
+          location?: string | null
+          price?: number | null
+          sale_amount?: number | null
+          sale_buyer_id?: string | null
+          sale_date?: string | null
+          saves?: number | null
+          seller_id?: string | null
+          status?: string | null
+          title?: string | null
+          type?: string | null
+          updated_at?: string | null
+          views?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_listings_seller"
+            columns: ["seller_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
+      get_listing_with_expiry_check: {
+        Args: { listing_id: string }
+        Returns: {
+          allow_best_offer: boolean
+          bid_increment: number | null
+          category: string
+          condition: string
+          created_at: string
+          current_bid: number | null
+          description: string
+          expires_at: string
+          highest_bidder_id: string | null
+          id: string
+          images: string[]
+          location: string
+          price: number
+          sale_amount: number | null
+          sale_buyer_id: string | null
+          sale_date: string | null
+          saves: number
+          seller_id: string
+          status: string
+          title: string
+          type: string
+          updated_at: string
+          views: number
+        }[]
+      }
+      get_listings_with_expiry_check: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          allow_best_offer: boolean
+          bid_increment: number | null
+          category: string
+          condition: string
+          created_at: string
+          current_bid: number | null
+          description: string
+          expires_at: string
+          highest_bidder_id: string | null
+          id: string
+          images: string[]
+          location: string
+          price: number
+          sale_amount: number | null
+          sale_buyer_id: string | null
+          sale_date: string | null
+          saves: number
+          seller_id: string
+          status: string
+          title: string
+          type: string
+          updated_at: string
+          views: number
+        }[]
+      }
       get_membership_data_for_admin: {
         Args: Record<PropertyKey, never>
         Returns: {
