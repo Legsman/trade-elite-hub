@@ -33,6 +33,22 @@ export const useOfferActions = (
     }
 
     try {
+      // Check if bidding has started (if any bids exist, offers are not allowed)
+      const { data: existingBids } = await supabase
+        .from("bids")
+        .select("id")
+        .eq("listing_id", listingId)
+        .limit(1);
+
+      if (existingBids && existingBids.length > 0) {
+        toast({
+          title: "Bidding Has Started",
+          description: "Offers are no longer accepted once bidding has begun.",
+          variant: "destructive",
+        });
+        return { success: false };
+      }
+
       // Check if user already has a pending offer
       const { data: existingOffers } = await supabase
         .from("offers")

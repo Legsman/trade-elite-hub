@@ -1,10 +1,11 @@
 
 import { AlertCircle } from "lucide-react";
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { OfferForm } from "./OfferForm";
 import { OfferManagement } from "./OfferManagement";
 import { useOffers } from "@/hooks/listings";
+import { supabase } from "@/integrations/supabase/client";
 
 interface OfferSectionProps {
   listingId: string;
@@ -30,6 +31,23 @@ export const OfferSection = ({
     respondToOffer,
     getUserOfferStatus
   } = useOffers({ listingId });
+  
+  const [bidsExist, setBidsExist] = useState(false);
+  
+  // Check if any bids exist for this listing
+  useEffect(() => {
+    const checkBids = async () => {
+      const { data } = await supabase
+        .from("bids")
+        .select("id")
+        .eq("listing_id", listingId)
+        .limit(1);
+      
+      setBidsExist(!!(data && data.length > 0));
+    };
+    
+    checkBids();
+  }, [listingId]);
   
   useEffect(() => {
     fetchOffers();
@@ -72,7 +90,7 @@ export const OfferSection = ({
           </div>
         )}
         
-        {!isSeller && userId && (
+        {!isSeller && userId && !bidsExist && (
           <div className="md:col-span-2">
             <OfferForm 
               listingId={listingId}
@@ -81,6 +99,18 @@ export const OfferSection = ({
               onMakeOffer={handleMakeOffer}
               userOfferStatus={userOfferStatus}
             />
+          </div>
+        )}
+        
+        {!isSeller && userId && bidsExist && (
+          <div className="md:col-span-2">
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Bidding has started</AlertTitle>
+              <AlertDescription>
+                Offers are no longer accepted for this listing as bidding has begun. You can place a bid instead.
+              </AlertDescription>
+            </Alert>
           </div>
         )}
         
