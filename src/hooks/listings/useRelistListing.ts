@@ -50,7 +50,10 @@ export const useRelistListing = (listingId?: string) => {
         previous_offers: listing.offers || [],
       };
 
-      // 4. Clear auction data and reset listing to fresh state
+      // 4. Clear auction data and reset listing to fresh state with new expiration
+      const newExpirationDate = new Date();
+      newExpirationDate.setDate(newExpirationDate.getDate() + 7); // 7 days from now
+      
       const { error: updateError } = await supabase
         .from("listings")
         .update({
@@ -60,6 +63,7 @@ export const useRelistListing = (listingId?: string) => {
           sale_buyer_id: null,
           sale_amount: null,
           sale_date: null,
+          expires_at: newExpirationDate.toISOString(),
           updated_at: new Date().toISOString(),
         })
         .eq("id", listingId);
