@@ -61,6 +61,7 @@ export const PriceCard = ({
           </span>
         </div>
       ) : isAuction ? (
+        // Only show bid form for non-sellers
         listing.sellerId !== user?.id && user && !isSold ? (
           <CollapsibleBidForm
             listingId={listing.id}
@@ -70,6 +71,13 @@ export const PriceCard = ({
             userBidStatus={adaptedUserBidStatus}
             expiryDate={listing.expiresAt}
           />
+        ) : listing.sellerId === user?.id ? (
+          // Message for sellers
+          <div className="p-4 bg-muted/50 rounded-md text-center">
+            <p className="text-sm text-muted-foreground">
+              This is your auction. You cannot bid on your own listing.
+            </p>
+          </div>
         ) : (
           <div className="space-y-1">
             {currentPrice ? (
