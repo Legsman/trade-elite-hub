@@ -109,18 +109,20 @@ export const PriceCard = ({
           )}
         </div>
       )}
-      {/* Countdown for unsold */}
-      {!isSold ? (
+      {/* Countdown for active listings */}
+      {!isSold && listing.status !== 'expired' ? (
         <ListingCountdown 
           expiryDate={listing.expiresAt} 
           isAuction={isAuction}
           listingStatus={listing.status}
         />
       ) : (
-        <p className="text-sm text-muted-foreground">This item is no longer available</p>
+        <p className="text-sm text-muted-foreground">
+          {isSold ? "This item is no longer available" : "This auction has ended"}
+        </p>
       )}
-      {/* Seller can relist */}
-      {isSold && isOwner && (
+      {/* Seller can relist sold or expired items */}
+      {(isSold || listing.status === 'expired') && isOwner && (
         <Button 
           variant="outline" 
           size="sm" 
@@ -130,8 +132,8 @@ export const PriceCard = ({
           Relist This Item
         </Button>
       )}
-      {/* Contact/save/share for unsold */}
-      {!isSold && (
+      {/* Contact/save/share for active listings only */}
+      {!isSold && listing.status !== 'expired' && (
         <div className="flex items-center gap-2">
           <Button 
             className="flex-1"
@@ -184,8 +186,8 @@ export const PriceCard = ({
           </TooltipProvider>
         </div>
       )}
-      {/* "Make an offer" logic - allow for auctions only if no bids */}
-      {listing.allowBestOffer && !isSold && listing.sellerId !== user?.id && user && (!isAuction || bids.length === 0) && (
+      {/* "Make an offer" logic - allow for auctions only if no bids and not expired */}
+      {listing.allowBestOffer && !isSold && listing.status !== 'expired' && listing.sellerId !== user?.id && user && (!isAuction || bids.length === 0) && (
         <Button 
           variant="outline" 
           className="w-full"
@@ -194,8 +196,8 @@ export const PriceCard = ({
           Make an Offer
         </Button>
       )}
-      {/* Log in prompt for non-logged-in */}
-      {!user && !isSold && (
+      {/* Log in prompt for active listings only */}
+      {!user && !isSold && listing.status !== 'expired' && (
         <Button 
           variant="outline" 
           className="w-full"
