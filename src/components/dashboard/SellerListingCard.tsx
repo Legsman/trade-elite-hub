@@ -16,6 +16,7 @@ interface SellerListingCardProps {
   onReviewOffers?: () => void;
   onShare?: () => void;
   onChangeToAuction?: () => void;
+  onRelist?: () => void;
   disableEnd?: boolean;
 }
 
@@ -26,6 +27,7 @@ export function SellerListingCard({
   onReviewOffers,
   onShare,
   onChangeToAuction,
+  onRelist,
   disableEnd = false,
 }: SellerListingCardProps) {
   const now = new Date();
@@ -50,6 +52,7 @@ export function SellerListingCard({
         onReviewOffers={onReviewOffers}
         onShare={onShare}
         onChangeToAuction={onChangeToAuction}
+        onRelist={onRelist}
         disableEnd={disableEnd}
       />
       <div className="aspect-video overflow-hidden">

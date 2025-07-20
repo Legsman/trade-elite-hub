@@ -72,6 +72,7 @@ export const UserListingsTab = ({ userId }: UserListingsTabProps) => {
           onReviewOffers={handleReviewOffers}
           onShare={handleShare}
           onChangeToAuction={handleChangeToAuction}
+          onRelist={handleRelistClick}
           isEnding={isEnding}
         />
       )}

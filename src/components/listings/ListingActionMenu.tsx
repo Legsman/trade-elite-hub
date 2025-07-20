@@ -6,7 +6,7 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { MoreHorizontal, Share, Edit } from "lucide-react";
+import { MoreHorizontal, Share, Edit, RotateCcw } from "lucide-react";
 import { getEffectiveListingStatus, canEndListing } from "@/utils/listingStatus";
 import { Listing } from "@/types";
 
@@ -17,6 +17,7 @@ interface ListingActionMenuProps {
   onShare?: () => void;
   onChangeToAuction?: () => void;
   onEnd?: () => void;
+  onRelist?: () => void;
   disableEnd?: boolean;
 }
 
@@ -27,6 +28,7 @@ export function ListingActionMenu({
   onShare,
   onChangeToAuction,
   onEnd,
+  onRelist,
   disableEnd = false,
 }: ListingActionMenuProps) {
   const status = getEffectiveListingStatus(listing);
@@ -34,6 +36,7 @@ export function ListingActionMenu({
   const showEdit = status === "active";
   const showReviewOffers = listing.allowBestOffer;
   const showChangeToAuction = listing.type?.toLowerCase() === "classified";
+  const showRelist = status === "sold" || status === "expired";
 
   return (
     <DropdownMenu>
@@ -76,6 +79,12 @@ export function ListingActionMenu({
         {showEnd && (
           <DropdownMenuItem onClick={onEnd} disabled={disableEnd}>
             End Listing
+          </DropdownMenuItem>
+        )}
+        {showRelist && (
+          <DropdownMenuItem onClick={onRelist}>
+            <RotateCcw className="mr-2 h-4 w-4" />
+            Relist Item
           </DropdownMenuItem>
         )}
       </DropdownMenuContent>

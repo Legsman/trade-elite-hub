@@ -7,6 +7,7 @@ interface ListingsGridProps {
   onReviewOffers: (listing: any) => void;
   onShare: (listing: any) => void;
   onChangeToAuction: (listing: any) => void;
+  onRelist: (listing: any) => void;
   isEnding: boolean;
 }
 
@@ -17,6 +18,7 @@ export const ListingsGrid = ({
   onReviewOffers,
   onShare,
   onChangeToAuction,
+  onRelist,
   isEnding,
 }: ListingsGridProps) => {
   return (
@@ -38,6 +40,7 @@ export const ListingsGrid = ({
               ? () => onChangeToAuction(listing)
               : undefined
           }
+          onRelist={() => onRelist(listing)}
           disableEnd={isEnding}
         />
       ))}
