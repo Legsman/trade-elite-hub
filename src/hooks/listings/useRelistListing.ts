@@ -50,24 +50,41 @@ export const useRelistListing = (listingId?: string) => {
         previous_offers: listing.offers || [],
       };
 
-      // 4. Update the listing status to active
+      // 4. Clear auction data and reset listing to fresh state
       const { error: updateError } = await supabase
         .from("listings")
         .update({
           status: "active",
+          current_bid: null,
+          highest_bidder_id: null,
+          sale_buyer_id: null,
+          sale_amount: null,
+          sale_date: null,
           updated_at: new Date().toISOString(),
         })
         .eq("id", listingId);
 
       if (updateError) throw updateError;
 
-      // 5. Find accepted offer and notify previous buyer
+      // 5. Cancel all previous bids by setting them to inactive
+      const { error: bidError } = await supabase
+        .from("bids")
+        .update({ 
+          status: "cancelled",
+          updated_at: new Date().toISOString()
+        })
+        .eq("listing_id", listingId)
+        .eq("status", "active");
+
+      if (bidError) throw bidError;
+
+      // 6. Find accepted offer and notify previous buyer
       const acceptedOffer = listing.offers ? 
         listing.offers.find((offer: any) => offer.status === "accepted") :
         null;
 
       if (acceptedOffer) {
-        // 6. Create a notification for the previous buyer
+        // 7. Create a notification for the previous buyer
         await supabase
           .from("notifications")
           .insert({
@@ -81,7 +98,7 @@ export const useRelistListing = (listingId?: string) => {
             }
           });
 
-        // 7. Update all previous offers to "cancelled"
+        // 8. Update all previous offers to "cancelled"
         await supabase
           .from("offers")
           .update({ status: "cancelled", updated_at: new Date().toISOString() })
