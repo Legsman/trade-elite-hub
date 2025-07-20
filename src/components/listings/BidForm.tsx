@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Loader2, Shield } from "lucide-react";
+import { Loader2, Shield, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { 
@@ -31,6 +31,7 @@ interface BidFormProps {
     userHighestBid: number | null;
     userMaximumBid: number | null;
   };
+  expiresAt?: string;
 }
 
 export const BidForm = ({ 
@@ -38,11 +39,15 @@ export const BidForm = ({
   currentPrice, 
   highestBid, 
   onPlaceBid,
-  userBidStatus
+  userBidStatus,
+  expiresAt
 }: BidFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showVerificationModal, setShowVerificationModal] = useState(false);
   const { canPlaceBids, verificationLevel, getVerificationMessage } = usePermissionCheck();
+  
+  // Check if auction has expired
+  const isExpired = expiresAt ? new Date(expiresAt) <= new Date() : false;
   
   // Calculate minimum bid - either the highest bid + £5 or the starting price
   const minimumBid = highestBid ? highestBid + 5 : currentPrice;
@@ -123,11 +128,20 @@ export const BidForm = ({
           </div>
         )}
 
-        {!canPlaceBids && (
+        {!canPlaceBids && !isExpired && (
           <Alert className="mb-4">
             <Shield className="h-4 w-4" />
             <AlertDescription>
               {getVerificationMessage("place bids")}
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {isExpired && (
+          <Alert className="mb-4" variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              This auction has ended. No more bids can be placed.
             </AlertDescription>
           </Alert>
         )}
@@ -146,7 +160,7 @@ export const BidForm = ({
                       type="number"
                       step="1"
                       min={minimumBid}
-                      disabled={isSubmitting}
+                      disabled={isSubmitting || isExpired}
                     />
                   </FormControl>
                   <FormDescription>
@@ -160,13 +174,15 @@ export const BidForm = ({
             <Button 
               type="submit" 
               className="w-full mt-4" 
-              disabled={isSubmitting || !canPlaceBids}
+              disabled={isSubmitting || !canPlaceBids || isExpired}
             >
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Placing Bid...
                 </>
+              ) : isExpired ? (
+                "Auction Ended"
               ) : (
                 canPlaceBids ? "Place Bid" : "Verification Required"
               )}

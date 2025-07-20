@@ -46,6 +46,9 @@ export const CollapsibleBidForm = ({
   
   // Calculate minimum bid - either highest bid + £5 or starting price
   const minimumBid = highestBid ? highestBid + 5 : currentPrice;
+  
+  // Check if auction has expired
+  const isExpired = new Date(expiryDate) <= new Date();
 
   // Create form schema
   const FormSchema = z.object({
@@ -68,6 +71,16 @@ export const CollapsibleBidForm = ({
   }, [minimumBid, form]);
 
   const handleSubmit = async (values: z.infer<typeof FormSchema>) => {
+    // Check if auction has expired before placing bid
+    if (isExpired) {
+      toast({
+        title: "Auction Ended",
+        description: "This auction has ended. No more bids can be placed.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setIsSubmitting(true);
     setLastBidAmount(values.maximumBid);
     
@@ -99,8 +112,7 @@ export const CollapsibleBidForm = ({
     }
   };
 
-  // Check if auction has ended
-  const isAuctionEnded = new Date() > expiryDate;
+  // Note: isExpired is already defined above, no need for duplicate check
   
   // Add the proxy bidding info text
   const proxyBiddingInfo = (
@@ -132,10 +144,14 @@ export const CollapsibleBidForm = ({
             )}
           </div>
 
-          {!isOpen && !isAuctionEnded && (
+          {!isOpen && !isExpired && (
             <CollapsibleTrigger asChild>
               <Button>Place Bid</Button>
             </CollapsibleTrigger>
+          )}
+          
+          {isExpired && (
+            <Badge variant="destructive">Auction Ended</Badge>
           )}
         </div>
 
@@ -186,8 +202,8 @@ export const CollapsibleBidForm = ({
                         type="number"
                         step="1"
                         min={minimumBid}
-                        disabled={isSubmitting}
-                      />
+                  disabled={isSubmitting || isExpired}
+                />
                     </FormControl>
                     <FormDescription>
                       Minimum bid: £{minimumBid.toLocaleString()} (in £5 increments)
@@ -198,20 +214,22 @@ export const CollapsibleBidForm = ({
               />
               
               <div className="flex gap-2 mt-4">
-                <Button 
-                  type="submit" 
-                  className="flex-1" 
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Placing Bid...
-                    </>
-                  ) : (
-                    "Place Bid"
-                  )}
-                </Button>
+              <Button 
+                type="submit" 
+                className="flex-1" 
+                disabled={isSubmitting || isExpired}
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Placing Bid...
+                  </>
+                ) : isExpired ? (
+                  "Auction Ended"
+                ) : (
+                  "Place Bid"
+                )}
+              </Button>
                 
                 <Button 
                   type="button" 

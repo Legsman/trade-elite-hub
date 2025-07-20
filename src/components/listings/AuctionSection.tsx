@@ -18,6 +18,7 @@ interface AuctionSectionProps {
   highestBidderId?: string;
   /** Status of the listing to determine which bids to show */
   listingStatus?: string;
+  expiresAt?: string;
 }
 
 export const AuctionSection = ({ 
@@ -27,7 +28,8 @@ export const AuctionSection = ({
   userId,
   refetchListing,
   highestBidderId: propHighestBidderId, // Rename to avoid confusion
-  listingStatus
+  listingStatus,
+  expiresAt
 }: AuctionSectionProps) => {
   const { 
     bids, 
@@ -59,6 +61,16 @@ export const AuctionSection = ({
 
   const handlePlaceBid = useCallback(async (amount: number) => {
     console.log("AuctionSection: Handling bid placement", amount);
+    
+    // Check if auction has expired
+    if (expiresAt && new Date(expiresAt) <= new Date()) {
+      toast({
+        title: "Auction Ended",
+        description: "This auction has ended. No more bids can be placed.",
+        variant: "destructive",
+      });
+      return { success: false };
+    }
     
     if (!userId) {
       toast({
@@ -142,6 +154,7 @@ export const AuctionSection = ({
               highestBid={highestBid}
               onPlaceBid={handlePlaceBid}
               userBidStatus={userBidStatus}
+              expiresAt={expiresAt}
             />
           )}
           
