@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { ChevronDown, ChevronUp, Loader2, User, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -94,7 +95,7 @@ export const BidHistory = ({
               <Alert className="mb-4 bg-amber-50 border-amber-200">
                 <AlertTriangle className="h-4 w-4 text-amber-500" />
                 <AlertDescription className="text-xs text-amber-700">
-                  Debug: Found {bids.length} bids. User profiles available: {bids.some(b => b.user_profile?.full_name) ? 'Yes' : 'No'}
+                  Debug: Found {bids.length} bids. User profiles available: {bids.some(b => b.user_profile?.username) ? 'Yes' : 'No'}
                 </AlertDescription>
               </Alert>
             )}
@@ -117,7 +118,7 @@ export const BidHistory = ({
                       <div className="font-medium flex items-center">
                         {bid.userId === currentUserId 
                           ? "You" 
-                          : obfuscateText((bid.user_profile?.full_name ?? "User"), 2)
+                          : obfuscateText((bid.user_profile?.username ?? bid.user_profile?.full_name ?? "User"), 2)
                         }
                         {bid.userId === currentUserId && (
                           <Badge variant="outline" className="ml-2 text-xs">You</Badge>

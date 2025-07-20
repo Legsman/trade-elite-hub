@@ -88,14 +88,16 @@ async function processExpiredAuctions() {
         .in("id", losingIds);
     }
 
-    // Update the listing as sold
+    // Update the listing as sold with the correct sale amount
+    const finalSaleAmount = winningBid.amount; // Use the actual winning bid amount, not maximum_bid
+    
     await supabase
       .from("listings")
       .update({
         status: "sold",
         sale_buyer_id: winningBid.user_id,
-        sale_amount: winningBid.amount,
-        current_bid: winningBid.amount, // Set current_bid to match the actual winning amount
+        sale_amount: finalSaleAmount,
+        current_bid: finalSaleAmount, // Set current_bid to match the actual winning amount
         sale_date: new Date().toISOString(),
         updated_at: new Date().toISOString()
       })
@@ -105,11 +107,11 @@ async function processExpiredAuctions() {
     await supabase.from("notifications").insert({
       user_id: listing.seller_id,
       type: "auction_sold",
-      message: `Your auction "${listing.title}" was won for £${Number(winningBid.amount).toLocaleString()}.`,
+      message: `Your auction "${listing.title}" was won for £${Number(finalSaleAmount).toLocaleString()}.`,
       metadata: {
         listingId: listing.id,
         buyerId: winningBid.user_id,
-        amount: winningBid.amount
+        amount: finalSaleAmount
       },
       is_read: false
     });
@@ -118,16 +120,14 @@ async function processExpiredAuctions() {
     await supabase.from("notifications").insert({
       user_id: winningBid.user_id,
       type: "auction_won",
-      message: `Congratulations! You won "${listing.title}" for £${Number(winningBid.amount).toLocaleString()}.`,
+      message: `Congratulations! You won "${listing.title}" for £${Number(finalSaleAmount).toLocaleString()}.`,
       metadata: {
         listingId: listing.id,
         sellerId: listing.seller_id,
-        amount: winningBid.amount
+        amount: finalSaleAmount
       },
       is_read: false
     });
-
-    // Feedback: Optionally insert a feedback "todo" marker (can be handled in UI fetches)
 
     actions++;
   }

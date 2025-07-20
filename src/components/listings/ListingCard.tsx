@@ -18,7 +18,7 @@ interface ListingCardProps {
   listing: Listing;
   onClick?: (id: string) => void;
   highestBid?: number | null;
-  bidCount?: number; // New prop to track bid count
+  bidCount?: number;
 }
 
 export const ListingCard = memo(({ listing, onClick, highestBid, bidCount = 0 }: ListingCardProps) => {
@@ -39,12 +39,13 @@ export const ListingCard = memo(({ listing, onClick, highestBid, bidCount = 0 }:
 
   // Effective status & helpers
   const effectiveStatus = getEffectiveListingStatus(listing);
+  const isSold = effectiveStatus === "sold";
 
   return (
     <Card
       id={`listing-card-${listing.id}`}
       className={`overflow-hidden cursor-pointer transition-all hover:shadow-md ${
-        effectiveStatus === "sold" ? "border-green-500" : ""
+        isSold ? "border-green-500" : ""
       }`}
       onClick={handleClick}
     >
@@ -62,7 +63,21 @@ export const ListingCard = memo(({ listing, onClick, highestBid, bidCount = 0 }:
             {listing.location}
           </p>
         </div>
-        <ListingCardPrice listing={listing} highestBid={highestBid} />
+        
+        {/* Show sold price for sold items, otherwise show current/highest bid */}
+        {isSold && listing.saleAmount ? (
+          <div className="mb-2">
+            <div className="font-bold text-lg text-green-600">
+              Sold for £{Number(listing.saleAmount).toLocaleString()}
+            </div>
+            <div className="text-sm text-muted-foreground line-through">
+              Listed at £{listing.price.toLocaleString()}
+            </div>
+          </div>
+        ) : (
+          <ListingCardPrice listing={listing} highestBid={highestBid} />
+        )}
+        
         {/* Countdown or ended status */}
         <div className="mt-2">
           {isListingActive(listing) ? (
@@ -74,8 +89,8 @@ export const ListingCard = memo(({ listing, onClick, highestBid, bidCount = 0 }:
             />
           ) : (
             <p className="text-xs text-muted-foreground">
-              {effectiveStatus === "sold"
-                ? "No longer available"
+              {isSold
+                ? "Sold"
                 : effectiveStatus === "expired" || effectiveStatus === "ended"
                   ? "Ended"
                   : effectiveStatus.charAt(0).toUpperCase() + effectiveStatus.slice(1)}

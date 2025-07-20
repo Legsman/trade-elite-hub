@@ -1,7 +1,10 @@
+
 import { useState } from "react";
 import { Loading } from "@/components/ui/loading";
 import { EndListingDialog } from "@/components/listings/EndListingDialog";
+import { RelistForm } from "@/components/listings/RelistForm";
 import { useEndListing } from "@/hooks/listings/useEndListing";
+import { useRelistListing } from "@/hooks/listings/useRelistListing";
 import { SoldItemsList } from "@/components/listings/sold-items/SoldItemsList";
 import { useSoldItems } from "@/components/listings/sold-items/useSoldItems";
 import { useUserListings, TabType } from "@/hooks/dashboard/useUserListings";
@@ -20,8 +23,9 @@ export const UserListingsTab = ({ userId }: UserListingsTabProps) => {
   const [relistingItem, setRelistingItem] = useState<any>(null);
   
   const { isEnding, endListing } = useEndListing(endingItem?.id);
-  const { listings, isLoading } = useUserListings(userId, tab, isEnding);
-  const { soldItems, isLoading: isSoldLoading } = useSoldItems(userId, relistingItem);
+  const { relistListing, isRelisting } = useRelistListing(relistingItem?.id);
+  const { listings, isLoading } = useUserListings(userId, tab, isEnding || isRelisting);
+  const { soldItems, isLoading: isSoldLoading } = useSoldItems(userId, isRelisting);
   
   const {
     handleEdit,
@@ -36,6 +40,14 @@ export const UserListingsTab = ({ userId }: UserListingsTabProps) => {
 
   const handleRelistClick = (item: any) => {
     setRelistingItem(item);
+  };
+
+  const handleRelistSubmit = async (data: any) => {
+    const success = await relistListing(data);
+    if (success) {
+      setRelistingItem(null);
+    }
+    return success;
   };
 
   return (
@@ -71,6 +83,15 @@ export const UserListingsTab = ({ userId }: UserListingsTabProps) => {
           onEnd={endListing}
           listingTitle={endingItem.title}
           isEnding={isEnding}
+        />
+      )}
+
+      {relistingItem && (
+        <RelistForm
+          open={!!relistingItem}
+          onOpenChange={(open) => !open && setRelistingItem(null)}
+          onRelist={handleRelistSubmit}
+          listingTitle={relistingItem.title}
         />
       )}
     </div>

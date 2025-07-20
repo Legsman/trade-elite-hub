@@ -1,15 +1,17 @@
 
-import { AlertCircle, Check } from "lucide-react";
+import { Check } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface ListingDetailSoldAlertProps {
   isAuction?: boolean;
   soldDate?: Date;
+  saleAmount?: number;
 }
 
 export const ListingDetailSoldAlert = ({ 
   isAuction = false, 
-  soldDate
+  soldDate,
+  saleAmount
 }: ListingDetailSoldAlertProps) => {
   const formattedDate = soldDate ? 
     new Intl.DateTimeFormat('en-GB', {
@@ -30,6 +32,11 @@ export const ListingDetailSoldAlert = ({
           "This auction has ended and the item has been sold to the highest bidder." :
           "This listing has been sold and is no longer available for purchase."
         }
+        {saleAmount && (
+          <div className="mt-1 font-semibold">
+            Final sale price: £{Number(saleAmount).toLocaleString()}
+          </div>
+        )}
         {formattedDate && (
           <div className="mt-1 text-sm">
             Sold on {formattedDate}
