@@ -21,40 +21,45 @@ export const useListing = (id?: string) => {
     setError(null);
 
     try {
+      // Use the new function that automatically checks and updates expired status
       const { data, error } = await supabase
-        .from("listings")
-        .select("*")
-        .eq("id", id)
-        .single();
+        .rpc("get_listing_with_expiry_check", { listing_id: id });
 
       if (error) {
         throw error;
       }
 
+      // Get the first result since the function returns SETOF
+      const listingData = data && data.length > 0 ? data[0] : null;
+      
+      if (!listingData) {
+        throw new Error("Listing not found");
+      }
+
       // Convert database record to Listing type with proper camelCase
       const mappedListing: Listing = {
-        id: data.id,
-        sellerId: data.seller_id,
-        title: data.title,
-        description: data.description,
-        category: data.category,
-        type: data.type,
-        price: Number(data.price),
-        location: data.location,
-        condition: data.condition,
-        images: data.images,
-        allowBestOffer: data.allow_best_offer,
-        expiresAt: new Date(data.expires_at),
-        createdAt: new Date(data.created_at),
-        updatedAt: new Date(data.updated_at),
-        status: data.status,
-        views: data.views,
-        saves: data.saves,
-        currentBid: data.current_bid ? Number(data.current_bid) : null,
-        highestBidderId: data.highest_bidder_id || null,
-        saleAmount: data.sale_amount ? Number(data.sale_amount) : null,
-        saleBuyerId: data.sale_buyer_id || null,
-        saleDate: data.sale_date ? data.sale_date : null
+        id: listingData.id,
+        sellerId: listingData.seller_id,
+        title: listingData.title,
+        description: listingData.description,
+        category: listingData.category,
+        type: listingData.type,
+        price: Number(listingData.price),
+        location: listingData.location,
+        condition: listingData.condition,
+        images: listingData.images,
+        allowBestOffer: listingData.allow_best_offer,
+        expiresAt: new Date(listingData.expires_at),
+        createdAt: new Date(listingData.created_at),
+        updatedAt: new Date(listingData.updated_at),
+        status: listingData.status,
+        views: listingData.views,
+        saves: listingData.saves,
+        currentBid: listingData.current_bid ? Number(listingData.current_bid) : null,
+        highestBidderId: listingData.highest_bidder_id || null,
+        saleAmount: listingData.sale_amount ? Number(listingData.sale_amount) : null,
+        saleBuyerId: listingData.sale_buyer_id || null,
+        saleDate: listingData.sale_date ? listingData.sale_date : null
       };
 
       setListing(mappedListing);
