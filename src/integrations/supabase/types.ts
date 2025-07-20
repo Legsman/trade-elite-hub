@@ -962,6 +962,15 @@ export type Database = {
       }
     }
     Functions: {
+      audit_and_fix_auction_data: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          listing_id: string
+          issue_type: string
+          old_value: string
+          new_value: string
+        }[]
+      }
       get_listing_with_expiry_check: {
         Args: { listing_id: string }
         Returns: {

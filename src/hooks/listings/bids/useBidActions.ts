@@ -52,6 +52,18 @@ export const useBidActions = () => {
           userMessage = 'You can only update your own bids';
         } else if (error.code === 'P0002') {
           userMessage = 'This listing was not found';
+        } else if (error.code === 'P0003') {
+          userMessage = 'This auction has ended';
+        } else if (error.code === 'P0004') {
+          userMessage = 'This auction is no longer active';
+        } else if (error.code === 'P0005') {
+          userMessage = 'You cannot bid on your own auction';
+        } else if (error.code === 'P0006') {
+          userMessage = 'Bid amount must be a positive number';
+        } else if (error.code === 'P0007') {
+          userMessage = 'Maximum bid cannot be less than your bid amount';
+        } else if (error.code === 'P0008') {
+          userMessage = 'Your bid must meet the minimum increment requirement';
         }
         
         toast({
