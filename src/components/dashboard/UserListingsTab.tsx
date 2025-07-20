@@ -24,7 +24,7 @@ export const UserListingsTab = ({ userId }: UserListingsTabProps) => {
   
   const { isEnding, endListing } = useEndListing(endingItem?.id);
   const { relistListing, isRelisting } = useRelistListing(relistingItem?.id);
-  const { listings, isLoading } = useUserListings(userId, tab, isEnding || isRelisting);
+  const { listings, isLoading, refetch } = useUserListings(userId, tab, isEnding || isRelisting);
   const { soldItems, isLoading: isSoldLoading } = useSoldItems(userId, isRelisting);
   
   const {
@@ -43,11 +43,13 @@ export const UserListingsTab = ({ userId }: UserListingsTabProps) => {
   };
 
   const handleRelistSubmit = async (data: any) => {
-    const success = await relistListing(data);
-    if (success) {
+    const result = await relistListing(data);
+    if (result.success) {
       setRelistingItem(null);
+      // Refresh listings to show the new listing
+      refetch();
     }
-    return success;
+    return result.success;
   };
 
   return (

@@ -19,13 +19,13 @@ export const ListingDetailsRelistDialog = ({
   const { relistListing } = useRelistListing(listing.id);
 
   const handleRelistSubmit = async (data: any) => {
-    const success = await relistListing(data);
-    if (success) {
+    const result = await relistListing(data);
+    if (result.success && result.newListingId) {
       setOpen(false);
-      // Redirect to refresh the page with updated data
-      navigate(0);
+      // Navigate to the new listing
+      navigate(`/listings/${result.newListingId}`);
     }
-    return success;
+    return result.success;
   };
 
   return (

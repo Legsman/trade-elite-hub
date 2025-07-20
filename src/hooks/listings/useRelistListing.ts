@@ -20,7 +20,7 @@ export const useRelistListing = (listingId?: string) => {
         description: "User or listing information missing",
         variant: "destructive",
       });
-      return false;
+      return { success: false };
     }
 
     setIsRelisting(true);
@@ -29,7 +29,7 @@ export const useRelistListing = (listingId?: string) => {
       // 1. Get current listing information
       const { data: listing, error: listingError } = await supabase
         .from("listings")
-        .select("*, offers(id, user_id, amount, status)")
+        .select("*")
         .eq("id", listingId)
         .single();
 
@@ -40,81 +40,102 @@ export const useRelistListing = (listingId?: string) => {
         throw new Error("Only the seller can relist this item");
       }
 
-      // 3. Save relisting information to a relisting_history table or to metadata
-      const metadata = {
-        relisted: true,
-        previous_status: listing.status,
-        relist_reason: data.reason,
-        additional_info: data.additionalInfo || null,
-        relist_date: new Date().toISOString(),
-        previous_offers: listing.offers || [],
-      };
-
-      // 4. Clear auction data and reset listing to fresh state with new expiration
-      const newExpirationDate = new Date();
-      newExpirationDate.setDate(newExpirationDate.getDate() + 7); // 7 days from now
-      
-      const { error: updateError } = await supabase
+      // 3. Mark original listing as 'relisted' and record the reason
+      const { error: originalUpdateError } = await supabase
         .from("listings")
         .update({
-          status: "active",
-          current_bid: null,
-          highest_bidder_id: null,
-          sale_buyer_id: null,
-          sale_amount: null,
-          sale_date: null,
-          expires_at: newExpirationDate.toISOString(),
+          status: "relisted",
+          relist_reason: data.reason,
+          relisted_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         })
         .eq("id", listingId);
 
-      if (updateError) throw updateError;
+      if (originalUpdateError) throw originalUpdateError;
 
-      // 5. Cancel all previous bids by setting them to inactive
-      const { error: bidError } = await supabase
+      // 4. Cancel all bids on the original listing
+      const { error: bidCancelError } = await supabase
         .from("bids")
         .update({ 
-          status: "cancelled",
+          status: "cancelled_due_to_relist",
           updated_at: new Date().toISOString()
         })
         .eq("listing_id", listingId)
         .eq("status", "active");
 
-      if (bidError) throw bidError;
+      if (bidCancelError) throw bidCancelError;
 
-      // 6. Find accepted offer and notify previous buyer
-      const acceptedOffer = listing.offers ? 
-        listing.offers.find((offer: any) => offer.status === "accepted") :
-        null;
+      // 5. Cancel all offers on the original listing
+      const { error: offerCancelError } = await supabase
+        .from("offers")
+        .update({ 
+          status: "cancelled",
+          updated_at: new Date().toISOString() 
+        })
+        .eq("listing_id", listingId)
+        .in("status", ["pending", "accepted"]);
 
-      if (acceptedOffer) {
-        // 7. Create a notification for the previous buyer
-        await supabase
-          .from("notifications")
-          .insert({
-            user_id: acceptedOffer.user_id,
-            type: "listing_relisted",
-            message: `The listing "${listing.title}" you purchased has been relisted by the seller. The reason provided is: ${data.reason}`,
-            metadata: {
-              listing_id: listingId,
-              reason: data.reason,
-              additional_info: data.additionalInfo || null,
-            }
-          });
+      if (offerCancelError) throw offerCancelError;
 
-        // 8. Update all previous offers to "cancelled"
-        await supabase
-          .from("offers")
-          .update({ status: "cancelled", updated_at: new Date().toISOString() })
-          .eq("listing_id", listingId);
+      // 6. Create a completely new listing with fresh data
+      const newExpirationDate = new Date();
+      newExpirationDate.setDate(newExpirationDate.getDate() + 7); // 7 days from now
+
+      const { data: newListing, error: createError } = await supabase
+        .from("listings")
+        .insert({
+          seller_id: listing.seller_id,
+          title: listing.title,
+          description: listing.description,
+          category: listing.category,
+          type: listing.type,
+          price: listing.price,
+          location: listing.location,
+          condition: listing.condition,
+          images: listing.images,
+          allow_best_offer: listing.allow_best_offer,
+          bid_increment: listing.bid_increment,
+          expires_at: newExpirationDate.toISOString(),
+          status: "active",
+          views: 0,
+          saves: 0,
+          original_listing_id: listingId,
+          // relist_count will be auto-calculated by trigger
+        })
+        .select()
+        .single();
+
+      if (createError) throw createError;
+
+      // 7. Notify previous bidders about the relist
+      const { data: previousBidders } = await supabase
+        .from("bids")
+        .select("user_id")
+        .eq("listing_id", listingId)
+        .eq("status", "cancelled_due_to_relist");
+
+      if (previousBidders?.length) {
+        const notifications = previousBidders.map(bid => ({
+          user_id: bid.user_id,
+          type: "listing_relisted",
+          message: `The auction "${listing.title}" you bid on has been relisted as a new auction. You can view the new listing and place new bids.`,
+          metadata: {
+            original_listing_id: listingId,
+            new_listing_id: newListing.id,
+            reason: data.reason,
+            additional_info: data.additionalInfo || null,
+          }
+        }));
+
+        await supabase.from("notifications").insert(notifications);
       }
 
       toast({
-        title: "Listing Relisted",
-        description: "Your listing is now active again and available for purchase",
+        title: "Listing Relisted Successfully",
+        description: "A new listing has been created. Previous bids and offers have been cancelled.",
       });
 
-      return true;
+      return { success: true, newListingId: newListing.id };
     } catch (error) {
       console.error("Error relisting item:", error);
       toast({
@@ -122,7 +143,7 @@ export const useRelistListing = (listingId?: string) => {
         description: error instanceof Error ? error.message : "There was an error relisting the item",
         variant: "destructive",
       });
-      return false;
+      return { success: false };
     } finally {
       setIsRelisting(false);
     }

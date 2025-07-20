@@ -33,6 +33,11 @@ export interface Listing {
   saleAmount?: number | null;
   saleBuyerId?: string | null;
   saleDate?: string | null;
+  // Relist tracking fields:
+  originalListingId?: string | null;
+  relistCount?: number;
+  relistReason?: string | null;
+  relistedAt?: Date | null;
 }
 
 export interface Offer {

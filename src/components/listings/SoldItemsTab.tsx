@@ -19,11 +19,11 @@ export const SoldItemsTab = ({ userId }: SoldItemsTabProps) => {
   };
   
   const handleRelistSubmit = async (data) => {
-    const success = await relistListing(data);
-    if (success) {
+    const result = await relistListing(data);
+    if (result.success) {
       setRelistingItem(null);
     }
-    return success;
+    return result.success;
   };
   
   return (
